@@ -24,8 +24,8 @@ sequenceDiagram
 
     User->>Luzia: Send message
     Luzia->>Nexo: Delegate partner connection handling
-    Luzia->>Luzia: Pre-process user input (for example translation/normalization)
-    Nexo->>Nexo: Pre-process runtime context before partner call
+    Luzia->>Luzia: Pre-process user input (for example language translation)
+    Nexo->>Nexo: Pre-process runtime context (including translation when needed)
     Nexo->>Partner: POST webhook request (signed)
     Partner->>Partner: Verify secret + signature
     alt Traditional response
@@ -34,7 +34,7 @@ sequenceDiagram
         Partner-->>Nexo: 200 text/event-stream (SSE)
     end
     Nexo-->>Luzia: Return partner result
-    Luzia->>Luzia: Post-process webhook output (for example translation)
+    Luzia->>Luzia: Post-process webhook output (for example language translation)
     Luzia-->>User: Return assistant reply
 ```
 
