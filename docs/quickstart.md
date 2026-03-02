@@ -5,8 +5,8 @@
 Your webhook should accept Nexo requests and return one of these:
 
 Profile note:
-- `profile.locale` is the primary stable profile field today.
-- Additional profile fields can appear over time - parse defensively and ignore unknown fields.
+- Webhook payloads can include consented profile attributes such as `locale`, `language`, `location`, `age`, `date_of_birth`, `gender`, and `dietary_preferences`.
+- Availability depends on consent and rollout configuration - parse defensively and ignore unknown fields.
 
 ### JSON response
 

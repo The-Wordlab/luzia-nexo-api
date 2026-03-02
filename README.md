@@ -26,7 +26,7 @@ sequenceDiagram
     Luzia->>Nexo: Delegate partner connection handling
     Luzia->>Luzia: Pre-process user input (for example language translation)
     Nexo->>Nexo: Pre-process runtime context (including translation when needed)
-    Nexo->>Partner: POST webhook request (signed)
+    Nexo->>Partner: POST webhook request (signed + consented profile context)
     Partner->>Partner: Verify secret + signature
     alt Traditional response
         Partner-->>Nexo: 200 JSON (text/reply)
@@ -56,9 +56,17 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
 
 ## Profile context (current and next)
 
-- Current: webhook payloads can include profile context, with `profile.locale` as the primary stable field for integration logic.
+- Webhook payloads can include consented profile attributes such as:
+  - `locale`
+  - `language`
+  - `location` (for example city/country)
+  - `age` or age range
+  - `date_of_birth`
+  - `gender`
+  - `dietary_preferences`
+  - `preferences` and selected profile facts
+- Availability depends on consent and rollout configuration.
 - Recommended: parse profile fields defensively and ignore unknown fields.
-- Next: expanded consented profile fields will be documented as they are promoted to stable contract.
 
 ## Repository map
 

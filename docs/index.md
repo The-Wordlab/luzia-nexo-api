@@ -18,7 +18,7 @@ sequenceDiagram
     Luzia->>Nexo: Delegate partner connection handling
     Luzia->>Luzia: Pre-process user input (for example language translation)
     Nexo->>Nexo: Pre-process runtime context (including translation when needed)
-    Nexo->>Partner: POST webhook request (signed)
+    Nexo->>Partner: POST webhook request (signed + consented profile context)
     Partner->>Partner: Verify secret + signature
     alt Traditional response
         Partner-->>Nexo: 200 JSON (text/reply)
@@ -40,9 +40,17 @@ Use [API Reference](partner-api-reference.md) for payload, signature, and respon
 
 ## Profile context
 
-- Current stable field: `profile.locale`.
-- Additional consented profile fields may be present depending on app and rollout configuration.
-- Expanded profile field documentation will be added as those fields are promoted to stable contract.
+- Webhook payloads can include consented profile attributes such as:
+  - `locale`
+  - `language`
+  - `location` (for example city/country)
+  - `age` or age range
+  - `date_of_birth`
+  - `gender`
+  - `dietary_preferences`
+  - `preferences` and selected profile facts
+- Availability depends on consent and rollout configuration.
+- Parse defensively and ignore unknown fields.
 
 ## Optional deployment examples
 

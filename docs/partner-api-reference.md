@@ -32,9 +32,17 @@ Your webhook should parse the fields it needs and safely ignore unknown extra fi
 
 ### Profile fields (current and upcoming)
 
-- Current stable field: `profile.locale`.
-- Other consented profile fields may appear depending on app configuration and rollout state.
-- Expanded profile field contract will be published here as those fields move to stable availability.
+- Webhook payloads can include consented profile attributes such as:
+  - `locale`
+  - `language`
+  - `location` (for example city/country)
+  - `age` or age range
+  - `date_of_birth`
+  - `gender`
+  - `dietary_preferences`
+  - `preferences` and selected profile facts
+- Availability depends on consent and rollout configuration.
+- Parse defensively and ignore unknown fields.
 
 ### Signature verification
 
