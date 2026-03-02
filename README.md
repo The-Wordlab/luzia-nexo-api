@@ -14,7 +14,7 @@ Use this repository to:
 - API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
 - Luzia Nexo: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 
-## Webhook flow (target architecture)
+## Webhook flow (integration architecture)
 
 ```mermaid
 sequenceDiagram
