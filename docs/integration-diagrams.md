@@ -1,27 +1,30 @@
 # Integration Diagrams
 
-Simple partner-facing architecture for how Nexo conversations map to partner APIs.
+## 1) Webhook flow (primary integration path)
 
-## Conversation and partner API model
+```mermaid
+sequenceDiagram
+    autonumber
+    participant User as End User
+    participant Nexo as Nexo Thread Runtime
+    participant Partner as Partner Webhook
+
+    User->>Nexo: Sends message in a thread
+    Nexo->>Nexo: Resolve thread, character, and tools
+    Nexo->>Partner: POST webhook request with app headers and signature
+    Partner->>Partner: Verify secret and signature
+    Partner-->>Nexo: 200 response with assistant text
+    Nexo-->>User: Assistant reply in the same thread
+    Note over Nexo,Partner: Transient failures are retried by Nexo
+```
+
+## 2) Partner API flow (optional proactive path)
 
 ```mermaid
 flowchart LR
-    Partner[Partner Backend]
-
-    subgraph Nexo[Nexo]
-      Threads[Threads]
-      Characters[Characters]
-      Tools[Tools]
-      Messages[Messages]
-    end
-
-    Threads --> Characters
-    Threads --> Tools
-    Threads --> Messages
-
-    Partner -->|GET /apps/:app_id/threads| Threads
-    Partner -->|GET /apps/:app_id/threads/:thread_id/messages| Messages
-    Partner -->|POST /apps/:app_id/threads| Threads
-    Partner -->|POST /apps/:app_id/threads/:thread_id/messages| Messages
-    Partner -->|POST /apps/:app_id/threads/:thread_id/messages/assistant| Messages
+    Partner[Partner Backend] -->|GET threads| Threads[Threads]
+    Partner -->|POST message| Messages[Thread Messages]
+    Partner -->|POST assistant message| Assistant[Assistant Reply Trigger]
+    Threads --> Characters[Characters]
+    Threads --> Tools[Tools]
 ```
