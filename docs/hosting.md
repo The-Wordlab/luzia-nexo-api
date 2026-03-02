@@ -16,6 +16,8 @@ The `examples/` folder contains webhook and Partner API examples you can adapt d
 
 ## Docker (recommended example)
 
+These containers can run in any environment that supports Docker (local machine, VM, Kubernetes, Cloud Run, ECS, etc.). GCP below is only one optional deployment example.
+
 ### Python example service
 
 ```bash
