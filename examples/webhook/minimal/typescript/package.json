@@ -1,0 +1,12 @@
+{
+  "name": "@nexo/webhook-minimal-ts",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node webhook-server.mjs",
+    "test": "node --test test-webhook-server.mjs"
+  }
+}

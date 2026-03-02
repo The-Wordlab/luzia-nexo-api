@@ -1,0 +1,38 @@
+site_name: Luzia Nexo API
+site_description: Partner integration docs for hosted examples and demo receiver
+site_url: https://the-wordlab.github.io/luzia-nexo-api/
+repo_url: https://github.com/The-Wordlab/luzia-nexo-api
+repo_name: The-Wordlab/luzia-nexo-api
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.tracking
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: teal
+      accent: blue
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - Onboarding: onboarding.md
+  - GCP Projects: gcp-projects.md
+  - Integration Model: integration-model.md
+  - Demo Receiver: demo-receiver.md
+  - Dashboard Contract: dashboard-integration-contract.md
+  - Partner API Reference: partner-api-reference.md
+  - System Overview: system-overview.md
+  - Backlog: backlog.md

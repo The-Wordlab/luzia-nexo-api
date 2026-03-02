@@ -1,0 +1,7 @@
+# Do not upload local deploy config or test artifacts
+.gcloudignore
+.git
+.gitignore
+node_modules/
+deploy/cloudrun/env.local
+test-server.mjs

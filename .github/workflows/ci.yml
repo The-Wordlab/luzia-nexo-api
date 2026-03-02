@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r demo-receiver/requirements.txt
+          pip install -r examples/webhook/minimal/python/requirements.txt
+          pip install -r examples/webhook/structured/python/requirements.txt
+          pip install -r examples/webhook/advanced/python/requirements.txt
+          pip install -r examples-hosted/python/requirements.txt
+      - name: Run demo receiver tests
+        run: |
+          cd demo-receiver
+          pytest -q
+      - name: Run minimal webhook tests
+        run: |
+          cd examples/webhook/minimal/python
+          pytest -q
+      - name: Run structured webhook tests
+        run: |
+          cd examples/webhook/structured/python
+          pytest -q
+      - name: Run advanced webhook tests
+        run: |
+          cd examples/webhook/advanced/python
+          pytest -q
+      - name: Run hosted Python examples tests
+        run: |
+          cd examples-hosted/python
+          pytest -q
+
+  node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Enable corepack
+        run: corepack enable
+      - name: Run minimal TypeScript webhook tests
+        run: |
+          cd examples/webhook/minimal/typescript
+          node --test test-webhook-server.mjs
+      - name: Run hosted TypeScript examples tests
+        run: |
+          cd examples-hosted/typescript
+          node --test test-server.mjs
+      - name: Run SDK tests
+        run: |
+          cd sdk/javascript
+          pnpm install --no-frozen-lockfile
+          pnpm test
+
+  docs-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install docs deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements-docs.txt
+      - name: Build docs
+        run: |
+          mkdocs build --strict

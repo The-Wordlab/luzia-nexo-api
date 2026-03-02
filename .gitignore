@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Node
+node_modules/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+
+# OS
+.DS_Store
+
+# Local deploy env
+demo-receiver/deploy/cloudrun/env.local
+examples-hosted/python/deploy/cloudrun/env.local
+examples-hosted/typescript/deploy/cloudrun/env.local
+
+# Docs build output
+site/

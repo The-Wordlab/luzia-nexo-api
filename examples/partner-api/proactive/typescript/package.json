@@ -1,0 +1,25 @@
+{
+  "name": "nexo-partner-api-examples",
+  "version": "1.0.0",
+  "description": "Nexo Partner API proactive messaging examples in Node.js",
+  "main": "proactive-messaging.js",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node proactive-messaging.js"
+  },
+  "keywords": [
+    "nexo",
+    "partner-api",
+    "proactive-messaging",
+    "chatbot"
+  ],
+  "author": "",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  }
+}

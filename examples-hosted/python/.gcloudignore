@@ -1,0 +1,10 @@
+# Do not upload local deploy config or test artifacts
+.gcloudignore
+.git
+.gitignore
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+tests/
+deploy/cloudrun/env.local
