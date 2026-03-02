@@ -44,6 +44,7 @@ verify-examples:
 	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) ./scripts/verify-hosted-examples.sh
 
 docs-build:
+	$(MAKE) check-toolchain
 	@if [ ! -d .venv ]; then python3 -m venv .venv; fi
 	. .venv/bin/activate && pip install -r docs/requirements-docs.txt && mkdocs build --strict
 

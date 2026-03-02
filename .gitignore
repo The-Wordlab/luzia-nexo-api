@@ -2,10 +2,14 @@
 __pycache__/
 *.pyc
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
+.coverage
 
 # Node
 node_modules/
+coverage/
 
 # Terraform
 .terraform/
@@ -14,6 +18,10 @@ node_modules/
 
 # OS
 .DS_Store
+
+# Editors
+.idea/
+.vscode/
 
 # Local deploy env
 demo-receiver/deploy/cloudrun/env.local
