@@ -38,16 +38,19 @@ sequenceDiagram
 ## Quick start
 
 1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
-2. Test a hosted example endpoint:
+2. Implement your own webhook endpoint and return:
 
-```bash
-curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" \
-  -H "Content-Type: application/json" \
-  -H "X-App-Secret: <your-shared-secret>" \
-  -d '{"message":{"content":"hello"}}'
+```json
+{
+  "text": "Your assistant response"
+}
 ```
 
-3. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md)
+3. Use hosted endpoints as reference implementations:
+- [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
+
+4. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md)
 
 ## Repository map
 

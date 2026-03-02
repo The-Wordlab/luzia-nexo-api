@@ -1,35 +1,32 @@
 # Quickstart
 
-## Hosted path (fastest)
+## 1) Implement your webhook
 
-1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-2. Call a hosted endpoint:
+Create a webhook endpoint in your own backend and return a JSON response:
 
-```bash
-curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" \
-  -H "Content-Type: application/json" \
-  -H "X-App-Secret: <your-shared-secret>" \
-  -d '{"message":{"content":"hello"}}'
+```json
+{
+  "text": "Your assistant response"
+}
 ```
 
-## Optional: host on GCP (your own project)
+## 2) Configure your app secret and webhook URL
 
-```bash
-brew install --cask google-cloud-sdk
-brew install terraform
+1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+2. Create or open your app
+3. Set your webhook URL and secret
+4. Verify requests on your backend
 
-gcloud auth login --update-adc
-gcloud auth application-default login
+## 3) Support both response modes
 
-PROJECT_ID=<your-project-id> PROJECT_NUMBER=<your-project-number> REGION=<your-region> make gcp-bootstrap
+- Traditional JSON response
+- SSE streaming response (`text/event-stream`)
 
-cp examples-hosted/python/deploy/cloudrun/env.example examples-hosted/python/deploy/cloudrun/env.local
-cp examples-hosted/typescript/deploy/cloudrun/env.example examples-hosted/typescript/deploy/cloudrun/env.local
-# set EXAMPLES_SHARED_API_SECRET in both files
+## Optional: reference hosted examples
 
-make deploy-examples
-make verify-examples EXAMPLES_SHARED_API_SECRET=<your-shared-secret>
-```
+These are sample implementations only:
+- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
 
 ## Next
 

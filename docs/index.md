@@ -28,10 +28,10 @@ sequenceDiagram
 ## Start in 3 steps
 
 1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-2. Follow [Quickstart](quickstart.md)
+2. Implement your webhook using [Quickstart](quickstart.md)
 3. Use [API Reference](partner-api-reference.md) for webhook contract and examples
 
-## Hosted examples
+## Hosted reference examples
 
 - Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
 - TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
