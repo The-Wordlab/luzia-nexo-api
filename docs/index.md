@@ -30,11 +30,12 @@ sequenceDiagram
     Luzia-->>User: Return assistant reply
 ```
 
-## Start in 3 steps
+## Start in 4 steps
 
 1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 2. Implement your webhook using [Quickstart](quickstart.md)
-3. Use [API Reference](partner-api-reference.md) for webhook contract and examples
+3. Enable your integration in Nexo by configuring your webhook URL and secret in the partner portal
+4. Validate payload and response contracts with [API Reference](partner-api-reference.md)
 
 ## Optional deployment examples
 
