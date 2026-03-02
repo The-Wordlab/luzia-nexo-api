@@ -49,6 +49,28 @@ def test_webhook_minimal_with_secret(monkeypatch) -> None:
     assert resp.json()["reply"] == "Echo: hi"
 
 
+def test_webhook_minimal_profile_context(monkeypatch) -> None:
+    monkeypatch.setenv("EXAMPLES_SHARED_API_SECRET", "test-secret")
+    resp = client.post(
+        "/webhook/minimal",
+        json={
+            "message": {"content": "recommend dinner"},
+            "profile": {
+                "display_name": "Mia",
+                "locale": "en",
+                "dietary_preferences": "vegan",
+                "future_field": "ignored",
+            },
+        },
+        headers=SECRET,
+    )
+    assert resp.status_code == 200
+    assert (
+        resp.json()["reply"]
+        == "Mia, you said: recommend dinner (locale=en, dietary=vegan)"
+    )
+
+
 def test_webhook_advanced_order_status(monkeypatch) -> None:
     monkeypatch.setenv("EXAMPLES_SHARED_API_SECRET", "test-secret")
     resp = client.post(

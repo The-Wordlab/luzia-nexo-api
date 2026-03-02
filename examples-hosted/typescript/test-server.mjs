@@ -47,3 +47,25 @@ test("webhook accepts authorized request", () => {
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, { reply: "Echo: hello" });
 });
+
+test("webhook uses optional profile context defensively", () => {
+  const result = processRequest(
+    "POST",
+    "/webhook/minimal",
+    { "x-app-secret": secret },
+    JSON.stringify({
+      message: { content: "recommend lunch" },
+      profile: {
+        display_name: "Leo",
+        locale: "en",
+        dietary_preferences: "vegetarian",
+        future_field: "ignored",
+      },
+    }),
+    secret,
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, {
+    reply: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+  });
+});

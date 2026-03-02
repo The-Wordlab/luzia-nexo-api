@@ -15,7 +15,8 @@ function infoPayload() {
   return {
     service: "nexo-examples-ts",
     runtime: "typescript",
-    description: "Hosted TypeScript webhook and proactive examples.",
+    description:
+      "Lucia Nexo hosted TypeScript examples. Use these endpoints as a reference, then clone and extend the examples in GitHub for your integration.",
     docs_url: "https://the-wordlab.github.io/luzia-nexo-api/",
     auth: {
       shared_secret_env: "EXAMPLES_SHARED_API_SECRET",
@@ -43,7 +44,7 @@ function infoHtml(info) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>${info.service} - endpoint catalog</title>
+    <title>Lucia Nexo - ${info.service}</title>
     <style>
       body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; color: #1f2937; }
       h1 { margin-bottom: 4px; }
@@ -56,9 +57,9 @@ function infoHtml(info) {
     </style>
   </head>
   <body>
-    <h1>${info.service}</h1>
+    <h1>Lucia Nexo - ${info.service}</h1>
     <p>${info.description}</p>
-    <p><a href="${info.docs_url}" target="_blank" rel="noopener noreferrer">Integration guide and setup instructions</a></p>
+    <p><a href="${info.docs_url}" target="_blank" rel="noopener noreferrer">Integration guide, quickstart, and runnable example code</a></p>
     <table>
       <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Auth</th></tr></thead>
       <tbody>${rows}</tbody>
@@ -123,7 +124,17 @@ export function processRequest(method, url, headers, rawBody, expectedSecret) {
       return { status: 400, body: { error: "Invalid JSON" } };
     }
     const content = payload?.message?.content ?? "";
-    return { status: 200, body: { reply: `Echo: ${content}`.trim() }, contentType: "application/json" };
+    const profile = payload?.profile ?? {};
+    const name = profile.display_name ?? profile.name ?? null;
+    const locale = profile.locale ?? profile.language ?? null;
+    const dietary = profile.dietary_preferences ?? null;
+
+    let reply = name ? `${name}, you said: ${content}` : `Echo: ${content}`.trim();
+    const hints = [];
+    if (locale) hints.push(`locale=${locale}`);
+    if (dietary) hints.push(`dietary=${dietary}`);
+    if (hints.length > 0) reply = `${reply} (${hints.join(", ")})`;
+    return { status: 200, body: { reply }, contentType: "application/json" };
   }
 
   if (method === "POST" && path === "/partner/proactive/preview") {
