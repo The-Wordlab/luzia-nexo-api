@@ -9,9 +9,8 @@ Use this repository to:
 
 ## Links
 
-- Partner docs: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
-- Partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-- Support: [mmm@luzia.com](mailto:mmm@luzia.com)
+- API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
+- Luzia Nex: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 
 ## Webhook flow (target architecture)
 
@@ -64,3 +63,5 @@ make check-toolchain
 make test-all
 make docs-build
 ```
+
+- Support: [mmm@luzia.com](mailto:mmm@luzia.com)
