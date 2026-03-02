@@ -1,8 +1,10 @@
-# Luzia Nexo Integration Docs
+# Lucia Nexo
+
+Partner Integration APIs.
 
 Start here to integrate quickly with Nexo webhooks and APIs.
 
-Nexo is the partner integration layer for Luzia. It gives partners a clean thread-based interface to Luzia conversations, while Nexo handles runtime bridging, context mediation, and webhook delivery so your backend can focus on agent logic and response quality.
+Partners integrate with Luzia through Nexo. Nexo is a Luzia product dedicated to partner integrations, providing a clean thread-based interface while handling runtime bridging, context mediation, and webhook delivery so your backend can focus on agent logic and response quality.
 
 ## Webhook flow (target architecture)
 
