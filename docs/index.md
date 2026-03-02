@@ -24,6 +24,7 @@ sequenceDiagram
         Partner-->>Nexo: 200 text/event-stream (SSE)
     end
     Nexo-->>Luzia: Return partner result
+    Luzia->>Luzia: Post-process webhook output (for example translation)
     Luzia-->>User: Return assistant reply
 ```
 
