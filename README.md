@@ -10,7 +10,7 @@ Use this repository to:
 ## Links
 
 - API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
-- Luzia Nex: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- Luzia Nexo: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 
 ## Webhook flow (target architecture)
 
@@ -47,7 +47,7 @@ curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" 
   -d '{"message":{"content":"hello"}}'
 ```
 
-3. Continue with full docs: [Quickstart](docs/quickstart.md), [Examples](docs/examples.md), [API Reference](docs/partner-api-reference.md)
+3. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md)
 
 ## Repository map
 

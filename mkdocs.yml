@@ -43,5 +43,4 @@ extra_css:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - Examples: examples.md
   - API Reference: partner-api-reference.md

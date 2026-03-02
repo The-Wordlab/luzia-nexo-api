@@ -33,5 +33,4 @@ make verify-examples EXAMPLES_SHARED_API_SECRET=<your-shared-secret>
 
 ## Next
 
-- [Examples](examples.md)
-- [Partner API Reference](partner-api-reference.md)
+- [API Reference](partner-api-reference.md)

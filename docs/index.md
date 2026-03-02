@@ -29,7 +29,7 @@ sequenceDiagram
 
 1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 2. Follow [Quickstart](quickstart.md)
-3. Copy a runnable integration from [Examples](examples.md)
+3. Use [API Reference](partner-api-reference.md) for webhook contract and examples
 
 ## Hosted examples
 
