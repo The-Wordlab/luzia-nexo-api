@@ -39,6 +39,19 @@ sequenceDiagram
 
 Use [API Reference](partner-api-reference.md) for payload, signature, and response contract details.
 
+## Live examples
+
+You can test simple hosted examples before building your own implementation:
+
+- Python examples service: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
+  - [info](https://nexo-examples-py-v3me5awkta-ew.a.run.app/info)
+  - [minimal webhook endpoint](https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal)
+- TypeScript examples service: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
+  - [info](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/info)
+  - [minimal webhook endpoint](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/webhook/minimal)
+
+Use these as reference implementations, then adapt code from [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples) for your own environment.
+
 ## Profile context
 
 - Webhook payloads include consented profile attributes such as:
