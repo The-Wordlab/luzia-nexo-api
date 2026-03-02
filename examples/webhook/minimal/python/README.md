@@ -2,6 +2,8 @@
 
 Smallest webhook contract implementation.
 
+Includes optional HMAC signature verification when `WEBHOOK_SECRET` is set.
+
 ## Run
 
 ```bash
