@@ -16,8 +16,11 @@ theme:
     - search.highlight
   palette:
     - scheme: default
-      primary: teal
-      accent: blue
+      primary: indigo
+      accent: indigo
+    - scheme: slate
+      primary: indigo
+      accent: indigo
 
 markdown_extensions:
   - admonition
@@ -33,6 +36,9 @@ markdown_extensions:
 extra_javascript:
   - https://unpkg.com/mermaid@10/dist/mermaid.min.js
   - javascripts/mermaid.js
+
+extra_css:
+  - stylesheets/brand.css
 
 nav:
   - Home: index.md
