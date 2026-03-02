@@ -20,6 +20,7 @@ sequenceDiagram
     Nexo->>Nexo: Pre-process runtime context (including translation when needed)
     Nexo->>Partner: POST webhook request (signed + consented profile context)
     Partner->>Partner: Verify secret + signature
+    Partner->>Partner: Process profile context for personalization and decisions
     alt Traditional response
         Partner-->>Nexo: 200 JSON (text/reply)
     else Streaming response
