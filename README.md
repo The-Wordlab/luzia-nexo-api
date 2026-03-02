@@ -13,16 +13,18 @@ Use this repository to:
 - Partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 - Support: [mmm@luzia.com](mailto:mmm@luzia.com)
 
-## Webhook flow
+## Webhook flow (target architecture)
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant User as End User
-    participant Nexo as Nexo Thread Runtime
+    participant Luzia as Luzia Backend
+    participant Nexo as Nexo Partner Runtime
     participant Partner as Partner Webhook
 
-    User->>Nexo: Send message
+    User->>Luzia: Send message
+    Luzia->>Nexo: Delegate partner connection handling
     Nexo->>Partner: POST webhook request (signed)
     Partner->>Partner: Verify secret + signature
     alt Traditional response
@@ -30,7 +32,8 @@ sequenceDiagram
     else Streaming response
         Partner-->>Nexo: 200 text/event-stream (SSE)
     end
-    Nexo-->>User: Return assistant reply
+    Nexo-->>Luzia: Return partner result
+    Luzia-->>User: Return assistant reply
 ```
 
 ## Quick start
