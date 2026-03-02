@@ -28,6 +28,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --project "${PROJECT_ID}" \
   --region "${REGION}" \
   --source "${ROOT_DIR}/examples-hosted/typescript" \
+  --clear-base-image \
   --allow-unauthenticated \
   --set-env-vars "EXAMPLES_SHARED_API_SECRET=${EXAMPLES_SHARED_API_SECRET}" \
   --quiet
