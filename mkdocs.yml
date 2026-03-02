@@ -22,8 +22,17 @@ theme:
 markdown_extensions:
   - admonition
   - attr_list
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - toc:
       permalink: true
+
+extra_javascript:
+  - https://unpkg.com/mermaid@10/dist/mermaid.min.js
+  - javascripts/mermaid.js
 
 nav:
   - Home: index.md
@@ -31,8 +40,8 @@ nav:
   - Onboarding: onboarding.md
   - GCP Projects: gcp-projects.md
   - Integration Model: integration-model.md
+  - Integration Diagrams: integration-diagrams.md
   - Demo Receiver: demo-receiver.md
   - Dashboard Contract: dashboard-integration-contract.md
   - Partner API Reference: partner-api-reference.md
   - System Overview: system-overview.md
-  - Backlog: backlog.md

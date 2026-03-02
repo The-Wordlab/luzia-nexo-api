@@ -6,3 +6,5 @@
 2. Proactive Partner API examples (`examples/partner-api/proactive/*`)
 
 The canonical API contract remains in `luzia-nexo`.
+
+For visual flow and topology diagrams, see [Integration Diagrams](integration-diagrams.md).

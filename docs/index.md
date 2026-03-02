@@ -7,6 +7,7 @@ Partner-facing documentation for hosted webhook examples, demo receiver infrastr
 1. **New partner onboarding**: [Onboarding](onboarding.md)
 2. **Full deployment guide**: [Quickstart](quickstart.md)
 3. **GCP setup model**: [GCP Projects](gcp-projects.md)
+4. **Visual architecture**: [Integration Diagrams](integration-diagrams.md)
 
 ## Live hosted services
 
