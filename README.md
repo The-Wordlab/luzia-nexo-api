@@ -49,14 +49,14 @@ sequenceDiagram
 
 4. Verify request signature handling (`X-Timestamp`, `X-Signature`) using the contract in [API Reference](docs/partner-api-reference.md).
 
-Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md), [Hosting (Optional)](docs/hosting.md)
+Read the full integration guide: [API Documentation](https://the-wordlab.github.io/luzia-nexo-api/)
 
 ## Repository map
 
-- `examples/` - local webhook and partner API examples
-- `examples-hosted/` - Cloud Run deployable example services
-- `infra/terraform/` - GCP infrastructure
-- `docs/` - integration documentation
+- [`examples/`](examples/) - local webhook and partner API examples
+- [`examples-hosted/`](examples-hosted/) - Cloud Run deployable example services
+- [`infra/terraform/`](infra/terraform/) - GCP infrastructure
+- [`docs/`](docs/) - documentation source for the published docs site
 
 ## Maintainer commands
 
