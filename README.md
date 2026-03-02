@@ -56,7 +56,7 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
 
 ## Profile context (current and next)
 
-- Webhook payloads can include consented profile attributes such as:
+- Webhook payloads include consented profile attributes such as:
   - `locale`
   - `language`
   - `location` (for example city/country)
@@ -65,7 +65,8 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
   - `gender`
   - `dietary_preferences`
   - `preferences` and selected profile facts
-- Availability depends on consent and rollout configuration.
+- Availability depends on app permissions and user consent.
+- Additional attributes are added over time while keeping backward compatibility.
 - Recommended: parse profile fields defensively and ignore unknown fields.
 
 ## Repository map

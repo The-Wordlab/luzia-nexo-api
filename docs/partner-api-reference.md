@@ -32,7 +32,7 @@ Your webhook should parse the fields it needs and safely ignore unknown extra fi
 
 ### Profile fields (current and upcoming)
 
-- Webhook payloads can include consented profile attributes such as:
+- Webhook payloads include consented profile attributes such as:
   - `locale`
   - `language`
   - `location` (for example city/country)
@@ -41,7 +41,8 @@ Your webhook should parse the fields it needs and safely ignore unknown extra fi
   - `gender`
   - `dietary_preferences`
   - `preferences` and selected profile facts
-- Availability depends on consent and rollout configuration.
+- Availability depends on app permissions and user consent.
+- Additional attributes are added over time while keeping backward compatibility.
 - Parse defensively and ignore unknown fields.
 
 ### Signature verification

@@ -40,7 +40,7 @@ Use [API Reference](partner-api-reference.md) for payload, signature, and respon
 
 ## Profile context
 
-- Webhook payloads can include consented profile attributes such as:
+- Webhook payloads include consented profile attributes such as:
   - `locale`
   - `language`
   - `location` (for example city/country)
@@ -49,7 +49,8 @@ Use [API Reference](partner-api-reference.md) for payload, signature, and respon
   - `gender`
   - `dietary_preferences`
   - `preferences` and selected profile facts
-- Availability depends on consent and rollout configuration.
+- Availability depends on app permissions and user consent.
+- Additional attributes are added over time while keeping backward compatibility.
 - Parse defensively and ignore unknown fields.
 
 ## Optional deployment examples

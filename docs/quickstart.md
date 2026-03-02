@@ -6,7 +6,9 @@ Your webhook should accept Nexo requests and return one of these:
 
 Profile note:
 - Webhook payloads can include consented profile attributes such as `locale`, `language`, `location`, `age`, `date_of_birth`, `gender`, and `dietary_preferences`.
-- Availability depends on consent and rollout configuration - parse defensively and ignore unknown fields.
+- Availability depends on app permissions and user consent.
+- Additional attributes are added over time while keeping backward compatibility.
+- Parse defensively and ignore unknown fields.
 
 ### JSON response
 
