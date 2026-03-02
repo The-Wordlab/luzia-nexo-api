@@ -28,6 +28,8 @@ Example body:
 }
 ```
 
+Your webhook should parse the fields it needs and safely ignore unknown extra fields.
+
 ### Signature verification
 
 Verify signature before processing:

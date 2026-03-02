@@ -58,7 +58,7 @@ Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/
 - `infra/terraform/` - GCP infrastructure
 - `docs/` - integration documentation
 
-## Developer commands
+## Maintainer commands
 
 ```bash
 make check-toolchain

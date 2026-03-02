@@ -22,7 +22,7 @@ docker run --rm -p 8080:8080 \
   nexo-examples-ts
 ```
 
-## GCP Cloud Run (example deployment target)
+## GCP Cloud Run example (not required)
 
 ```bash
 PROJECT_ID=<your-project-id> PROJECT_NUMBER=<your-project-number> REGION=<your-region> make gcp-bootstrap
