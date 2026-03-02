@@ -1,6 +1,6 @@
 # Hosting (Optional)
 
-Partners can host their webhook anywhere.
+You can host your webhook anywhere.
 
 If you want a fast starting point, clone this repository, run the examples, and then extend them for your own integration.
 

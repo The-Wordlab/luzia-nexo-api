@@ -2,7 +2,7 @@
 
 Reference implementation for Nexo partner integrations.
 
-Partners integrate with Luzia through Nexo. Nexo is a Luzia product dedicated to partner integrations, providing a clean thread-based interface, consented user profile context, and managed webhook delivery so partner systems can focus on agent behavior and response quality.
+You integrate with Luzia through Nexo. Nexo is a Luzia product dedicated to partner integrations, providing a clean thread-based interface, consented user profile context, and managed webhook delivery so your systems can focus on agent behavior and response quality.
 
 Use this repository to:
 - build and test webhook handlers (Python or TypeScript)
