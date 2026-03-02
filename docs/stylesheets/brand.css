@@ -23,15 +23,46 @@
   border-radius: 8px;
 }
 
-/* Tighten top-of-page hero spacing on docs pages. */
+/* Responsive top-of-page spacing for better desktop/mobile balance. */
 .md-main__inner {
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
 }
 
 .md-content__inner {
-  padding-top: 0.2rem;
+  padding-top: 0.3rem;
 }
 
 .md-typeset h1 {
-  margin-top: 0.2rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.6rem;
+}
+
+@media screen and (max-width: 76.2344em) {
+  .md-main__inner {
+    margin-top: 0.35rem;
+  }
+
+  .md-content__inner {
+    padding-top: 0.2rem;
+  }
+
+  .md-typeset h1 {
+    margin-top: 0.2rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media screen and (max-width: 44.9844em) {
+  .md-main__inner {
+    margin-top: 0.2rem;
+  }
+
+  .md-content__inner {
+    padding-top: 0.1rem;
+  }
+
+  .md-typeset h1 {
+    margin-top: 0.1rem;
+    margin-bottom: 0.4rem;
+  }
 }
