@@ -2,7 +2,7 @@
 
 Start here to integrate quickly with Nexo webhooks and APIs.
 
-Nexo lets you connect your agents to Luzia conversations with minimal integration work. In Luzia, each thread can be linked to a character or to tools, and Nexo handles the partner runtime bridge so your webhook can focus on your agent logic and responses.
+Nexo is the partner integration layer for Luzia. It gives partners a clean thread-based interface to Luzia conversations, while Nexo handles runtime bridging, context mediation, and webhook delivery so your backend can focus on agent logic and response quality.
 
 ## Webhook flow (target architecture)
 

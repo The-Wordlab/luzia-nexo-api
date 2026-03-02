@@ -2,6 +2,8 @@
 
 Reference implementation for Nexo partner integrations.
 
+Nexo is the partner integration layer for Luzia. It gives partners a clean thread-based interface to Luzia conversations, while Nexo handles runtime bridging and webhook delivery so partner systems can focus on agent behavior and response quality.
+
 Use this repository to:
 - build and test webhook handlers (Python or TypeScript)
 - send proactive Partner API requests
