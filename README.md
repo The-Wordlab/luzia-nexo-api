@@ -27,7 +27,11 @@ sequenceDiagram
     Nexo->>Nexo: Resolve thread, character, and tools
     Nexo->>Partner: POST webhook request with app headers and signature
     Partner->>Partner: Verify secret and signature
-    Partner-->>Nexo: 200 response with assistant text
+    alt Traditional response
+        Partner-->>Nexo: 200 JSON with text/reply
+    else Streaming response
+        Partner-->>Nexo: 200 text/event-stream (SSE chunks + done)
+    end
     Nexo-->>User: Assistant reply in the same thread
     Note over Nexo,Partner: Transient failures are retried by Nexo
 ```
