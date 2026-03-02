@@ -6,19 +6,19 @@ Partner-facing documentation for hosted webhook examples, demo receiver infrastr
 
 1. **New partner onboarding**: [Onboarding](onboarding.md)
 2. **Full deployment guide**: [Quickstart](quickstart.md)
-3. **GCP setup model**: [GCP Projects](gcp-projects.md)
-4. **Visual architecture**: [Integration Diagrams](integration-diagrams.md)
+3. **Visual architecture**: [Integration Diagrams](integration-diagrams.md)
 
 ## Live hosted services
 
-- Demo receiver: `https://nexo-demo-receiver-v3me5awkta-ew.a.run.app`
-- Hosted Python examples: `https://nexo-examples-py-v3me5awkta-ew.a.run.app`
-- Hosted TypeScript examples: `https://nexo-examples-ts-v3me5awkta-ew.a.run.app`
+- Demo receiver: [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app)
+- Hosted Python examples: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- Hosted TypeScript examples: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
 
 ## API secret and support
 
-- Partner portal: `https://nexo.luzia.com/partners`
-- Support: `mmm@luzia.com` (Mark MacMahon)
+- Partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- Nexo dashboard: [nexo.luzia.com](https://nexo.luzia.com)
+- Support: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
 
 ## What these docs cover
 
@@ -29,4 +29,4 @@ Partner-facing documentation for hosted webhook examples, demo receiver infrastr
 
 ## Source repository
 
-- `https://github.com/The-Wordlab/luzia-nexo-api`
+- [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)

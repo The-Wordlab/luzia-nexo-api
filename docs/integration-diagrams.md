@@ -24,7 +24,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    subgraph GCP[Google Cloud Project: luzia-nexo-api-examples]
+    subgraph GCP[Google Cloud Project]
         AR[Artifact Registry\nnexo-examples]
         CR1[Cloud Run\nnexo-examples-py]
         CR2[Cloud Run\nnexo-examples-ts]

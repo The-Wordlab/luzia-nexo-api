@@ -5,10 +5,10 @@ This guide is for engineers who want to use hosted examples immediately or deplo
 ## Option A - Use hosted examples now
 
 1. Open endpoint catalog:
-   - Python: `https://nexo-examples-py-v3me5awkta-ew.a.run.app/`
-   - TypeScript: `https://nexo-examples-ts-v3me5awkta-ew.a.run.app/`
+   - Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
+   - TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
 2. Get your API secret from partner portal:
-   - `https://nexo.luzia.com/partners`
+   - [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 3. Call protected example endpoint:
 
 ```bash
@@ -18,7 +18,7 @@ curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" 
   -d '{"message":{"content":"hello"}}'
 ```
 
-Need help: `mmm@luzia.com` (Mark MacMahon)
+Need help: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
 
 ## Option B - Deploy your own copy on GCP
 
@@ -30,7 +30,7 @@ gcloud auth application-default login
 make gcp-bootstrap
 ```
 
-If you are deploying to your own project, use:
+Deploy to your own project by passing project values explicitly:
 
 ```bash
 PROJECT_ID=<your-project-id> PROJECT_NUMBER=<your-project-number> REGION=<your-region> make gcp-bootstrap
@@ -54,6 +54,6 @@ make verify-examples EXAMPLES_SHARED_API_SECRET=<your-shared-secret>
 
 ## Reference
 
-- Full setup: `docs/quickstart.md`
-- GCP projects and IAM: `docs/gcp-projects.md`
-- GitHub: `https://github.com/The-Wordlab/luzia-nexo-api`
+- Full setup: [Quickstart](quickstart.md)
+- API and contract details: [Partner API Reference](partner-api-reference.md)
+- GitHub: [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)

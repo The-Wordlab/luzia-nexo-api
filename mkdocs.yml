@@ -44,7 +44,6 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - Onboarding: onboarding.md
-  - GCP Projects: gcp-projects.md
   - Integration Model: integration-model.md
   - Integration Diagrams: integration-diagrams.md
   - Demo Receiver: demo-receiver.md

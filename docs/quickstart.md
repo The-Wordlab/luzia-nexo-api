@@ -1,18 +1,30 @@
 # Quickstart
 
 Public docs portal:
-- `https://the-wordlab.github.io/luzia-nexo-api/`
+- [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
 
 Runtime pins:
 - Node.js `22` (`.nvmrc`)
 - Python `3.12` (`.python-version`)
 
-## GCP bootstrap (required before deploy)
+## Option A - Use hosted services immediately
 
-Target project:
-- Project ID: `luzia-nexo-api-examples`
-- Project number: `367427598362`
-- Default region: `europe-west1`
+Luzia-hosted endpoints:
+- Demo receiver: [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app)
+- Hosted Python examples: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- Hosted TypeScript examples: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
+
+Get your API secret from the partner portal:
+- [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+
+Verify availability:
+
+```bash
+curl -s https://nexo-examples-py-v3me5awkta-ew.a.run.app/health
+curl -s https://nexo-examples-ts-v3me5awkta-ew.a.run.app/health
+```
+
+## Option B - Deploy your own copy on GCP
 
 Install required tooling (macOS):
 
@@ -31,15 +43,13 @@ gcloud auth application-default login
 Set defaults and required APIs from repo root:
 
 ```bash
-make gcp-bootstrap
+PROJECT_ID=<your-project-id> PROJECT_NUMBER=<your-project-number> REGION=<your-region> make gcp-bootstrap
 ```
 
-For internal vs external project setup details and required IAM roles, see `docs/gcp-projects.md`.
-
 This automates:
-- `gcloud` default project -> `luzia-nexo-api-examples`
-- ADC quota project -> `luzia-nexo-api-examples`
-- default run region -> `europe-west1`
+- `gcloud` default project -> `<your-project-id>`
+- ADC quota project -> `<your-project-id>`
+- default run region -> `<your-region>`
 - required APIs enablement
 - Artifact Registry repo creation (`nexo-examples`)
 
@@ -52,6 +62,9 @@ cp demo-receiver/deploy/cloudrun/env.example demo-receiver/deploy/cloudrun/env.l
 ```
 
 Edit `demo-receiver/deploy/cloudrun/env.local` and set `PROJECT_ID=luzia-nexo-api-examples`.
+Edit `demo-receiver/deploy/cloudrun/env.local` and set:
+- `PROJECT_ID=<your-project-id>`
+- `REGION=<your-region>`
 
 Then deploy with one command:
 
@@ -62,7 +75,7 @@ make deploy-demo-receiver
 Direct script invocation still works:
 
 ```bash
-PROJECT_ID=luzia-nexo-api-examples REGION=europe-west1 ./demo-receiver/deploy/cloudrun/deploy.sh
+PROJECT_ID=<your-project-id> REGION=<your-region> ./demo-receiver/deploy/cloudrun/deploy.sh
 ```
 
 ## Deploy hosted examples (Python + TypeScript)
@@ -75,9 +88,8 @@ cp examples-hosted/typescript/deploy/cloudrun/env.example examples-hosted/typesc
 ```
 
 Set the same `EXAMPLES_SHARED_API_SECRET` value in both files. This is the shared API secret both services require for non-health endpoints.
-For operational consistency, use the same value you use as the partner app webhook secret in `luzia-nexo` when running demos.
-Get/create API secrets in partner portal: `https://nexo.luzia.com/partners`.
-Support contact for onboarding issues: `mmm@luzia.com` (Mark MacMahon).
+Get/create API secrets in partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
+Support contact for onboarding issues: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon).
 
 Deploy both services:
 
@@ -99,19 +111,19 @@ Service endpoints after deploy:
   - JSON variant via `?format=json` or `Accept: application/json`
 
 Current deployed URLs:
-- Demo receiver: `https://nexo-demo-receiver-v3me5awkta-ew.a.run.app`
-- Hosted Python examples: `https://nexo-examples-py-v3me5awkta-ew.a.run.app`
-- Hosted TypeScript examples: `https://nexo-examples-ts-v3me5awkta-ew.a.run.app`
+- Demo receiver: [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app)
+- Hosted Python examples: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- Hosted TypeScript examples: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
 
 Repository docs:
-- `https://github.com/The-Wordlab/luzia-nexo-api`
+- [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)
 
 ## Terraform provisioning
 
 ```bash
 cd infra/terraform/gcp-demo-receiver
 terraform init
-terraform apply -var="project_id=luzia-nexo-api-examples" -var="region=europe-west1"
+terraform apply -var="project_id=<your-project-id>" -var="region=<your-region>"
 ```
 
 ## Demo receiver local run

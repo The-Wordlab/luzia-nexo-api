@@ -4,14 +4,15 @@ Partner integration repository for runnable examples, demo webhook receiver, and
 
 This repository is intentionally separate from `luzia-nexo` runtime infrastructure.
 
-GitHub: `https://github.com/The-Wordlab/luzia-nexo-api`
+GitHub: [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)
+Docs site (partner-facing): [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
+Quick onboarding: [docs/onboarding.md](docs/onboarding.md)
+Quickstart: [docs/quickstart.md](docs/quickstart.md)
 
-Quick onboarding: `docs/onboarding.md`
-GCP setup details: `docs/gcp-projects.md`
-Docs site (GitHub Pages): `https://the-wordlab.github.io/luzia-nexo-api/`
-
-Partner portal (API secret provisioning): `https://nexo.luzia.com/partners`
-Support contact: `mmm@luzia.com` (Mark MacMahon)
+Nexo links:
+- Partner portal (API secret provisioning): [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- Nexo dashboard: [nexo.luzia.com](https://nexo.luzia.com)
+- Support contact: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
 
 ## Scope
 
@@ -20,6 +21,7 @@ In scope:
 - Demo receiver service for stable webhook URLs
 - SDK packaging and partner integration helpers
 - Cloud Run deployment assets for demo receiver
+- Public, partner-friendly documentation and examples
 
 Out of scope:
 - Production ECS or AWS infrastructure from `luzia-nexo`
@@ -47,7 +49,7 @@ This repo consumes that contract and provides partner-facing implementations.
 - `demo-receiver/` - hosted demo receiver service
 - `sdk/` - partner SDK packages
 - `infra/terraform/` - GCP infrastructure definitions
-- `docs/` - operating docs and migration guidance
+- `docs/` - partner-facing documentation for integration and deployment
 
 ## Development
 
@@ -81,7 +83,7 @@ gcloud auth application-default login
 make gcp-bootstrap
 ```
 
-`make gcp-bootstrap` sets the default `gcloud` project to `luzia-nexo-api-examples` and aligns ADC quota project automatically.
+`make gcp-bootstrap` sets the default `gcloud` project and ADC quota project for the values you pass (or your local defaults).
 
 ### Deploy without inline env vars
 
@@ -101,11 +103,11 @@ make deploy-examples
 make verify-examples EXAMPLES_SHARED_API_SECRET=your-shared-secret
 ```
 
-### Live service URLs
+### Live hosted service URLs
 
-- Demo receiver: `https://nexo-demo-receiver-v3me5awkta-ew.a.run.app`
-- Hosted Python examples: `https://nexo-examples-py-v3me5awkta-ew.a.run.app`
-- Hosted TypeScript examples: `https://nexo-examples-ts-v3me5awkta-ew.a.run.app`
+- Demo receiver: [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app)
+- Hosted Python examples: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- Hosted TypeScript examples: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
 
 ### Run individual suites
 
