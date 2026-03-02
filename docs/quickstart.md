@@ -16,6 +16,37 @@ Your webhook should accept Nexo requests and return one of these:
 
 Use `Content-Type: text/event-stream` and stream `delta` events followed by `done`.
 
+### Minimal Python webhook
+
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class Payload(BaseModel):
+    message: dict | None = None
+
+@app.post("/webhook")
+def webhook(payload: Payload):
+    content = (payload.message or {}).get("content", "")
+    return {"text": f"Echo: {content}"}
+```
+
+### Minimal TypeScript webhook
+
+```ts
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.post("/webhook", (req, res) => {
+  const content = req.body?.message?.content ?? "";
+  res.json({ text: `Echo: ${content}` });
+});
+```
+
 ## 2) Configure Nexo
 
 1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
@@ -51,4 +82,5 @@ Expected response shape:
 ## Next
 
 - Full contract and examples: [API Reference](partner-api-reference.md)
+- Direct examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - Optional hosting/deployment examples: [Hosting (Optional)](hosting.md)
