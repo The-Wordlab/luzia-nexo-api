@@ -4,6 +4,8 @@ Luzia Partner Integration APIs.
 
 Integrate your backend with Luzia through Nexo using webhooks and APIs. Nexo provides a clean thread-based interface, consented user profile context, and managed webhook delivery so you can focus on agent logic and response quality.
 
+It's really that simple.
+
 ## Webhook flow (integration architecture)
 
 ```mermaid
