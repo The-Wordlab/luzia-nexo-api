@@ -32,11 +32,18 @@ app = FastAPI()
 
 class Payload(BaseModel):
     message: dict | None = None
+    profile: dict | None = None
 
 @app.post("/webhook")
 def webhook(payload: Payload):
     content = (payload.message or {}).get("content", "")
-    return {"text": f"Echo: {content}"}
+    profile = payload.profile or {}
+    name = profile.get("display_name") or profile.get("name")
+    locale = profile.get("locale") or profile.get("language")
+    dietary = profile.get("dietary_preferences")
+    text = f"{name}, you said: {content}" if name else f"Echo: {content}"
+    hints = [h for h in [f"locale={locale}" if locale else None, f"dietary={dietary}" if dietary else None] if h]
+    return {"text": f"{text} ({', '.join(hints)})" if hints else text}
 ```
 
 ### Minimal TypeScript webhook
@@ -49,7 +56,16 @@ app.use(express.json());
 
 app.post("/webhook", (req, res) => {
   const content = req.body?.message?.content ?? "";
-  res.json({ text: `Echo: ${content}` });
+  const profile = req.body?.profile ?? {};
+  const name = profile.display_name ?? profile.name ?? null;
+  const locale = profile.locale ?? profile.language ?? null;
+  const dietary = profile.dietary_preferences ?? null;
+  let text = name ? `${name}, you said: ${content}` : `Echo: ${content}`;
+  const hints = [];
+  if (locale) hints.push(`locale=${locale}`);
+  if (dietary) hints.push(`dietary=${dietary}`);
+  if (hints.length) text = `${text} (${hints.join(", ")})`;
+  res.json({ text });
 });
 ```
 

@@ -40,10 +40,18 @@ export function processWebhook(raw, headers = {}, secret = "") {
   }
 
   const content = data.message?.content ?? "";
-  // Current stable profile signal is locale. Read it defensively so future
-  // profile field expansion remains backward compatible for this example.
-  void (data.profile?.locale ?? null);
-  return { status: 200, body: { reply: `Echo: ${content}` } };
+  const profile = data.profile ?? {};
+  const displayName = profile.display_name ?? profile.name ?? null;
+  const locale = profile.locale ?? profile.language ?? null;
+  const dietary = profile.dietary_preferences ?? null;
+
+  let reply = displayName ? `${displayName}, you said: ${content}` : `Echo: ${content}`;
+  const hints = [];
+  if (locale) hints.push(`locale=${locale}`);
+  if (dietary) hints.push(`dietary=${dietary}`);
+  if (hints.length > 0) reply = `${reply} (${hints.join(", ")})`;
+
+  return { status: 200, body: { reply } };
 }
 
 export function createServer(secretProvider = () => process.env.WEBHOOK_SECRET || "") {

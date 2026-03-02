@@ -28,9 +28,38 @@ class ReplyOut(BaseModel):
     reply: str
 
 
-def build_reply(content: str | None) -> str:
+def _extract_profile_context(
+    profile: dict | None,
+) -> tuple[str | None, str | None, str | None]:
+    data = profile or {}
+    display_name = data.get("display_name") or data.get("name")
+    locale = data.get("locale") or data.get("language")
+    dietary = data.get("dietary_preferences")
+    return display_name, locale, dietary
+
+
+def build_reply(
+    content: str | None,
+    *,
+    display_name: str | None = None,
+    locale: str | None = None,
+    dietary_preferences: str | None = None,
+) -> str:
     content = content or ""
-    return f"Echo: {content}".strip()
+    if display_name:
+        base = f"{display_name}, you said: {content}".strip()
+    else:
+        base = f"Echo: {content}".strip()
+
+    # Example of defensive profile usage - include optional hints only when present.
+    hints: list[str] = []
+    if locale:
+        hints.append(f"locale={locale}")
+    if dietary_preferences:
+        hints.append(f"dietary={dietary_preferences}")
+    if hints:
+        return f"{base} ({', '.join(hints)})"
+    return base
 
 
 def verify_signature(secret: str, raw_body: bytes, timestamp: str, signature: str) -> bool:
@@ -63,8 +92,14 @@ app = FastAPI(title="nexo-examples minimal webhook")
 async def receive_webhook(payload: WebhookPayload, request: Request) -> ReplyOut:
     raw_body = await request.body()
     _require_signature(request, raw_body)
-    # Current stable profile signal is locale. Parse defensively and ignore
-    # unknown fields so future profile expansions do not break integrations.
-    _ = (payload.profile or {}).get("locale")
+    # Parse optional profile fields defensively and ignore unknown additions.
+    display_name, locale, dietary = _extract_profile_context(payload.profile)
     content = payload.message.content if payload.message else ""
-    return ReplyOut(reply=build_reply(content))
+    return ReplyOut(
+        reply=build_reply(
+            content,
+            display_name=display_name,
+            locale=locale,
+            dietary_preferences=dietary,
+        )
+    )

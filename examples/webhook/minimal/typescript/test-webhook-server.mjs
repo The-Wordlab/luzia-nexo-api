@@ -22,6 +22,24 @@ test("processWebhook returns reply for valid payload", () => {
   assert.deepEqual(result.body, { reply: "Echo: hi" });
 });
 
+test("processWebhook uses optional profile context defensively", () => {
+  const result = processWebhook(
+    JSON.stringify({
+      message: { content: "recommend lunch" },
+      profile: {
+        display_name: "Leo",
+        locale: "en",
+        dietary_preferences: "vegetarian",
+        future_field: "ignored",
+      },
+    }),
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, {
+    reply: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+  });
+});
+
 test("processWebhook returns 400 for invalid JSON", () => {
   const result = processWebhook("not-json");
   assert.equal(result.status, 400);
