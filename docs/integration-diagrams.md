@@ -19,9 +19,9 @@ flowchart LR
     Threads --> Tools
     Threads --> Messages
 
-    Partner -->|GET /apps/{app_id}/threads| Threads
-    Partner -->|GET /apps/{app_id}/threads/{thread_id}/messages| Messages
-    Partner -->|POST /apps/{app_id}/threads| Threads
-    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages| Messages
-    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages/assistant| Messages
+    Partner -->|GET /apps/:app_id/threads| Threads
+    Partner -->|GET /apps/:app_id/threads/:thread_id/messages| Messages
+    Partner -->|POST /apps/:app_id/threads| Threads
+    Partner -->|POST /apps/:app_id/threads/:thread_id/messages| Messages
+    Partner -->|POST /apps/:app_id/threads/:thread_id/messages/assistant| Messages
 ```

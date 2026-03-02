@@ -4,10 +4,13 @@ PROJECT_ID ?= luzia-nexo-api-examples
 PROJECT_NUMBER ?= 367427598362
 REGION ?= europe-west1
 
-.PHONY: check-toolchain test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples verify-examples docs-build docs-serve
+.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples verify-examples docs-build docs-serve
 
 check-toolchain:
 	./scripts/check-toolchain.sh
+
+check-mermaid:
+	python3 scripts/check_mermaid.py
 
 test-demo-receiver:
 	cd demo-receiver && pytest -q
@@ -45,6 +48,7 @@ verify-examples:
 
 docs-build:
 	$(MAKE) check-toolchain
+	$(MAKE) check-mermaid
 	@if [ ! -d .venv ]; then python3 -m venv .venv; fi
 	. .venv/bin/activate && pip install -r docs/requirements-docs.txt && mkdocs build --strict
 
