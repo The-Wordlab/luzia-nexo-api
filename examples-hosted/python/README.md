@@ -20,3 +20,10 @@ Run locally:
 ```bash
 EXAMPLES_SHARED_API_SECRET=dev-secret uvicorn app.main:app --reload --port 8080
 ```
+
+Run with Docker:
+
+```bash
+docker build -t nexo-examples-py .
+docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-py
+```

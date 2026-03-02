@@ -5,7 +5,7 @@ Reference implementation for Nexo partner integrations.
 Use this repository to:
 - build and test webhook handlers (Python or TypeScript)
 - send proactive Partner API requests
-- deploy hosted examples on Cloud Run
+- reference optional deployment examples (Docker, Cloud Run)
 
 ## Links
 
@@ -46,11 +46,7 @@ sequenceDiagram
 }
 ```
 
-3. Use hosted endpoints as reference implementations:
-- [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
-- [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
-
-4. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md)
+3. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md), [Hosting (Optional)](docs/hosting.md)
 
 ## Repository map
 

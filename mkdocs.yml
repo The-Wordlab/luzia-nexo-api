@@ -44,3 +44,4 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
+  - Hosting (Optional): hosting.md

@@ -31,10 +31,9 @@ sequenceDiagram
 2. Implement your webhook using [Quickstart](quickstart.md)
 3. Use [API Reference](partner-api-reference.md) for webhook contract and examples
 
-## Hosted reference examples
+## Optional deployment examples
 
-- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
-- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
+- Docker and Cloud Run examples: [Hosting (Optional)](hosting.md)
 
 ## Support
 

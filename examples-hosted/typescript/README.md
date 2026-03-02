@@ -18,3 +18,10 @@ Run locally:
 ```bash
 EXAMPLES_SHARED_API_SECRET=dev-secret node server.mjs
 ```
+
+Run with Docker:
+
+```bash
+docker build -t nexo-examples-ts .
+docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-ts
+```

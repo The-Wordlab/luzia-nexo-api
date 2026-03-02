@@ -1,8 +1,10 @@
 # Quickstart
 
-## 1) Implement your webhook
+## 1) Implement your webhook in your backend
 
-Create a webhook endpoint in your own backend and return a JSON response:
+Your webhook should accept Nexo requests and return one of these:
+
+### JSON response
 
 ```json
 {
@@ -10,24 +12,25 @@ Create a webhook endpoint in your own backend and return a JSON response:
 }
 ```
 
-## 2) Configure your app secret and webhook URL
+### SSE response
+
+Use `Content-Type: text/event-stream` and stream `delta` events followed by `done`.
+
+## 2) Configure Nexo
 
 1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 2. Create or open your app
 3. Set your webhook URL and secret
-4. Verify requests on your backend
+4. Send a test message and verify logs on your backend
 
-## 3) Support both response modes
+## 3) Validate request handling
 
-- Traditional JSON response
-- SSE streaming response (`text/event-stream`)
-
-## Optional: reference hosted examples
-
-These are sample implementations only:
-- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
-- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
+Checklist:
+- verify `X-App-Id`
+- verify timestamp/signature (`X-Timestamp`, `X-Signature`)
+- return valid JSON or SSE stream
 
 ## Next
 
-- [API Reference](partner-api-reference.md)
+- Full contract and examples: [API Reference](partner-api-reference.md)
+- Optional hosting/deployment examples: [Hosting (Optional)](hosting.md)
