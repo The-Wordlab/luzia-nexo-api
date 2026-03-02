@@ -28,9 +28,7 @@ def test_info_endpoints_support_json() -> None:
     assert root_resp.status_code == 200
     assert info_resp.status_code == 200
     assert root_resp.json()["service"] == "nexo-examples-py"
-    assert info_resp.json()["repository_url"] == "https://github.com/The-Wordlab/luzia-nexo-api"
-    assert info_resp.json()["partner_portal_url"] == "https://nexo.luzia.com/partners"
-    assert info_resp.json()["api_secret_help"]["contact_email"] == "mmm@luzia.com"
+    assert info_resp.json()["docs_url"] == "https://the-wordlab.github.io/luzia-nexo-api/"
     assert any(e["path"] == "/webhook/minimal" for e in info_resp.json()["endpoints"])
 
 

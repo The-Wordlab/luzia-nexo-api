@@ -1,25 +1,44 @@
 # Examples
 
-Direct links to runnable integrations.
+Use the examples folder as the single source of runnable integrations.
 
-## Webhooks
+Main folder:
+- [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 
-- Minimal Python: [server.py](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/python/server.py)
-- Minimal TypeScript: [webhook-server.mjs](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/typescript/webhook-server.mjs)
-- Structured Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/python)
-- Structured TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/typescript)
-- Advanced Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/python)
-- Advanced TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/typescript)
+## Minimal webhook snippet (Python)
 
-## Partner API (proactive)
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
 
-- TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/typescript)
-- Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/python)
-- cURL: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/bash)
+app = FastAPI()
 
-## Hosted endpoints
+class Payload(BaseModel):
+    message: dict | None = None
+
+@app.post("/webhook")
+def webhook(payload: Payload):
+    content = (payload.message or {}).get("content", "")
+    return {"text": f"Echo: {content}"}
+```
+
+## Minimal webhook snippet (TypeScript)
+
+```ts
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.post("/webhook", (req, res) => {
+  const content = req.body?.message?.content ?? "";
+  res.json({ text: `Echo: ${content}` });
+});
+```
+
+## Hosted examples
 
 - Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
 - TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
 
-Protected endpoints require `X-App-Secret` (or `Authorization: Bearer`).
+Protected endpoints require `X-App-Secret` or `Authorization: Bearer`.

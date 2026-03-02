@@ -20,7 +20,7 @@ sequenceDiagram
     autonumber
     participant User as End User
     participant Luzia as Luzia Backend
-    participant Nexo as Nexo Partner Runtime
+    participant Nexo as Nexo Agent Runtime
     participant Partner as Partner Webhook
 
     User->>Luzia: Send message
@@ -48,15 +48,14 @@ curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" 
   -d '{"message":{"content":"hello"}}'
 ```
 
-3. Continue with full docs: [Quickstart](docs/quickstart.md), [Examples](docs/examples.md), [Partner API Reference](docs/partner-api-reference.md)
+3. Continue with full docs: [Quickstart](docs/quickstart.md), [Examples](docs/examples.md), [API Reference](docs/partner-api-reference.md)
 
 ## Repository map
 
 - `examples/` - local webhook and partner API examples
 - `examples-hosted/` - Cloud Run deployable example services
-- `demo-receiver/` - demo webhook receiver service
 - `infra/terraform/` - GCP infrastructure
-- `docs/` - partner documentation
+- `docs/` - integration documentation
 
 ## Developer commands
 

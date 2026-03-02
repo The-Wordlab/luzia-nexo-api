@@ -55,14 +55,7 @@ def _info_payload() -> dict[str, Any]:
         "service": "nexo-examples-py",
         "runtime": "python",
         "description": "Hosted Python webhook and proactive examples.",
-        "repository_url": "https://github.com/The-Wordlab/luzia-nexo-api",
-        "partner_portal_url": "https://nexo.luzia.com/partners",
-        "api_secret_help": {
-            "how_to_get_secret": "Generate or copy your app webhook secret from the partner portal.",
-            "portal_url": "https://nexo.luzia.com/partners",
-            "contact_email": "mmm@luzia.com",
-            "contact_name": "Mark MacMahon",
-        },
+        "docs_url": "https://the-wordlab.github.io/luzia-nexo-api/",
         "auth": {
             "shared_secret_env": "EXAMPLES_SHARED_API_SECRET",
             "headers": ["X-App-Secret", "Authorization: Bearer <secret>"],
@@ -110,9 +103,7 @@ def _render_info_html(info: dict[str, Any]) -> str:
   <body>
     <h1>{info['service']}</h1>
     <p>{info['description']}</p>
-    <p><a href="{info['repository_url']}" target="_blank" rel="noopener noreferrer">Repository and setup instructions</a></p>
-    <p>Get your API secret: <a href="{info['partner_portal_url']}" target="_blank" rel="noopener noreferrer">{info['partner_portal_url']}</a></p>
-    <p>Need help: <a href="mailto:{info['api_secret_help']['contact_email']}">{info['api_secret_help']['contact_email']}</a> ({info['api_secret_help']['contact_name']})</p>
+    <p><a href="{info['docs_url']}" target="_blank" rel="noopener noreferrer">Integration guide and setup instructions</a></p>
     <table>
       <thead><tr><th>Method</th><th>Path</th><th>Description</th><th>Auth</th></tr></thead>
       <tbody>{endpoint_rows}</tbody>

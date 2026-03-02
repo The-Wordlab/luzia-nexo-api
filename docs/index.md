@@ -1,6 +1,6 @@
-# Nexo Partner Integration Docs
+# Nexo Integration Docs
 
-Start here if you want to integrate quickly with Nexo webhooks and Partner APIs.
+Start here to integrate quickly with Nexo webhooks and APIs.
 
 ## Webhook flow (target architecture)
 
@@ -9,7 +9,7 @@ sequenceDiagram
     autonumber
     participant User as End User
     participant Luzia as Luzia Backend
-    participant Nexo as Nexo Partner Runtime
+    participant Nexo as Nexo Agent Runtime
     participant Partner as Partner Webhook
 
     User->>Luzia: Send message

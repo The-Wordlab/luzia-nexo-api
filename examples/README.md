@@ -1,32 +1,15 @@
 # Examples
 
-Partner integration examples organized by progression level.
+Runnable Nexo integration examples.
 
-## Webhook progression
+Folders:
+- `webhook/minimal`
+- `webhook/structured`
+- `webhook/advanced`
+- `partner-api/proactive`
 
-1. `webhook/minimal` - smallest runnable implementation.
-2. `webhook/structured` - profile-aware and structured payload handling.
-3. `webhook/advanced` - connector actions, idempotency, and retry behavior.
-
-## Proactive API examples
-
-`partner-api/proactive` contains outbound API usage examples.
-
-## Test coverage
-
-- `webhook/minimal/python` - `pytest`
-- `webhook/structured/python` - `pytest`
-- `webhook/advanced/python` - `pytest`
-- `webhook/minimal/typescript` - `node --test`
-
-Run all example tests from repo root:
+Run all example tests from the repo root:
 
 ```bash
 make test-examples
 ```
-
-## Scope rules
-
-- No Replit-specific files.
-- No committed virtual environments or cache artifacts.
-- Keep examples intentionally differentiated by complexity.

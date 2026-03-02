@@ -12,7 +12,7 @@ curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" 
   -d '{"message":{"content":"hello"}}'
 ```
 
-## Self-host path (your own GCP project)
+## Optional: host on GCP (your own project)
 
 ```bash
 brew install --cask google-cloud-sdk

@@ -1,4 +1,4 @@
-# Partner API Reference
+# API Reference
 
 Base URL:
 - `https://nexo.luzia.com/api`

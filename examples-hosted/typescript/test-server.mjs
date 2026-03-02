@@ -19,9 +19,7 @@ test("info endpoints are public", () => {
   assert.equal(typeof rootResult.body, "string");
   assert.equal(rootResult.contentType, "text/html; charset=utf-8");
   assert.equal(infoResult.contentType, "application/json");
-  assert.equal(infoResult.body.repository_url, "https://github.com/The-Wordlab/luzia-nexo-api");
-  assert.equal(infoResult.body.partner_portal_url, "https://nexo.luzia.com/partners");
-  assert.equal(infoResult.body.api_secret_help.contact_email, "mmm@luzia.com");
+  assert.equal(infoResult.body.docs_url, "https://the-wordlab.github.io/luzia-nexo-api/");
   assert.equal(
     infoResult.body.endpoints.some((e) => e.path === "/webhook/minimal"),
     true,
