@@ -2,6 +2,30 @@
 
 Partner-facing documentation for hosted webhook examples, demo receiver infrastructure, and deployment workflows.
 
+## Integration at a glance
+
+```mermaid
+flowchart LR
+    Partner[Partner Backend]
+
+    subgraph Nexo[Nexo]
+      Threads[Threads]
+      Characters[Characters]
+      Tools[Tools]
+      Messages[Messages]
+    end
+
+    Threads --> Characters
+    Threads --> Tools
+    Threads --> Messages
+
+    Partner -->|GET /apps/{app_id}/threads| Threads
+    Partner -->|GET /apps/{app_id}/threads/{thread_id}/messages| Messages
+    Partner -->|POST /apps/{app_id}/threads| Threads
+    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages| Messages
+    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages/assistant| Messages
+```
+
 ## Start here
 
 1. **New partner onboarding**: [Onboarding](onboarding.md)

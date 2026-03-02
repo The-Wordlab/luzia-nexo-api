@@ -14,6 +14,30 @@ Nexo links:
 - Nexo dashboard: [nexo.luzia.com](https://nexo.luzia.com)
 - Support contact: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
 
+## Integration at a glance
+
+```mermaid
+flowchart LR
+    Partner[Partner Backend]
+
+    subgraph Nexo[Nexo]
+      Threads[Threads]
+      Characters[Characters]
+      Tools[Tools]
+      Messages[Messages]
+    end
+
+    Threads --> Characters
+    Threads --> Tools
+    Threads --> Messages
+
+    Partner -->|GET /apps/{app_id}/threads| Threads
+    Partner -->|GET /apps/{app_id}/threads/{thread_id}/messages| Messages
+    Partner -->|POST /apps/{app_id}/threads| Threads
+    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages| Messages
+    Partner -->|POST /apps/{app_id}/threads/{thread_id}/messages/assistant| Messages
+```
+
 ## Scope
 
 In scope:
