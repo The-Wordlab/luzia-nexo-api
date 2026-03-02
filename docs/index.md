@@ -38,6 +38,12 @@ sequenceDiagram
 
 Use [API Reference](partner-api-reference.md) for payload, signature, and response contract details.
 
+## Profile context
+
+- Current stable field: `profile.locale`.
+- Additional consented profile fields may be present depending on app and rollout configuration.
+- Expanded profile field documentation will be added as those fields are promoted to stable contract.
+
 ## Optional deployment examples
 
 - Docker and Cloud Run examples: [Hosting (Optional)](hosting.md)

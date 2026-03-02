@@ -4,6 +4,10 @@
 
 Your webhook should accept Nexo requests and return one of these:
 
+Profile note:
+- `profile.locale` is the primary stable profile field today.
+- Additional profile fields can appear over time - parse defensively and ignore unknown fields.
+
 ### JSON response
 
 ```json

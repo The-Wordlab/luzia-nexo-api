@@ -4,6 +4,10 @@ Smallest webhook contract implementation.
 
 Includes optional HMAC signature verification when `WEBHOOK_SECRET` is set.
 
+Profile context:
+- Today, treat `profile.locale` as the primary stable profile field.
+- More consented profile fields will be added to the stable contract in future updates.
+
 ## Run
 
 ```bash

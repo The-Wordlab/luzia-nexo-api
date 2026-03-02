@@ -30,6 +30,12 @@ Example body:
 
 Your webhook should parse the fields it needs and safely ignore unknown extra fields.
 
+### Profile fields (current and upcoming)
+
+- Current stable field: `profile.locale`.
+- Other consented profile fields may appear depending on app configuration and rollout state.
+- Expanded profile field contract will be published here as those fields move to stable availability.
+
 ### Signature verification
 
 Verify signature before processing:

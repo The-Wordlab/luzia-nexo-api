@@ -40,6 +40,9 @@ export function processWebhook(raw, headers = {}, secret = "") {
   }
 
   const content = data.message?.content ?? "";
+  // Current stable profile signal is locale. Read it defensively so future
+  // profile field expansion remains backward compatible for this example.
+  void (data.profile?.locale ?? null);
   return { status: 200, body: { reply: `Echo: ${content}` } };
 }
 

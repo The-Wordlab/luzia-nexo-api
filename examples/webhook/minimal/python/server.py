@@ -21,6 +21,7 @@ class MessageIn(BaseModel):
 class WebhookPayload(BaseModel):
     event: str | None = None
     message: MessageIn | None = None
+    profile: dict | None = None
 
 
 class ReplyOut(BaseModel):
@@ -62,5 +63,8 @@ app = FastAPI(title="nexo-examples minimal webhook")
 async def receive_webhook(payload: WebhookPayload, request: Request) -> ReplyOut:
     raw_body = await request.body()
     _require_signature(request, raw_body)
+    # Current stable profile signal is locale. Parse defensively and ignore
+    # unknown fields so future profile expansions do not break integrations.
+    _ = (payload.profile or {}).get("locale")
     content = payload.message.content if payload.message else ""
     return ReplyOut(reply=build_reply(content))

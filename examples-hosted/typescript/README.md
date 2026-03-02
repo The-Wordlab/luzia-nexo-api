@@ -2,6 +2,10 @@
 
 Cloud Run deployable Node service exposing hosted TypeScript example endpoints.
 
+Profile context note:
+- Current stable profile field is `profile.locale`.
+- Expanded consented profile fields will be added to stable docs over time.
+
 Endpoints:
 - `GET /`
 - `GET /info`

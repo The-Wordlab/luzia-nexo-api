@@ -2,6 +2,10 @@
 
 Adds profile-aware replies, locale handling, and optional `content_json` card hints.
 
+Profile context:
+- This example uses `profile.locale` and optional profile fields when present.
+- The stable profile contract will expand over time as more consented fields are promoted.
+
 Run:
 
 ```bash

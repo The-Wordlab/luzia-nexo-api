@@ -54,6 +54,12 @@ See [API Reference](docs/partner-api-reference.md) for payload, signature, and r
 
 Read the full integration guide: [API Documentation](https://the-wordlab.github.io/luzia-nexo-api/)
 
+## Profile context (current and next)
+
+- Current: webhook payloads can include profile context, with `profile.locale` as the primary stable field for integration logic.
+- Recommended: parse profile fields defensively and ignore unknown fields.
+- Next: expanded consented profile fields will be documented as they are promoted to stable contract.
+
 ## Repository map
 
 - [`examples/`](examples/) - local webhook and partner API examples
