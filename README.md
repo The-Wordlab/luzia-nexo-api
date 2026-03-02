@@ -40,9 +40,9 @@ sequenceDiagram
 
 ## Quick start
 
-1. Implement your webhook endpoint in your backend.
-2. Configure your webhook URL and app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
-3. Test your webhook response shape locally:
+1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
+2. Implement your webhook endpoint and configure your webhook URL in Nexo.
+3. Validate your response shape and signature handling against the API contract:
 
 ```json
 {
@@ -50,7 +50,7 @@ sequenceDiagram
 }
 ```
 
-4. Verify request signature handling (`X-Timestamp`, `X-Signature`) using the contract in [API Reference](docs/partner-api-reference.md).
+See [API Reference](docs/partner-api-reference.md).
 
 Read the full integration guide: [API Documentation](https://the-wordlab.github.io/luzia-nexo-api/)
 
