@@ -37,8 +37,9 @@ sequenceDiagram
 
 ## Quick start
 
-1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
-2. Implement your own webhook endpoint and return:
+1. Implement your webhook endpoint in your backend.
+2. Configure your webhook URL and app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
+3. Test your webhook response shape locally:
 
 ```json
 {
@@ -46,7 +47,9 @@ sequenceDiagram
 }
 ```
 
-3. Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md), [Hosting (Optional)](docs/hosting.md)
+4. Verify request signature handling (`X-Timestamp`, `X-Signature`) using the contract in [API Reference](docs/partner-api-reference.md).
+
+Continue with full docs: [Quickstart](docs/quickstart.md), [API Reference](docs/partner-api-reference.md), [Hosting (Optional)](docs/hosting.md)
 
 ## Repository map
 
