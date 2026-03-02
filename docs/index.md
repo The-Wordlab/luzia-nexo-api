@@ -1,6 +1,6 @@
 # Luzia Nexo API Docs
 
-Partner-facing documentation for hosted webhook examples, demo receiver infrastructure, and deployment workflows.
+Fast partner integration docs.
 
 ## Integration at a glance
 
@@ -28,9 +28,9 @@ flowchart LR
 
 ## Start here
 
-1. **New partner onboarding**: [Onboarding](onboarding.md)
-2. **Full deployment guide**: [Quickstart](quickstart.md)
-3. **Visual architecture**: [Integration Diagrams](integration-diagrams.md)
+1. **Onboarding (5 minutes)**: [Onboarding](onboarding.md)
+2. **Quickstart (hosted or self-deploy)**: [Quickstart](quickstart.md)
+3. **Code examples**: [Examples](examples.md)
 
 ## Live hosted services
 
@@ -41,15 +41,13 @@ flowchart LR
 ## API secret and support
 
 - Partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-- Nexo dashboard: [nexo.luzia.com](https://nexo.luzia.com)
 - Support: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
 
 ## What these docs cover
 
 - How to use hosted examples immediately
-- How to deploy your own isolated copy on GCP
-- Shared secret auth contract for example services
-- Demo receiver behavior and guardrails
+- How to deploy your own copy on GCP
+- Direct links to Python, TypeScript, and cURL examples
 
 ## Source repository
 

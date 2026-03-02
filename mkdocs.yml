@@ -42,11 +42,8 @@ extra_css:
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
   - Onboarding: onboarding.md
-  - Integration Model: integration-model.md
+  - Quickstart: quickstart.md
+  - Examples: examples.md
   - Integration Diagrams: integration-diagrams.md
-  - Demo Receiver: demo-receiver.md
-  - Dashboard Contract: dashboard-integration-contract.md
   - Partner API Reference: partner-api-reference.md
-  - System Overview: system-overview.md

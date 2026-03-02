@@ -1,15 +1,17 @@
 # Partner Onboarding (5 minutes)
 
-This guide is for engineers who want to use hosted examples immediately or deploy their own copy on Google Cloud.
+Goal: send one request to a hosted example and confirm your integration path.
 
-## Option A - Use hosted examples now
+## 1) Pick a hosted example
 
-1. Open endpoint catalog:
-   - Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
-   - TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
-2. Get your API secret from partner portal:
-   - [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-3. Call protected example endpoint:
+- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
+- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
+
+## 2) Get your app secret
+
+- [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+
+## 3) Send a test request
 
 ```bash
 curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" \
@@ -18,42 +20,17 @@ curl -X POST "https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal" 
   -d '{"message":{"content":"hello"}}'
 ```
 
-Need help: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
+If that works, go to [Examples](examples.md) for Python, TypeScript, and cURL source code.
 
-## Option B - Deploy your own copy on GCP
+## Need your own hosted copy?
 
-1. Authenticate and bootstrap:
+- Use [Quickstart](quickstart.md) and run:
 
 ```bash
 gcloud auth login --update-adc
 gcloud auth application-default login
-make gcp-bootstrap
-```
-
-Deploy to your own project by passing project values explicitly:
-
-```bash
 PROJECT_ID=<your-project-id> PROJECT_NUMBER=<your-project-number> REGION=<your-region> make gcp-bootstrap
-```
-
-2. Configure local deploy env files:
-
-```bash
-cp examples-hosted/python/deploy/cloudrun/env.example examples-hosted/python/deploy/cloudrun/env.local
-cp examples-hosted/typescript/deploy/cloudrun/env.example examples-hosted/typescript/deploy/cloudrun/env.local
-```
-
-3. Set `EXAMPLES_SHARED_API_SECRET` in both files.
-
-4. Deploy and verify:
-
-```bash
 make deploy-examples
-make verify-examples EXAMPLES_SHARED_API_SECRET=<your-shared-secret>
 ```
 
-## Reference
-
-- Full setup: [Quickstart](quickstart.md)
-- API and contract details: [Partner API Reference](partner-api-reference.md)
-- GitHub: [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)
+Need help: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
