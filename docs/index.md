@@ -1,4 +1,4 @@
-# Nexo Integration Docs
+# Luzia Nexo Integration Docs
 
 Start here to integrate quickly with Nexo webhooks and APIs.
 
