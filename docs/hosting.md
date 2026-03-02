@@ -1,6 +1,18 @@
 # Hosting (Optional)
 
-This page is optional. Partners can host their webhook anywhere.
+Partners can host their webhook anywhere.
+
+If you want a fast starting point, clone this repository, run the examples, and then extend them for your own integration.
+
+## Quick path: clone and run examples
+
+```bash
+git clone git@github.com:The-Wordlab/luzia-nexo-api.git
+cd luzia-nexo-api
+make test-examples
+```
+
+The `examples/` folder contains webhook and Partner API examples you can adapt directly.
 
 ## Docker (recommended example)
 
