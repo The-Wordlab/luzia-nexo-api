@@ -1,8 +1,8 @@
-# Luzia Nexo API Docs
+# Nexo Partner Integration Docs
 
-Fast partner integration docs.
+Start here if you want to integrate quickly with Nexo webhooks and Partner APIs.
 
-## Integration at a glance
+## Webhook flow
 
 ```mermaid
 sequenceDiagram
@@ -11,42 +11,28 @@ sequenceDiagram
     participant Nexo as Nexo Thread Runtime
     participant Partner as Partner Webhook
 
-    User->>Nexo: Sends message in a thread
-    Nexo->>Nexo: Resolve thread, character, and tools
-    Nexo->>Partner: POST webhook request with app headers and signature
-    Partner->>Partner: Verify secret and signature
+    User->>Nexo: Send message
+    Nexo->>Partner: POST webhook request (signed)
+    Partner->>Partner: Verify secret + signature
     alt Traditional response
-        Partner-->>Nexo: 200 JSON with text/reply
+        Partner-->>Nexo: 200 JSON (text/reply)
     else Streaming response
-        Partner-->>Nexo: 200 text/event-stream (SSE chunks + done)
+        Partner-->>Nexo: 200 text/event-stream (SSE)
     end
-    Nexo-->>User: Assistant reply in the same thread
-    Note over Nexo,Partner: Transient failures are retried by Nexo.
+    Nexo-->>User: Return assistant reply
 ```
 
-## Start here
+## Start in 3 steps
 
-1. **Onboarding (5 minutes)**: [Onboarding](onboarding.md)
-2. **Quickstart (hosted or self-deploy)**: [Quickstart](quickstart.md)
-3. **Code examples**: [Examples](examples.md)
+1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+2. Follow [Quickstart](quickstart.md)
+3. Copy a runnable integration from [Examples](examples.md)
 
-## Live hosted services
+## Hosted examples
 
-- Demo receiver: [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app)
-- Hosted Python examples: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
-- Hosted TypeScript examples: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
+- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app)
+- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app)
 
-## API secret and support
+## Support
 
-- Partner portal: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-- Support: [mmm@luzia.com](mailto:mmm@luzia.com) (Mark MacMahon)
-
-## What these docs cover
-
-- How to use hosted examples immediately
-- How to deploy your own copy on GCP
-- Direct links to Python, TypeScript, and cURL examples
-
-## Source repository
-
-- [github.com/The-Wordlab/luzia-nexo-api](https://github.com/The-Wordlab/luzia-nexo-api)
+- [mmm@luzia.com](mailto:mmm@luzia.com)

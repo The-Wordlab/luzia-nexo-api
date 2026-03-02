@@ -1,30 +1,25 @@
 # Examples
 
-This page links directly to runnable partner examples in this repository.
+Direct links to runnable integrations.
 
-## Webhook examples
+## Webhooks
 
-### Minimal
-- Python: [examples/webhook/minimal/python/server.py](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/python/server.py)
-- TypeScript: [examples/webhook/minimal/typescript/webhook-server.mjs](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/typescript/webhook-server.mjs)
+- Minimal Python: [server.py](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/python/server.py)
+- Minimal TypeScript: [webhook-server.mjs](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/typescript/webhook-server.mjs)
+- Structured Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/python)
+- Structured TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/typescript)
+- Advanced Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/python)
+- Advanced TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/typescript)
 
-### Structured
-- Python: [examples/webhook/structured/python/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/python)
-- TypeScript: [examples/webhook/structured/typescript/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/structured/typescript)
+## Partner API (proactive)
 
-### Advanced
-- Python: [examples/webhook/advanced/python/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/python)
-- TypeScript: [examples/webhook/advanced/typescript/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/advanced/typescript)
+- TypeScript: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/typescript)
+- Python: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/python)
+- cURL: [folder](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/bash)
 
-## Partner API proactive examples
+## Hosted endpoints
 
-- TypeScript: [examples/partner-api/proactive/typescript/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/typescript)
-- Python: [examples/partner-api/proactive/python/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/python)
-- cURL: [examples/partner-api/proactive/bash/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/bash)
+- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
+- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
 
-## Hosted examples
-
-- Python endpoint catalog: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
-- TypeScript endpoint catalog: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
-
-Both hosted services require `X-App-Secret` (or `Authorization: Bearer`) for protected endpoints.
+Protected endpoints require `X-App-Secret` (or `Authorization: Bearer`).

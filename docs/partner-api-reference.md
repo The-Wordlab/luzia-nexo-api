@@ -9,37 +9,24 @@ Authentication headers:
 
 ## Core endpoints
 
-- `GET /apps/{app_id}/subscribers`
-- `GET /apps/{app_id}/subscribers/{subscriber_id}/threads`
 - `GET /apps/{app_id}/threads`
 - `GET /apps/{app_id}/threads/{thread_id}/messages`
 - `POST /apps/{app_id}/threads`
 - `POST /apps/{app_id}/threads/{thread_id}/messages`
 - `POST /apps/{app_id}/threads/{thread_id}/messages/assistant`
 
-## Webhook request (Nexo -> your endpoint)
+## Webhook request
 
-Headers:
+Nexo calls your webhook with:
 - `Content-Type: application/json`
-- `X-App-Id: <app_uuid>`
-- `X-Timestamp: <unix_seconds>`
-- `X-Signature: sha256=<hex_digest>`
-- `X-Trace-ID: <uuid>`
+- `X-App-Id`
+- `X-Timestamp`
+- `X-Signature`
+- `X-Trace-ID`
 
-Example body:
+## Webhook response formats
 
-```json
-{
-  "message": "user message text",
-  "thread_id": "uuid",
-  "user_id": "uuid",
-  "profile": { "locale": "en", "name": "User Name" }
-}
-```
-
-## Webhook response (your endpoint -> Nexo)
-
-Return HTTP 200 with JSON:
+### Traditional JSON response
 
 ```json
 {
@@ -47,13 +34,24 @@ Return HTTP 200 with JSON:
 }
 ```
 
-`reply` is also accepted for legacy compatibility.
+`reply` is accepted as a legacy fallback.
 
-## TypeScript / Python / cURL examples
+### SSE streaming response
 
-- TypeScript: [examples/partner-api/proactive/typescript/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/typescript)
-- Python: [examples/partner-api/proactive/python/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/python)
-- cURL: [examples/partner-api/proactive/bash/](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive/bash)
+Use `Content-Type: text/event-stream` and stream events.
+
+```text
+data: {"type":"delta","text":"hello "}
+
+data: {"type":"delta","text":"world"}
+
+data: {"type":"done"}
+```
+
+## Example code
+
+- Webhook examples: [Examples](examples.md)
+- Partner API examples: [Examples](examples.md)
 
 ## Support
 
