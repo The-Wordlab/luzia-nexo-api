@@ -63,4 +63,6 @@ make test-all
 make docs-build
 ```
 
-- Support: [mmm@luzia.com](mailto:mmm@luzia.com)
+## Support
+
+- [mmm@luzia.com](mailto:mmm@luzia.com)

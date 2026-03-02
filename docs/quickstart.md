@@ -30,6 +30,24 @@ Checklist:
 - verify timestamp/signature (`X-Timestamp`, `X-Signature`)
 - return valid JSON or SSE stream
 
+## 4) Test your webhook directly
+
+Example local test:
+
+```bash
+curl -X POST "http://localhost:8080/webhook" \
+  -H "Content-Type: application/json" \
+  -d '{"message":{"content":"hello"}}'
+```
+
+Expected response shape:
+
+```json
+{
+  "text": "Your assistant response"
+}
+```
+
 ## Next
 
 - Full contract and examples: [API Reference](partner-api-reference.md)

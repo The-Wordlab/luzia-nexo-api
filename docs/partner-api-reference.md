@@ -17,7 +17,9 @@ Example body:
 
 ```json
 {
-  "message": "Book a table for 2 at 8pm",
+  "message": {
+    "content": "Book a table for 2 at 8pm"
+  },
   "thread_id": "thread_uuid",
   "user_id": "user_uuid",
   "profile": {
