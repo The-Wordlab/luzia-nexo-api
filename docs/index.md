@@ -1,4 +1,4 @@
-# Lucia Nexo
+# Luzia Nexo
 
 Luzia Partner Integration APIs.
 

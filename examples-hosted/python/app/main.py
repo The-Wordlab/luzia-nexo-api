@@ -55,7 +55,7 @@ def _info_payload() -> dict[str, Any]:
         "service": "nexo-examples-py",
         "runtime": "python",
         "description": (
-            "Lucia Nexo hosted Python examples. Use these endpoints as a reference, "
+            "Luzia Nexo hosted Python examples. Use these endpoints as a reference, "
             "then clone and extend the examples in GitHub for your integration."
         ),
         "docs_url": "https://the-wordlab.github.io/luzia-nexo-api/",
@@ -91,7 +91,7 @@ def _render_info_html(info: dict[str, Any]) -> str:
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lucia Nexo - {info['service']}</title>
+    <title>Luzia Nexo - {info['service']}</title>
     <style>
       body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 24px; color: #1f2937; }}
       h1 {{ margin-bottom: 4px; }}
@@ -104,7 +104,7 @@ def _render_info_html(info: dict[str, Any]) -> str:
     </style>
   </head>
   <body>
-    <h1>Lucia Nexo - {info['service']}</h1>
+    <h1>Luzia Nexo - {info['service']}</h1>
     <p>{info['description']}</p>
     <p><a href="{info['docs_url']}" target="_blank" rel="noopener noreferrer">Integration guide, quickstart, and runnable example code</a></p>
     <table>
