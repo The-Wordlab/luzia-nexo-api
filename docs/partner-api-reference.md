@@ -101,59 +101,9 @@ Core endpoints:
 
 ## Examples
 
-Main folder:
-- [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
-
-### Minimal webhook snippet (Python)
-
-```python
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-app = FastAPI()
-
-class Payload(BaseModel):
-    message: dict | None = None
-    profile: dict | None = None
-
-@app.post("/webhook")
-def webhook(payload: Payload):
-    content = (payload.message or {}).get("content", "")
-    profile = payload.profile or {}
-    name = profile.get("display_name") or profile.get("name")
-    locale = profile.get("locale") or profile.get("language")
-    dietary = profile.get("dietary_preferences")
-    text = f"{name}, you said: {content}" if name else f"Echo: {content}"
-    hints = [h for h in [f"locale={locale}" if locale else None, f"dietary={dietary}" if dietary else None] if h]
-    return {"text": f"{text} ({', '.join(hints)})" if hints else text}
-```
-
-### Minimal webhook snippet (TypeScript)
-
-```ts
-import express from "express";
-
-const app = express();
-app.use(express.json());
-
-app.post("/webhook", (req, res) => {
-  const content = req.body?.message?.content ?? "";
-  const profile = req.body?.profile ?? {};
-  const name = profile.display_name ?? profile.name ?? null;
-  const locale = profile.locale ?? profile.language ?? null;
-  const dietary = profile.dietary_preferences ?? null;
-  let text = name ? `${name}, you said: ${content}` : `Echo: ${content}`;
-  const hints = [];
-  if (locale) hints.push(`locale=${locale}`);
-  if (dietary) hints.push(`dietary=${dietary}`);
-  if (hints.length) text = `${text} (${hints.join(", ")})`;
-  res.json({ text });
-});
-```
-
-Hosted endpoints:
-- Python: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
-- TypeScript: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
+- Minimal webhook snippets: [Quickstart](quickstart.md)
+- All examples: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
+- Live hosted services: [Home - Live examples](index.md#live-examples)
 
 ## Support
 

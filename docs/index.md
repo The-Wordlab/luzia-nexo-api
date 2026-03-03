@@ -43,16 +43,14 @@ Use [API Reference](partner-api-reference.md) for payload, signature, and respon
 
 ## Live examples
 
-You can test simple hosted examples before building your own implementation:
+Hosted reference services you can test before building your own:
 
-- Python examples service: [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/)
-  - [info](https://nexo-examples-py-v3me5awkta-ew.a.run.app/info)
-  - [minimal webhook endpoint](https://nexo-examples-py-v3me5awkta-ew.a.run.app/webhook/minimal)
-- TypeScript examples service: [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/)
-  - [info](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/info)
-  - [minimal webhook endpoint](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/webhook/minimal)
+| Language | Live service | Source code |
+|----------|-------------|-------------|
+| Python | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [examples-hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples-hosted/python) |
+| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [examples-hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples-hosted/typescript) |
 
-Use these as reference implementations, then adapt code from [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples) for your own environment.
+For standalone webhook snippets see [examples/webhook](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook).
 
 ## Profile context
 
