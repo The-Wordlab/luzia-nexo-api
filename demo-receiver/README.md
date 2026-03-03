@@ -6,7 +6,7 @@ Minimal hosted webhook receiver for demos.
 
 - `POST /v1/ingest/{demo_key}` - accept and store event payloads
 - `GET /v1/events/{demo_key}` - retrieve recent events
-- `GET /healthz` - liveness
+- `GET /health` - liveness
 
 ## Safety defaults
 

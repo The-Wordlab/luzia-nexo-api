@@ -104,11 +104,6 @@ def _safe_payload(raw: Any) -> dict[str, Any]:
     return redacted
 
 
-@app.get("/healthz", response_model=HealthResponse)
-async def healthz() -> HealthResponse:
-    return HealthResponse()
-
-
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
     return HealthResponse()
