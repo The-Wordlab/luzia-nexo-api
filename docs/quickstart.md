@@ -90,7 +90,7 @@ Example local test:
 ```bash
 curl -X POST "http://localhost:8080/webhook" \
   -H "Content-Type: application/json" \
-  -d '{"message":{"content":"hello"}}'
+  -d '{"message":{"content":"hello"},"profile":{"display_name":"María","locale":"es-MX","dietary_preferences":"vegetarian"}}'
 ```
 
 Expected response shape:

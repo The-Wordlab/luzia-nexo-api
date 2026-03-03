@@ -23,7 +23,16 @@ Example body:
   "thread_id": "thread_uuid",
   "user_id": "user_uuid",
   "profile": {
-    "locale": "en"
+    "display_name": "María",
+    "locale": "es-MX",
+    "language": "es",
+    "location": "Mexico City",
+    "age": 32,
+    "gender": "female",
+    "dietary_preferences": "vegetarian",
+    "preferences": {
+      "cuisine": "Italian"
+    }
   }
 }
 ```

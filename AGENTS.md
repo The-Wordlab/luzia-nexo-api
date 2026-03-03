@@ -46,6 +46,15 @@ Do not include in public docs:
 2. Example apps (`/info`, `/`) should point to docs site, not duplicate support metadata.
 3. Avoid repeating the same setup text across multiple docs pages.
 
+## Two separate payload contracts
+
+This repository covers two distinct integration interfaces. Do not conflate them:
+
+1. **Webhook payload** (Nexo → partner): flat structure with `message`, `profile`, optional `thread_id`/`user_id`. Defined by the code examples in `examples/` and documented in `docs/partner-api-reference.md`.
+2. **Partner API payload** (partner → Nexo): richer structure with nested `app`, `thread`, `event`, `history_tail`, `tools`, `attachments`, `metadata`, `timestamp`. Defined by the SDK types in `sdk/javascript/src/types.ts`.
+
+When editing docs or examples, always verify which contract you are working with.
+
 ## Scope boundaries
 
 In scope:
