@@ -23,6 +23,11 @@ Webhook responses must clearly show both supported modes:
 - traditional JSON response
 - SSE streaming response
 
+For JSON responses, use the canonical rich envelope:
+- `schema_version`
+- `status`
+- at least one non-empty channel in `content_parts`, `cards`, or `actions`
+
 ## Public documentation contract
 
 Public docs must be simple, professional, and integration-first.
@@ -46,12 +51,12 @@ Do not include in public docs:
 2. Example apps (`/info`, `/`) should point to docs site, not duplicate support metadata.
 3. Avoid repeating the same setup text across multiple docs pages.
 
-## Two separate payload contracts
+## Two separate integration contracts
 
 This repository covers two distinct integration interfaces. Do not conflate them:
 
-1. **Webhook payload** (Nexo → partner): flat structure with `message`, `profile`, optional `thread_id`/`user_id`. Defined by the code examples in `examples/` and documented in `docs/partner-api-reference.md`.
-2. **Partner API payload** (partner → Nexo): richer structure with nested `app`, `thread`, `event`, `history_tail`, `tools`, `attachments`, `metadata`, `timestamp`. Defined by the SDK types in `sdk/javascript/src/types.ts`.
+1. **Webhook payload** (Nexo → partner): canonical envelope with `event`, `app`, `thread`, `message`, `history_tail`, optional `profile`/`tools`/`attachments`/`metadata`, and `timestamp`. Defined by runtime schema in `luzia-nexo` and mirrored in `sdk/javascript/src/types.ts`.
+2. **Partner API resources** (partner → Nexo): REST endpoints for subscribers, threads, and messages under `/api/apps/{app_id}/...` authenticated by `X-App-Id` + `X-App-Secret`.
 
 When editing docs or examples, always verify which contract you are working with.
 

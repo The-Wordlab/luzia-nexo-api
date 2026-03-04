@@ -16,7 +16,7 @@ Demonstrates four concepts beyond the intermediate tier:
    The ``schedule_appointment`` action simulates transient failures.
    When a failure occurs the server returns ``success: false``,
    a ``retry_after`` delay in seconds, and a
-   ``content_json.type = "retry_suggestion"`` card so the frontend
+   ``cards[0].type = "retry_suggestion"`` so the frontend
    can surface a "try again" prompt to the user.
 
 3. Idempotency via an action log
@@ -44,9 +44,11 @@ POST /
                }
            }
     Reply: {
-               "reply": "<text>",
-               "content_json": {...} | null,
-               "retry_after": <int> | null           # only on failure
+               "schema_version": "2026-03-01",
+               "status": "success",
+               "content_parts": [{"type": "text", "text": "<text>"}],
+               "cards": [...],                        # optional
+               "metadata": {"retry_after": 30}      # only on failure
            }
 
 POST /actions/{action_type}
@@ -282,26 +284,30 @@ def _build_action_reply(action_result: dict[str, Any], action_type: str) -> str:
     return "Action completed successfully."
 
 
-def _build_action_content_json(
+def _build_action_cards(
     action_result: dict[str, Any],
-) -> dict[str, Any]:
-    """Build a content_json block based on the action result."""
+) -> list[dict[str, Any]]:
+    """Build cards based on the action result."""
     if not action_result.get("success"):
-        return {
-            "type": "retry_suggestion",
-            "message": action_result.get("error", "Temporary error"),
-            "retry_after": action_result.get("retry_after", _RETRY_AFTER_SECONDS),
-        }
+        return [
+            {
+                "type": "retry_suggestion",
+                "message": action_result.get("error", "Temporary error"),
+                "retry_after": action_result.get("retry_after", _RETRY_AFTER_SECONDS),
+            }
+        ]
 
-    return {
-        "type": "action_result",
-        "success": True,
-        "data": {
-            k: v
-            for k, v in action_result.items()
-            if k not in {"success", "action_id", "cached"}
-        },
-    }
+    return [
+        {
+            "type": "action_result",
+            "success": True,
+            "data": {
+                k: v
+                for k, v in action_result.items()
+                if k not in {"success", "action_id", "cached"}
+            },
+        }
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -314,7 +320,7 @@ async def receive_webhook(request: Request) -> JSONResponse:
     """Main webhook endpoint.
 
     Inspects context.intent to decide whether to trigger a connector
-    action.  When an action is triggered the reply and content_json are
+    action.  When an action is triggered the content and cards are
     derived from the action result.  A failed action surfaces retry
     guidance to the caller.
     """
@@ -347,21 +353,26 @@ async def receive_webhook(request: Request) -> JSONResponse:
                 _store_result(action_id, action_result)
 
         reply = _build_action_reply(action_result, intent)
-        content_json = _build_action_content_json(action_result)
-
+        cards = _build_action_cards(action_result)
         response_body: dict[str, Any] = {
-            "reply": reply,
-            "content_json": content_json,
+            "schema_version": "2026-03-01",
+            "status": "success",
+            "content_parts": [{"type": "text", "text": reply}],
+            "cards": cards,
         }
-
         if not action_result.get("success"):
-            response_body["retry_after"] = action_result.get(
-                "retry_after", _RETRY_AFTER_SECONDS
-            )
-
+            response_body["metadata"] = {
+                "retry_after": action_result.get("retry_after", _RETRY_AFTER_SECONDS)
+            }
         return JSONResponse(response_body)
 
     # Plain message - no connector action needed
     content: str = message.get("content", "")
     reply_text = f'Received: "{content}"' if content else "Hello! How can I help you?"
-    return JSONResponse({"reply": reply_text, "content_json": None})
+    return JSONResponse(
+        {
+            "schema_version": "2026-03-01",
+            "status": "success",
+            "content_parts": [{"type": "text", "text": reply_text}],
+        }
+    )

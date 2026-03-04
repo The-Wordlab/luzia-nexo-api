@@ -14,7 +14,9 @@ Profile note:
 
 ```json
 {
-  "text": "Your assistant response"
+  "schema_version": "2026-03-01",
+  "status": "success",
+  "content_parts": [{ "type": "text", "text": "Your assistant response" }]
 }
 ```
 
@@ -31,8 +33,14 @@ from pydantic import BaseModel
 app = FastAPI()
 
 class Payload(BaseModel):
+    event: str | None = None
+    app: dict | None = None
+    thread: dict | None = None
     message: dict | None = None
+    history_tail: list[dict] | None = None
     profile: dict | None = None
+    metadata: dict | None = None
+    timestamp: str | None = None
 
 @app.post("/webhook")
 def webhook(payload: Payload):
@@ -43,7 +51,11 @@ def webhook(payload: Payload):
     dietary = profile.get("dietary_preferences")
     text = f"{name}, you said: {content}" if name else f"Echo: {content}"
     hints = [h for h in [f"locale={locale}" if locale else None, f"dietary={dietary}" if dietary else None] if h]
-    return {"text": f"{text} ({', '.join(hints)})" if hints else text}
+    return {
+      "schema_version": "2026-03-01",
+      "status": "success",
+      "content_parts": [{"type": "text", "text": f"{text} ({', '.join(hints)})" if hints else text}],
+    }
 ```
 
 ### Minimal TypeScript webhook
@@ -65,7 +77,11 @@ app.post("/webhook", (req, res) => {
   if (locale) hints.push(`locale=${locale}`);
   if (dietary) hints.push(`dietary=${dietary}`);
   if (hints.length) text = `${text} (${hints.join(", ")})`;
-  res.json({ text });
+  res.json({
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text }],
+  });
 });
 ```
 
@@ -90,14 +106,16 @@ Example local test:
 ```bash
 curl -X POST "http://localhost:8080/webhook" \
   -H "Content-Type: application/json" \
-  -d '{"message":{"content":"hello"},"profile":{"display_name":"María","locale":"es-MX","dietary_preferences":"vegetarian"}}'
+  -d '{"event":"message_received","app":{"id":"app-uuid","name":"Demo"},"thread":{"id":"thread-uuid","customer_id":"user-123"},"message":{"id":"msg-uuid","seq":1,"role":"user","content":"hello","content_json":{}},"history_tail":[],"profile":{"display_name":"María","locale":"es-MX","dietary_preferences":"vegetarian"},"metadata":{},"timestamp":"2026-03-04T12:00:00Z"}'
 ```
 
 Expected response shape:
 
 ```json
 {
-  "text": "Your assistant response"
+  "schema_version": "2026-03-01",
+  "status": "success",
+  "content_parts": [{ "type": "text", "text": "Your assistant response" }]
 }
 ```
 

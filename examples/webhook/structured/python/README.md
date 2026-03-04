@@ -1,6 +1,6 @@
 # Structured Webhook - Python
 
-Adds profile-aware replies, locale handling, and optional `content_json` card hints.
+Adds profile-aware replies, locale handling, and optional `cards` hints.
 
 Profile context:
 - This example uses `profile.locale` and optional profile fields when present.

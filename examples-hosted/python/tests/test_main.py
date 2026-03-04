@@ -7,6 +7,15 @@ client = TestClient(app)
 SECRET = {"X-App-Secret": "test-secret"}
 
 
+def _response_text(body: dict) -> str:
+    parts = body.get("content_parts") or []
+    return " ".join(
+        part.get("text", "")
+        for part in parts
+        if isinstance(part, dict) and part.get("type") == "text"
+    )
+
+
 def test_health_is_public() -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -46,7 +55,10 @@ def test_webhook_minimal_with_secret(monkeypatch) -> None:
         headers=SECRET,
     )
     assert resp.status_code == 200
-    assert resp.json()["reply"] == "Echo: hi"
+    body = resp.json()
+    assert body["schema_version"] == "2026-03-01"
+    assert body["status"] == "success"
+    assert _response_text(body) == "Echo: hi"
 
 
 def test_webhook_minimal_profile_context(monkeypatch) -> None:
@@ -65,10 +77,8 @@ def test_webhook_minimal_profile_context(monkeypatch) -> None:
         headers=SECRET,
     )
     assert resp.status_code == 200
-    assert (
-        resp.json()["reply"]
-        == "Mia, you said: recommend dinner (locale=en, dietary=vegan)"
-    )
+    body = resp.json()
+    assert _response_text(body) == "Mia, you said: recommend dinner (locale=en, dietary=vegan)"
 
 
 def test_webhook_advanced_order_status(monkeypatch) -> None:
@@ -80,4 +90,4 @@ def test_webhook_advanced_order_status(monkeypatch) -> None:
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["content_json"]["order_id"] == "ORD-1"
+    assert body["cards"][0]["order_id"] == "ORD-1"

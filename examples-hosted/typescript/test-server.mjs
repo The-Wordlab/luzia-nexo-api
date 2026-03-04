@@ -45,7 +45,11 @@ test("webhook accepts authorized request", () => {
     secret,
   );
   assert.equal(result.status, 200);
-  assert.deepEqual(result.body, { reply: "Echo: hello" });
+  assert.deepEqual(result.body, {
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text: "Echo: hello" }],
+  });
 });
 
 test("webhook uses optional profile context defensively", () => {
@@ -66,6 +70,13 @@ test("webhook uses optional profile context defensively", () => {
   );
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, {
-    reply: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [
+      {
+        type: "text",
+        text: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+      },
+    ],
   });
 });

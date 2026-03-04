@@ -30,7 +30,11 @@ app.post("/webhook", (req, res) => {
   const payload = parseWebhookPayload(rawBody);
   console.log(`Received message: ${payload.message.content}`);
 
-  res.json({ reply: `Echo: ${payload.message.content}` });
+  res.json({
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text: `Echo: ${payload.message.content}` }],
+  });
 });
 ```
 
@@ -57,7 +61,11 @@ app.post("/webhook", async (request, reply) => {
   }
 
   const payload = parseWebhookPayload(rawBody);
-  return { reply: `Echo: ${payload.message.content}` };
+  return {
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text: `Echo: ${payload.message.content}` }],
+  };
 });
 ```
 
@@ -132,7 +140,7 @@ The SDK exports these types:
 | Type | Description |
 |------|-------------|
 | `WebhookPayload` | Webhook request payload (event: `message_received`) |
-| `WebhookResponse` | Webhook response (`{ reply: string }`) |
+| `WebhookResponse` | Rich webhook response envelope |
 | `Message` | Message as returned by the API |
 | `MessageResponse` | Response from sending a proactive message |
 | `Thread` | Thread object |

@@ -72,7 +72,7 @@ echo "  -H \"Content-Type: application/json\" \\"
 echo "  -d '<test payload>'"
 echo ""
 echo "(Skipping actual request - start your webhook server and run manually)"
-echo "Expected response: {\"reply\": \"...\"}"
+echo "Expected response: {\"schema_version\":\"2026-03-01\",\"status\":\"success\",\"content_parts\":[{\"type\":\"text\",\"text\":\"...\"}]}"
 echo ""
 
 ###############################################################################

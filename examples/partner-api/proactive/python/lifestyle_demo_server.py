@@ -267,7 +267,15 @@ class DemoWebhookHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(json.dumps({"reply": reply}).encode())
+        self.wfile.write(
+            json.dumps(
+                {
+                    "schema_version": "2026-03-01",
+                    "status": "success",
+                    "content_parts": [{"type": "text", "text": reply}],
+                }
+            ).encode()
+        )
 
     def log_message(self, format, *args):
         pass  # Suppress default logging, we handle our own

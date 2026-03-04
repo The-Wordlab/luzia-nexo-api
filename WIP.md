@@ -1,39 +1,34 @@
 # Work In Progress
 
-**Last Updated:** 2026-03-02 14:55 CET
-**Last Synced:** 2026-03-02 14:55 CET
-**Status:** Sprint API-3 in progress.
+**Last Updated:** 2026-03-05
+**Status:** Documentation and example contract alignment complete.
 
 ## Current state
 
-1. Hosted examples are now deployable as two Cloud Run services: `nexo-examples-py` and `nexo-examples-ts`.
-2. Both hosted services expose health endpoints and enforce shared secret auth via `X-App-Secret`.
-3. Live deployment and verification succeeded in `luzia-nexo-api-examples` using `make deploy-examples` and `make verify-examples`.
-4. Demo receiver is deployed independently as `nexo-demo-receiver`.
-5. Partner onboarding flow is documented in `docs/onboarding.md` with hosted usage and self-deploy paths.
+1. Webhook documentation now uses one canonical response envelope:
+   - `schema_version`
+   - `status`
+   - `content_parts` (or `cards` / `actions`)
+2. Legacy `reply`-style webhook response examples were removed from docs and webhook examples.
+3. All webhook examples (minimal, structured, advanced, hosted Python, hosted TypeScript) now return the same rich envelope.
+4. SDK docs and SDK client tests were updated to match current auth/base URL behavior.
 
-## Latest completed sprint
+## Verification
 
-Sprint API-2 complete: API-005, API-006, API-009, API-010 delivered.
+Executed successfully:
+- `make test-all` (with local `.venv/bin` in PATH)
+- `make docs-build`
 
-## Active sprint plan
+## Next step
 
-Sprint API-3 - Deployment Automation: IN PROGRESS
-
-Items:
-- API-011: Terraform one-command deployment flow (in_progress)
-- API-012: TypeScript hosted lane (done)
-- API-013: Hosted Python + TypeScript with shared auth and verification (done)
-
-## Execution notes
-
-1. Keep this track isolated from `luzia-nexo` sprint execution.
-2. Maintain clean separation from production infrastructure.
-3. Keep docs and implementation synchronized on each completion.
+Deploy refreshed examples to Cloud Run after commit:
+- `make deploy-examples`
+- `make verify-examples`
 
 ## Quick links
 
-- [docs/backlog.md](docs/backlog.md)
-- [docs/current-sprint.md](docs/current-sprint.md)
-- [docs/system-overview.md](docs/system-overview.md)
+- [README.md](README.md)
+- [docs/index.md](docs/index.md)
 - [docs/quickstart.md](docs/quickstart.md)
+- [docs/partner-api-reference.md](docs/partner-api-reference.md)
+- [docs/hosting.md](docs/hosting.md)

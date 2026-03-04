@@ -20,10 +20,17 @@ class WebhookPayload(BaseModel):
     profile: dict[str, Any] | None = None
 
 
-class ReplyOut(BaseModel):
-    reply: str
-    content_json: dict[str, Any] | None = None
-    retry_after: int | None = None
+class ContentPartOut(BaseModel):
+    type: str
+    text: str
+
+
+class WebhookResponseOut(BaseModel):
+    schema_version: str
+    status: str
+    content_parts: list[ContentPartOut]
+    cards: list[dict[str, Any]] | None = None
+    metadata: dict[str, Any] | None = None
 
 
 def _shared_secret() -> str:
@@ -48,6 +55,21 @@ def _require_auth(x_app_secret: str | None, authorization: str | None) -> None:
 
 
 app = FastAPI(title="nexo-examples-py")
+
+
+def _webhook_response(
+    text: str,
+    *,
+    cards: list[dict[str, Any]] | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> WebhookResponseOut:
+    return WebhookResponseOut(
+        schema_version="2026-03-01",
+        status="success",
+        content_parts=[ContentPartOut(type="text", text=text)],
+        cards=cards,
+        metadata=metadata,
+    )
 
 
 def _info_payload() -> dict[str, Any]:
@@ -149,12 +171,12 @@ async def health() -> dict[str, Any]:
     }
 
 
-@app.post("/webhook/minimal", response_model=ReplyOut)
+@app.post("/webhook/minimal", response_model=WebhookResponseOut)
 async def webhook_minimal(
     payload: WebhookPayload,
     x_app_secret: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
-) -> ReplyOut:
+) -> WebhookResponseOut:
     _require_auth(x_app_secret, authorization)
     content = payload.message.content if payload.message else ""
     profile = payload.profile or {}
@@ -180,56 +202,60 @@ async def webhook_minimal(
         hints.append(f"dietary={dietary}")
     if hints:
         text = f"{text} ({', '.join(hints)})"
-    return ReplyOut(reply=text)
+    return _webhook_response(text)
 
 
-@app.post("/webhook/structured", response_model=ReplyOut)
+@app.post("/webhook/structured", response_model=WebhookResponseOut)
 async def webhook_structured(
     payload: WebhookPayload,
     x_app_secret: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
-) -> ReplyOut:
+) -> WebhookResponseOut:
     _require_auth(x_app_secret, authorization)
     profile = payload.profile or {}
     name = profile.get("name") if isinstance(profile.get("name"), str) else "there"
     content = payload.message.content if payload.message else ""
-    reply = f"Hello, {name}. Echo: {content.upper() if content else '(empty)'}"
-    return ReplyOut(reply=reply)
+    text = f"Hello, {name}. Echo: {content.upper() if content else '(empty)'}"
+    return _webhook_response(text)
 
 
-@app.post("/webhook/advanced", response_model=ReplyOut)
+@app.post("/webhook/advanced", response_model=WebhookResponseOut)
 async def webhook_advanced(
     payload: WebhookPayload,
     x_app_secret: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
-) -> ReplyOut:
+) -> WebhookResponseOut:
     _require_auth(x_app_secret, authorization)
     context = payload.context or {}
     intent = context.get("intent") if isinstance(context.get("intent"), str) else ""
 
     if intent == "schedule_appointment" and bool(context.get("force_fail")):
-        return ReplyOut(
-            reply="Scheduling is temporarily unavailable. Please retry soon.",
-            content_json={
-                "type": "retry_suggestion",
-                "retry_after": 30,
-            },
-            retry_after=30,
+        return _webhook_response(
+            "Scheduling is temporarily unavailable. Please retry soon.",
+            cards=[
+                {
+                    "type": "retry_suggestion",
+                    "retry_after": 30,
+                }
+            ],
+            metadata={"retry_after": 30},
         )
 
     if intent == "order_status":
         order_id = context.get("order_id") if isinstance(context.get("order_id"), str) else "UNKNOWN"
-        return ReplyOut(
-            reply=f"Order {order_id} is in transit.",
-            content_json={
-                "type": "action_result",
-                "status": "in_transit",
-                "order_id": order_id,
-            },
+        return _webhook_response(
+            f"Order {order_id} is in transit.",
+            cards=[
+                {
+                    "type": "action_result",
+                    "status": "in_transit",
+                    "order_id": order_id,
+                }
+            ],
         )
 
     content = payload.message.content if payload.message else ""
-    return ReplyOut(reply=f'Received: "{content}"' if content else "Hello! How can I help?")
+    return _webhook_response(f'Received: "{content}"' if content else "Hello! How can I help?")
 
 
 @app.post("/partner/proactive/preview")

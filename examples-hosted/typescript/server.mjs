@@ -74,6 +74,17 @@ function wantsJson(format, acceptHeader = "") {
   return acceptHeader.includes("application/json") && !acceptHeader.includes("text/html");
 }
 
+function webhookResponse(text, options = {}) {
+  const response = {
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text }],
+  };
+  if (options.cards) response.cards = options.cards;
+  if (options.metadata) response.metadata = options.metadata;
+  return response;
+}
+
 export function isAuthorized(headers, expectedSecret) {
   if (!expectedSecret) return false;
   const appSecret = (headers["x-app-secret"] ?? "").toString();
@@ -129,12 +140,12 @@ export function processRequest(method, url, headers, rawBody, expectedSecret) {
     const locale = profile.locale ?? profile.language ?? null;
     const dietary = profile.dietary_preferences ?? null;
 
-    let reply = name ? `${name}, you said: ${content}` : `Echo: ${content}`.trim();
+    let text = name ? `${name}, you said: ${content}` : `Echo: ${content}`.trim();
     const hints = [];
     if (locale) hints.push(`locale=${locale}`);
     if (dietary) hints.push(`dietary=${dietary}`);
-    if (hints.length > 0) reply = `${reply} (${hints.join(", ")})`;
-    return { status: 200, body: { reply }, contentType: "application/json" };
+    if (hints.length > 0) text = `${text} (${hints.join(", ")})`;
+    return { status: 200, body: webhookResponse(text), contentType: "application/json" };
   }
 
   if (method === "POST" && path === "/partner/proactive/preview") {

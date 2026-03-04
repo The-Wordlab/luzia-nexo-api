@@ -1,6 +1,6 @@
 /**
  * Minimal webhook server (Node http only). Implements the sync contract:
- * POST JSON body with webhook payload -> respond with { "reply": "..." }.
+ * POST JSON body with webhook payload -> respond with rich content envelope.
  * Port 8081 to avoid conflict with main app (3000, 8000).
  */
 import http from "node:http";
@@ -45,13 +45,20 @@ export function processWebhook(raw, headers = {}, secret = "") {
   const locale = profile.locale ?? profile.language ?? null;
   const dietary = profile.dietary_preferences ?? null;
 
-  let reply = displayName ? `${displayName}, you said: ${content}` : `Echo: ${content}`;
+  let text = displayName ? `${displayName}, you said: ${content}` : `Echo: ${content}`;
   const hints = [];
   if (locale) hints.push(`locale=${locale}`);
   if (dietary) hints.push(`dietary=${dietary}`);
-  if (hints.length > 0) reply = `${reply} (${hints.join(", ")})`;
+  if (hints.length > 0) text = `${text} (${hints.join(", ")})`;
 
-  return { status: 200, body: { reply } };
+  return {
+    status: 200,
+    body: {
+      schema_version: "2026-03-01",
+      status: "success",
+      content_parts: [{ type: "text", text }],
+    },
+  };
 }
 
 export function createServer(secretProvider = () => process.env.WEBHOOK_SECRET || "") {

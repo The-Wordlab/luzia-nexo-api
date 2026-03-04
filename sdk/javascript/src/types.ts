@@ -26,9 +26,22 @@ export interface WebhookPayload {
   timestamp: string;
 }
 
-/** Webhook response - just a reply string. */
+export interface WebhookContentPart {
+  type: string;
+  text?: string;
+  [key: string]: unknown;
+}
+
+/** Webhook response envelope. */
 export interface WebhookResponse {
-  reply: string;
+  schema_version: string;
+  status: "success" | "error";
+  content_parts?: WebhookContentPart[];
+  cards?: Array<Record<string, unknown>>;
+  actions?: Array<Record<string, unknown>>;
+  metadata?: Record<string, unknown>;
+  locale?: string;
+  extensions?: Record<string, unknown>;
 }
 
 /** A thread as returned by the Partner API. */

@@ -24,7 +24,7 @@ sequenceDiagram
     Partner->>Partner: Verify secret + signature
     Partner->>Partner: Process profile context for personalization and decisions
     alt Traditional response
-        Partner-->>Nexo: 200 JSON (text/reply)
+        Partner-->>Nexo: 200 JSON (schema_version + status + content_parts/cards/actions)
     else Streaming response
         Partner-->>Nexo: 200 text/event-stream (SSE)
     end

@@ -14,9 +14,9 @@ Demonstrates three concepts beyond webhook-basics:
    server greets the user in that language. Unknown locales fall back to
    English.
 
-3. content_json card hints
+3. Card hints
    When the optional ``context`` field signals a specific intent the server
-   attaches a structured ``content_json`` block to the response. Partners
+   attaches structured ``cards`` in the response. Partners
    can use this pattern to attach inline cards (suggestions, product
    carousels, consent prompts) alongside the plain-text reply.
 
@@ -27,8 +27,10 @@ Contract:
                "context": {"intent": "..."}                    # optional
            }
   ->       {
-               "reply": "<personalised text>",
-               "content_json": {...} | null
+               "schema_version": "2026-03-01",
+               "status": "success",
+               "content_parts": [{"type": "text", "text": "<personalised text>"}],
+               "cards": [...]  # optional
            }
 """
 
@@ -111,35 +113,39 @@ def _build_reply(message_content: str, profile: dict[str, Any]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# content_json card hints
+# Card hints
 # ---------------------------------------------------------------------------
 
 
-def _build_content_json(context: dict[str, Any]) -> dict[str, Any] | None:
-    """Return a card hint dict based on context.intent, or None."""
+def _build_cards(context: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return card hints based on context.intent."""
     intent: str = context.get("intent", "")
 
     if intent == "help":
-        return {
-            "type": "suggestion",
-            "text": "Need help? Here are some things I can do for you.",
-            "suggestions": [
-                "Show me your features",
-                "Connect my account",
-                "Talk to support",
-            ],
-        }
+        return [
+            {
+                "type": "suggestion",
+                "text": "Need help? Here are some things I can do for you.",
+                "suggestions": [
+                    "Show me your features",
+                    "Connect my account",
+                    "Talk to support",
+                ],
+            }
+        ]
 
     if intent == "product":
-        return {
-            "type": "product_card",
-            "items": [
-                {"name": "Starter", "price": "Free", "cta": "Get started"},
-                {"name": "Pro", "price": "$29/mo", "cta": "Upgrade"},
-            ],
-        }
+        return [
+            {
+                "type": "product_card",
+                "items": [
+                    {"name": "Starter", "price": "Free", "cta": "Get started"},
+                    {"name": "Pro", "price": "$29/mo", "cta": "Upgrade"},
+                ],
+            }
+        ]
 
-    return None
+    return []
 
 
 # ---------------------------------------------------------------------------
@@ -164,6 +170,12 @@ async def receive_webhook(request: Request) -> JSONResponse:
     content: str = message.get("content", "")
 
     reply = _build_reply(content, profile)
-    content_json = _build_content_json(context)
-
-    return JSONResponse({"reply": reply, "content_json": content_json})
+    cards = _build_cards(context)
+    response: dict[str, Any] = {
+        "schema_version": "2026-03-01",
+        "status": "success",
+        "content_parts": [{"type": "text", "text": reply}],
+    }
+    if cards:
+        response["cards"] = cards
+    return JSONResponse(response)

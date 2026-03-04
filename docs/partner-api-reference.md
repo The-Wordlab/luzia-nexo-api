@@ -9,19 +9,37 @@ Nexo sends `POST` requests to your webhook URL.
 Headers:
 - `Content-Type: application/json`
 - `X-App-Id: <app_uuid>`
+- `X-Thread-Id: <thread_uuid>`
 - `X-Timestamp: <unix_seconds>`
 - `X-Signature: sha256=<hex_digest>`
-- `X-Trace-ID: <uuid>`
 
 Example body:
 
 ```json
 {
+  "event": "message_received",
+  "app": {
+    "id": "app_uuid",
+    "name": "Restaurant Bot"
+  },
+  "thread": {
+    "id": "thread_uuid",
+    "customer_id": "user_uuid"
+  },
   "message": {
+    "id": "message_uuid",
+    "seq": 42,
+    "role": "user",
+    "content_json": {},
     "content": "Book a table for 2 at 8pm"
   },
-  "thread_id": "thread_uuid",
-  "user_id": "user_uuid",
+  "history_tail": [
+    {
+      "role": "assistant",
+      "content": "Hi - I can help with bookings.",
+      "content_json": {}
+    }
+  ],
   "profile": {
     "display_name": "María",
     "locale": "es-MX",
@@ -33,7 +51,9 @@ Example body:
     "preferences": {
       "cuisine": "Italian"
     }
-  }
+  },
+  "metadata": {},
+  "timestamp": "2026-03-04T12:00:00Z"
 }
 ```
 
@@ -69,11 +89,15 @@ Return HTTP `200`:
 
 ```json
 {
-  "text": "Sure - I can help with that."
+  "schema_version": "2026-03-01",
+  "status": "success",
+  "content_parts": [{ "type": "text", "text": "Sure - I can help with that." }],
+  "cards": [],
+  "actions": []
 }
 ```
 
-`reply` is accepted as legacy fallback.
+`content_parts`, `cards`, or `actions` must include at least one non-empty item.
 
 #### SSE streaming
 

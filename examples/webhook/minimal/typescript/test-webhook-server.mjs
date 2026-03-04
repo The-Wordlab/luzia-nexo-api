@@ -16,10 +16,14 @@ test("verifySignature validates HMAC sha256 payload", () => {
   assert.equal(verifySignature(secret, raw, timestamp, "sha256=bad"), false);
 });
 
-test("processWebhook returns reply for valid payload", () => {
+test("processWebhook returns rich response for valid payload", () => {
   const result = processWebhook('{"message":{"content":"hi"}}');
   assert.equal(result.status, 200);
-  assert.deepEqual(result.body, { reply: "Echo: hi" });
+  assert.deepEqual(result.body, {
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [{ type: "text", text: "Echo: hi" }],
+  });
 });
 
 test("processWebhook uses optional profile context defensively", () => {
@@ -36,7 +40,14 @@ test("processWebhook uses optional profile context defensively", () => {
   );
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, {
-    reply: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+    schema_version: "2026-03-01",
+    status: "success",
+    content_parts: [
+      {
+        type: "text",
+        text: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+      },
+    ],
   });
 });
 

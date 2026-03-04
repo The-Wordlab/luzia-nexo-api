@@ -52,16 +52,21 @@ export class NexoClient {
       throw new Error("baseUrl is required");
     }
     this.apiKey = options.apiKey;
-    this.baseUrl = options.baseUrl.replace(/\/+$/, "");
+    const normalizedBase = options.baseUrl.replace(/\/+$/, "");
+    this.baseUrl = normalizedBase.endsWith("/api")
+      ? normalizedBase
+      : `${normalizedBase}/api`;
   }
 
   private async request<T>(
     method: string,
     path: string,
+    appId: string,
     body?: unknown,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = {
+      "X-App-Id": appId,
       "X-App-Secret": this.apiKey,
       "Content-Type": "application/json",
     };
@@ -109,6 +114,7 @@ export class NexoClient {
     return this.request<MessageResponse>(
       "POST",
       `/apps/${appId}/threads/${threadId}/messages`,
+      appId,
       { role: "assistant", content },
     );
   }
@@ -124,6 +130,7 @@ export class NexoClient {
     return this.request<Thread>(
       "GET",
       `/apps/${appId}/threads/${threadId}`,
+      appId,
     );
   }
 
@@ -137,6 +144,7 @@ export class NexoClient {
     const data = await this.request<{ subscribers: Subscriber[] }>(
       "GET",
       `/apps/${appId}/subscribers`,
+      appId,
     );
     return data.subscribers;
   }
@@ -155,6 +163,7 @@ export class NexoClient {
     const data = await this.request<{ threads: Thread[] }>(
       "GET",
       `/apps/${appId}/subscribers/${subscriberId}/threads`,
+      appId,
     );
     return data.threads;
   }

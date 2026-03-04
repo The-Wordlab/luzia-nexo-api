@@ -82,7 +82,7 @@ describe("NexoClient API methods", () => {
       expect(fetchSpy).toHaveBeenCalledOnce();
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
       expect(url).toBe(
-        "https://api.example.com/apps/app-1/threads/t-1/messages",
+        "https://api.example.com/api/apps/app-1/threads/t-1/messages",
       );
       expect(init.method).toBe("POST");
       expect(JSON.parse(init.body as string)).toEqual({
@@ -91,6 +91,7 @@ describe("NexoClient API methods", () => {
       });
       expect(init.headers).toEqual(
         expect.objectContaining({
+          "X-App-Id": "app-1",
           "X-App-Secret": "test-secret",
           "Content-Type": "application/json",
         }),
@@ -134,8 +135,14 @@ describe("NexoClient API methods", () => {
       const result = await client.getThread("app-1", "t-1");
 
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe("https://api.example.com/apps/app-1/threads/t-1");
+      expect(url).toBe("https://api.example.com/api/apps/app-1/threads/t-1");
       expect(init.method).toBe("GET");
+      expect(init.headers).toEqual(
+        expect.objectContaining({
+          "X-App-Id": "app-1",
+          "X-App-Secret": "test-secret",
+        }),
+      );
       expect(result.id).toBe("t-1");
       expect(result.status).toBe("active");
     });
@@ -160,7 +167,7 @@ describe("NexoClient API methods", () => {
       const result = await client.listSubscribers("app-1");
 
       const [url] = fetchSpy.mock.calls[0] as [string, RequestInit];
-      expect(url).toBe("https://api.example.com/apps/app-1/subscribers");
+      expect(url).toBe("https://api.example.com/api/apps/app-1/subscribers");
       expect(result).toHaveLength(1);
       expect(result[0].customer_id).toBe("cust-1");
     });
@@ -187,7 +194,7 @@ describe("NexoClient API methods", () => {
 
       const [url] = fetchSpy.mock.calls[0] as [string, RequestInit];
       expect(url).toBe(
-        "https://api.example.com/apps/app-1/subscribers/sub-1/threads",
+        "https://api.example.com/api/apps/app-1/subscribers/sub-1/threads",
       );
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe("t-1");

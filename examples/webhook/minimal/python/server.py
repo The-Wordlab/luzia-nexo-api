@@ -24,8 +24,15 @@ class WebhookPayload(BaseModel):
     profile: dict | None = None
 
 
-class ReplyOut(BaseModel):
-    reply: str
+class ContentPartOut(BaseModel):
+    type: str
+    text: str
+
+
+class WebhookResponseOut(BaseModel):
+    schema_version: str
+    status: str
+    content_parts: list[ContentPartOut]
 
 
 def _extract_profile_context(
@@ -88,18 +95,25 @@ def _require_signature(request: Request, raw_body: bytes) -> None:
 app = FastAPI(title="nexo-examples minimal webhook")
 
 
-@app.post("/webhook", response_model=ReplyOut)
-async def receive_webhook(payload: WebhookPayload, request: Request) -> ReplyOut:
+@app.post("/webhook", response_model=WebhookResponseOut)
+async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookResponseOut:
     raw_body = await request.body()
     _require_signature(request, raw_body)
     # Parse optional profile fields defensively and ignore unknown additions.
     display_name, locale, dietary = _extract_profile_context(payload.profile)
     content = payload.message.content if payload.message else ""
-    return ReplyOut(
-        reply=build_reply(
-            content,
-            display_name=display_name,
-            locale=locale,
-            dietary_preferences=dietary,
-        )
+    return WebhookResponseOut(
+        schema_version="2026-03-01",
+        status="success",
+        content_parts=[
+            ContentPartOut(
+                type="text",
+                text=build_reply(
+                    content,
+                    display_name=display_name,
+                    locale=locale,
+                    dietary_preferences=dietary,
+                ),
+            )
+        ],
     )

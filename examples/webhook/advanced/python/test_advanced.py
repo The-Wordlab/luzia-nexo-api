@@ -3,7 +3,7 @@ Tests for the advanced connector-style webhook server.
 
 Demonstrates:
 - Connector action routing (order_status, schedule_appointment)
-- Failure/retry behavior with retry_after and retry_suggestion content_json
+- Failure/retry behavior with metadata.retry_after and retry_suggestion cards
 - Idempotency: same action_id returns cached result from the action log
 - Main webhook routing based on context.intent
 - Unknown action returns 404
@@ -31,6 +31,22 @@ from httpx import AsyncClient, ASGITransport
 def _make_signature(body: bytes, secret: str) -> str:
     """Compute HMAC-SHA256 hex digest matching the server's expected format."""
     return hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+
+
+def _response_text(data: dict) -> str:
+    parts = data.get("content_parts") or []
+    return " ".join(
+        part.get("text", "")
+        for part in parts
+        if isinstance(part, dict) and part.get("type") == "text"
+    )
+
+
+def _assert_rich_success(data: dict) -> None:
+    assert data["schema_version"] == "2026-03-01"
+    assert data["status"] == "success"
+    assert isinstance(data.get("content_parts"), list)
+    assert len(data["content_parts"]) > 0
 
 
 # ---------------------------------------------------------------------------
@@ -197,11 +213,9 @@ async def test_main_webhook_routes_to_order_status_action(open_app):
             )
     assert response.status_code == 200
     data = response.json()
-    assert "reply" in data
-    assert "content_json" in data
-    # The reply should acknowledge the order status
-    assert data["content_json"] is not None
-    assert data["content_json"].get("type") == "action_result"
+    _assert_rich_success(data)
+    assert "cards" in data
+    assert data["cards"][0].get("type") == "action_result"
 
 
 async def test_main_webhook_routes_to_schedule_appointment_action(open_app):
@@ -227,13 +241,13 @@ async def test_main_webhook_routes_to_schedule_appointment_action(open_app):
             )
     assert response.status_code == 200
     data = response.json()
-    assert "reply" in data
-    assert data["content_json"] is not None
-    assert data["content_json"].get("type") == "action_result"
+    _assert_rich_success(data)
+    assert "cards" in data
+    assert data["cards"][0].get("type") == "action_result"
 
 
 async def test_main_webhook_no_action_for_plain_message(open_app):
-    """When context has no special intent, the main webhook returns a plain reply."""
+    """When context has no special intent, webhook returns plain text content."""
     async with AsyncClient(
         transport=ASGITransport(app=open_app), base_url="http://test"
     ) as client:
@@ -243,21 +257,18 @@ async def test_main_webhook_no_action_for_plain_message(open_app):
         )
     assert response.status_code == 200
     data = response.json()
-    assert "reply" in data
-    assert len(data["reply"]) > 0
-    # No special content_json action result for plain messages
-    cj = data.get("content_json")
-    if cj is not None:
-        assert cj.get("type") != "action_result"
+    _assert_rich_success(data)
+    assert len(_response_text(data)) > 0
+    assert "cards" not in data
 
 
 # ---------------------------------------------------------------------------
-# Retry behavior - retry_after included on failure
+# Retry behavior - metadata.retry_after included on failure
 # ---------------------------------------------------------------------------
 
 
 async def test_retry_after_present_in_webhook_response_on_failure(open_app):
-    """When a connector action fails, the webhook reply includes retry_after."""
+    """When a connector action fails, response includes retry metadata and card."""
     import server as srv
 
     with unittest.mock.patch.object(srv, "_simulate_failure", return_value=True):
@@ -279,9 +290,10 @@ async def test_retry_after_present_in_webhook_response_on_failure(open_app):
             )
     assert response.status_code == 200
     data = response.json()
-    assert "retry_after" in data
-    assert isinstance(data["retry_after"], int)
-    assert data["content_json"]["type"] == "retry_suggestion"
+    _assert_rich_success(data)
+    assert "metadata" in data
+    assert isinstance(data["metadata"]["retry_after"], int)
+    assert data["cards"][0]["type"] == "retry_suggestion"
 
 
 # ---------------------------------------------------------------------------
@@ -429,7 +441,7 @@ async def test_empty_body_handled_gracefully(open_app):
         response = await client.post("/", json={})
     assert response.status_code == 200
     data = response.json()
-    assert "reply" in data
+    _assert_rich_success(data)
 
 
 async def test_non_json_body_handled_gracefully(open_app):
@@ -444,4 +456,4 @@ async def test_non_json_body_handled_gracefully(open_app):
         )
     assert response.status_code == 200
     data = response.json()
-    assert "reply" in data
+    _assert_rich_success(data)
