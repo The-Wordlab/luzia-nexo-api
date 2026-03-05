@@ -9,6 +9,9 @@ If you want a fast starting point, clone this repository, run the examples, and 
 ```bash
 git clone git@github.com:The-Wordlab/luzia-nexo-api.git
 cd luzia-nexo-api
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip pytest
 make test-examples
 ```
 

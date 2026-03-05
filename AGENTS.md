@@ -78,6 +78,7 @@ Out of scope:
 Before pushing:
 
 ```bash
+source .venv/bin/activate
 make docs-build
 make test-examples
 make test-hosted-examples

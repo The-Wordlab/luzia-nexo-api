@@ -83,9 +83,20 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
 - [`infra/terraform/`](infra/terraform/) - GCP infrastructure
 - [`docs/`](docs/) - documentation source for the published docs site
 
+## Local toolchain setup
+
+Use a project virtualenv for Python commands:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip pytest
+```
+
 ## Maintainer commands
 
 ```bash
+source .venv/bin/activate
 make check-toolchain
 make test-all
 make docs-build
