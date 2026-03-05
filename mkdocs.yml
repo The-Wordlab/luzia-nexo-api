@@ -7,7 +7,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
-  logo: assets/nexo-octopus-icon.png
+  logo: assets/nexo-octopus-logo.png
   favicon: assets/favicon.png
   features:
     - navigation.sections

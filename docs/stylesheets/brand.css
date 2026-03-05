@@ -1,8 +1,8 @@
 /* Align MkDocs Material palette with luzia-nexo frontend tokens. */
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #0f4c81;
-  --md-primary-fg-color--light: #1b6ca8;
-  --md-primary-fg-color--dark: #0a3356;
+  --md-primary-fg-color: #0c3c63;
+  --md-primary-fg-color--light: #145987;
+  --md-primary-fg-color--dark: #082941;
   --md-accent-fg-color: #0ea5c6;
   --md-typeset-a-color: #0c8aa8;
   --md-default-bg-color: #ffffff;
@@ -16,6 +16,21 @@
   --md-accent-fg-color: #4dd0e1;
   --md-typeset-a-color: #8de7f3;
   --md-default-bg-color: #06111c;
+}
+
+.md-header {
+  background: linear-gradient(90deg, #082941 0%, #0c3c63 55%, #0c8aa8 100%);
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 1.8rem;
+  width: auto;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+}
+
+.md-header__title {
+  font-weight: 700;
 }
 
 .md-typeset .admonition,
