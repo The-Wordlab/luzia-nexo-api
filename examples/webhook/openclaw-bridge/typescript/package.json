@@ -1,0 +1,9 @@
+{
+  "name": "@nexo/openclaw-webhook-bridge-ts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node openclaw-bridge-server.mjs",
+    "test": "node --test test-openclaw-bridge-server.mjs"
+  }
+}

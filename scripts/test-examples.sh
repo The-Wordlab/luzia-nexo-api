@@ -21,3 +21,9 @@ echo "==> node tests in examples/webhook/minimal/typescript"
   cd "${ROOT_DIR}/examples/webhook/minimal/typescript"
   node --test test-webhook-server.mjs
 )
+
+echo "==> node tests in examples/webhook/openclaw-bridge/typescript"
+(
+  cd "${ROOT_DIR}/examples/webhook/openclaw-bridge/typescript"
+  node --test test-openclaw-bridge-server.mjs
+)

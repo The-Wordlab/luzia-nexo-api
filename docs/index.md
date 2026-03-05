@@ -52,6 +52,9 @@ Hosted reference services you can test before building your own:
 
 For standalone webhook snippets see [examples/webhook](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook).
 
+If you are connecting through OpenClaw, use the OpenClaw Bridge example:
+- [examples/webhook/openclaw-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge)
+
 ## Profile context
 
 - Webhook payloads include consented profile attributes such as:
