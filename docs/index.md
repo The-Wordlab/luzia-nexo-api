@@ -41,6 +41,8 @@ sequenceDiagram
 
 Use [API Reference](partner-api-reference.md) for payload, signature, and response contract details.
 
+Note: the app secret is required to receive real traffic from Nexo. For local/offline development, you can run and test the example webhook servers directly without creating a partner app first.
+
 ## Live examples
 
 Hosted reference services you can test before building your own:

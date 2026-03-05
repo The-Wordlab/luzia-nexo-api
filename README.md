@@ -49,6 +49,8 @@ sequenceDiagram
 2. Implement your webhook endpoint.
 3. Activate your webhook in Nexo by configuring your webhook URL and app secret.
 
+Note: app secret setup is required for live Nexo delivery. You can still run and test webhook examples locally from this repository without provisioning a partner app.
+
 ```json
 {
   "schema_version": "2026-03-01",

@@ -87,6 +87,9 @@ app.post("/webhook", (req, res) => {
 
 ## 2) Configure Nexo
 
+This step is only required when you want Nexo to call your webhook in live integration mode.
+For independent local testing, skip to step 4 and hit your local webhook directly with curl.
+
 1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 2. Create or open your app
 3. Set your webhook URL and secret
