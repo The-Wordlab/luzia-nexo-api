@@ -1,21 +1,21 @@
 /* Align MkDocs Material palette with luzia-nexo frontend tokens. */
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #4264fc;
-  --md-primary-fg-color--light: #4d7fff;
-  --md-primary-fg-color--dark: #3653d6;
-  --md-accent-fg-color: #4264fc;
-  --md-typeset-a-color: #4d7fff;
+  --md-primary-fg-color: #0f4c81;
+  --md-primary-fg-color--light: #1b6ca8;
+  --md-primary-fg-color--dark: #0a3356;
+  --md-accent-fg-color: #0ea5c6;
+  --md-typeset-a-color: #0c8aa8;
   --md-default-bg-color: #ffffff;
   --md-default-fg-color: #171717;
 }
 
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #4264fc;
-  --md-primary-fg-color--light: #4d7fff;
-  --md-primary-fg-color--dark: #3653d6;
-  --md-accent-fg-color: #4264fc;
-  --md-typeset-a-color: #7f9bff;
-  --md-default-bg-color: #000000;
+  --md-primary-fg-color: #0a3356;
+  --md-primary-fg-color--light: #0f4c81;
+  --md-primary-fg-color--dark: #072744;
+  --md-accent-fg-color: #4dd0e1;
+  --md-typeset-a-color: #8de7f3;
+  --md-default-bg-color: #06111c;
 }
 
 .md-typeset .admonition,

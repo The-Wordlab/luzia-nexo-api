@@ -7,6 +7,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/nexo-octopus-icon.png
+  favicon: assets/favicon.png
   features:
     - navigation.sections
     - navigation.tracking
@@ -16,11 +18,11 @@ theme:
     - search.highlight
   palette:
     - scheme: default
-      primary: indigo
-      accent: indigo
+      primary: blue
+      accent: cyan
     - scheme: slate
-      primary: indigo
-      accent: indigo
+      primary: blue
+      accent: cyan
 
 markdown_extensions:
   - admonition
