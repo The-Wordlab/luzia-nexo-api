@@ -64,7 +64,6 @@ When editing docs or examples, always verify which contract you are working with
 
 In scope:
 - `examples/`
-- `examples-hosted/`
 - `docs/`
 - `sdk/`
 - `infra/terraform/`

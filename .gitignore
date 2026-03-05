@@ -24,9 +24,9 @@ coverage/
 .vscode/
 
 # Local deploy env
-demo-receiver/deploy/cloudrun/env.local
-examples-hosted/python/deploy/cloudrun/env.local
-examples-hosted/typescript/deploy/cloudrun/env.local
+examples/hosted/demo-receiver/deploy/cloudrun/env.local
+examples/hosted/python/deploy/cloudrun/env.local
+examples/hosted/typescript/deploy/cloudrun/env.local
 examples/webhook/openclaw-bridge/typescript/.env
 
 # Docs build output

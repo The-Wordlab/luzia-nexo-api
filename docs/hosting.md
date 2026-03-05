@@ -24,7 +24,7 @@ These containers can run in any environment that supports Docker (local machine,
 ### Python example service
 
 ```bash
-docker build -t nexo-examples-py ./examples-hosted/python
+docker build -t nexo-examples-py ./examples/hosted/python
 docker run --rm -p 8080:8080 \
   -e EXAMPLES_SHARED_API_SECRET=dev-secret \
   nexo-examples-py
@@ -33,7 +33,7 @@ docker run --rm -p 8080:8080 \
 ### TypeScript example service
 
 ```bash
-docker build -t nexo-examples-ts ./examples-hosted/typescript
+docker build -t nexo-examples-ts ./examples/hosted/typescript
 docker run --rm -p 8080:8080 \
   -e EXAMPLES_SHARED_API_SECRET=dev-secret \
   nexo-examples-ts

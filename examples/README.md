@@ -15,6 +15,9 @@ Folders:
 - `webhook/structured`
 - `webhook/advanced`
 - `partner-api/proactive`
+- `hosted/python`
+- `hosted/typescript`
+- `hosted/demo-receiver`
 
 Run all example tests from the repo root:
 

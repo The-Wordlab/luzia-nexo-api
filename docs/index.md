@@ -47,8 +47,8 @@ Hosted reference services you can test before building your own:
 
 | Language | Live service | Source code |
 |----------|-------------|-------------|
-| Python | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [examples-hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples-hosted/python) |
-| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [examples-hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples-hosted/typescript) |
+| Python | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [examples/hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
+| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [examples/hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
 
 For standalone webhook snippets see [examples/webhook](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook).
 

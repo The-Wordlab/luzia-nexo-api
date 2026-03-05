@@ -79,7 +79,7 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
 ## Repository map
 
 - [`examples/`](examples/) - local webhook and partner API examples
-- [`examples-hosted/`](examples-hosted/) - Cloud Run deployable example services
+- [`examples/hosted/`](examples/hosted/) - Cloud Run deployable example services (including demo receiver)
 - [`infra/terraform/`](infra/terraform/) - GCP infrastructure
 - [`docs/`](docs/) - documentation source for the published docs site
 

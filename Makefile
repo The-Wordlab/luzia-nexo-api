@@ -13,7 +13,7 @@ check-mermaid:
 	python3 scripts/check_mermaid.py
 
 test-demo-receiver:
-	cd demo-receiver && pytest -q
+	cd examples/hosted/demo-receiver && pytest -q
 
 test-examples:
 	./scripts/test-examples.sh
@@ -33,13 +33,13 @@ gcp-bootstrap-check:
 	PROJECT_ID=$(PROJECT_ID) PROJECT_NUMBER=$(PROJECT_NUMBER) REGION=$(REGION) ./scripts/bootstrap-gcp.sh >/dev/null
 
 deploy-demo-receiver:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-demo-receiver ./demo-receiver/deploy/cloudrun/deploy.sh
+	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
 
 deploy-examples-py:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-py ./examples-hosted/python/deploy/cloudrun/deploy.sh
+	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh
 
 deploy-examples-ts:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-ts ./examples-hosted/typescript/deploy/cloudrun/deploy.sh
+	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-ts ./examples/hosted/typescript/deploy/cloudrun/deploy.sh
 
 deploy-examples: deploy-examples-py deploy-examples-ts
 

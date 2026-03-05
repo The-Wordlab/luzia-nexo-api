@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-DEFAULT_ENV_FILE="${ROOT_DIR}/demo-receiver/deploy/cloudrun/env.local"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../.." && pwd)"
+DEFAULT_ENV_FILE="${ROOT_DIR}/examples/hosted/python/deploy/cloudrun/env.local"
 ENV_FILE="${DEPLOY_ENV_FILE:-${DEFAULT_ENV_FILE}}"
 
 if [[ -f "${ENV_FILE}" ]]; then
-  # shellcheck disable=SC1090
   set -a
+  # shellcheck disable=SC1090
   source "${ENV_FILE}"
   set +a
 fi
@@ -19,24 +19,18 @@ if [[ -z "${REGION:-}" ]]; then
   REGION="$(gcloud config get-value run/region 2>/dev/null || true)"
 fi
 
-: "${PROJECT_ID:?PROJECT_ID is required (set in env.local, shell env, or gcloud config)}"
+: "${PROJECT_ID:?PROJECT_ID is required}"
 : "${REGION:=europe-west1}"
-: "${SERVICE_NAME:=nexo-demo-receiver}"
+: "${SERVICE_NAME:=nexo-examples-py}"
+: "${EXAMPLES_SHARED_API_SECRET:?EXAMPLES_SHARED_API_SECRET is required}"
 
-cd "${ROOT_DIR}/demo-receiver"
-
-if [[ ! -f requirements.txt ]]; then
-  echo "requirements.txt not found"
-  exit 1
-fi
-
-# Build using Cloud Buildpacks from source.
 gcloud run deploy "${SERVICE_NAME}" \
   --project "${PROJECT_ID}" \
   --region "${REGION}" \
-  --source . \
+  --source "${ROOT_DIR}/examples/hosted/python" \
+  --clear-base-image \
   --allow-unauthenticated \
-  --set-env-vars "EVENT_TTL_SECONDS=${EVENT_TTL_SECONDS:-86400},MAX_EVENTS_PER_KEY=${MAX_EVENTS_PER_KEY:-200}" \
+  --set-env-vars "EXAMPLES_SHARED_API_SECRET=${EXAMPLES_SHARED_API_SECRET}" \
   --quiet
 
 echo "Deployed ${SERVICE_NAME} in ${PROJECT_ID}/${REGION}"

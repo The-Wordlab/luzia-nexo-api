@@ -113,7 +113,7 @@ Region:  ${REGION}
 
 Next steps:
 1. Build and deploy demo receiver from source:
-   PROJECT_ID=${PROJECT_ID} REGION=${REGION} SERVICE_NAME=nexo-demo-receiver ./demo-receiver/deploy/cloudrun/deploy.sh
+   PROJECT_ID=${PROJECT_ID} REGION=${REGION} SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
 
 2. Deploy hosted example services:
    make deploy-examples
