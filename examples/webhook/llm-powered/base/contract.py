@@ -13,9 +13,14 @@ class WebhookMessage(BaseModel):
 class WebhookProfile(BaseModel):
     """User profile data passed from Nexo (consent-scoped)."""
     id: str | None = Field(default=None, description="Profile ID")
-    name: str | None = Field(default=None, description="User's name")
+    # Nexo sends `display_name`; keep `name` for backward compatibility.
+    display_name: str | None = Field(default=None, description="User's display name")
+    name: str | None = Field(default=None, description="User's name (legacy key)")
     locale: str | None = Field(default=None, description="User locale (e.g., 'en', 'es-MX')")
-    facts: dict[str, Any] | None = Field(default=None, description="User facts/memory")
+    facts: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="User facts/memory entries",
+    )
     preferences: dict[str, Any] | None = Field(default=None, description="User preferences")
 
 

@@ -95,8 +95,9 @@ class BaseWebhookApp(ABC):
             return {}
         
         context = {}
-        if profile.name:
-            context["name"] = profile.name
+        display_name = profile.display_name or profile.name
+        if display_name:
+            context["name"] = display_name
         if profile.locale:
             context["locale"] = profile.locale
         if profile.facts:
