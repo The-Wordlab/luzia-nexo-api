@@ -7,7 +7,7 @@ import os
 from typing import Any
 from dataclasses import dataclass, field
 
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
@@ -60,11 +60,11 @@ def build_basic_chain(
     llm = llm or create_llm()
     
     prompt = ChatPromptTemplate.from_messages([
-        ("system", system_prompt),
+        ("system", "{system_prompt}{profile_context}"),
         MessagesPlaceholder(variable_name="messages", optional=True),
     ])
     
-    return prompt | llm
+    return prompt.partial(system_prompt=system_prompt) | llm
 
 
 def build_graph(
@@ -99,7 +99,7 @@ def build_graph(
     workflow = StateGraph(AssistantState)
     
     # Add nodes
-    workflow.add_node("llm", _llm_node(llm_with_tools))
+    workflow.add_node("llm", _llm_node(llm_with_tools, system_prompt))
     if tools:
         workflow.add_node("tools", ToolNode(tools))
     
@@ -123,11 +123,14 @@ def build_graph(
     return workflow.compile()
 
 
-def _llm_node(llm: Any):
+def _llm_node(llm: Any, system_prompt: str):
     """Create an LLM node that generates response."""
     def node(state: AssistantState) -> dict[str, Any]:
         # Build messages with system prompt + profile context
-        system_with_context = _inject_profile_context(state.profile_context)
+        system_with_context = _compose_system_prompt(
+            system_prompt,
+            state.profile_context,
+        )
         
         # Get prior messages
         prior_messages = state.messages[:-1] if state.messages else []
@@ -173,6 +176,14 @@ def _inject_profile_context(profile_context: dict[str, Any]) -> str:
     return "\n".join(context_parts)
 
 
+def _compose_system_prompt(
+    system_prompt: str,
+    profile_context: dict[str, Any],
+) -> str:
+    """Compose system prompt with optional profile context."""
+    return f"{system_prompt}{_inject_profile_context(profile_context)}"
+
+
 class AssistantChain:
     """Simple chain-based assistant for straightforward scenarios.
     
@@ -200,7 +211,7 @@ class AssistantChain:
         # Invoke chain
         response = self.chain.invoke({
             "messages": self.messages,
-            "profile_context": profile_context or {},
+            "profile_context": _inject_profile_context(profile_context or {}),
         })
         
         # Add assistant response to history
