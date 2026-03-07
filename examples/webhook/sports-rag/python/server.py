@@ -599,7 +599,7 @@ app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
 # ---------------------------------------------------------------------------
 
 
-@app.post("/")
+@app.post("/", response_model=None)
 async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     """Main Nexo webhook endpoint.
 

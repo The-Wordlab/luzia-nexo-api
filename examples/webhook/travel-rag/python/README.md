@@ -1,0 +1,68 @@
+# Travel RAG Partner Webhook
+
+A retrieval-augmented generation (RAG) travel assistant webhook for Nexo. Indexes 12 destination profiles and travel blog RSS feeds into ChromaDB, then answers user questions with rich destination cards.
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+
+# Using local Ollama (no API key needed):
+LLM_MODEL=ollama/llama3.2 uvicorn server:app --port 8092
+
+# Using OpenAI:
+OPENAI_API_KEY=sk-... LLM_MODEL=gpt-4o uvicorn server:app --port 8092
+```
+
+On startup the server seeds 12 destination profiles (Paris, Tokyo, Barcelona, NYC, Bali, Rome, London, Sydney, Marrakech, Reykjavik, Cape Town, Kyoto) and crawls travel RSS feeds.
+
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/` | Main Nexo webhook - RAG answer + destination cards |
+| POST | `/ingest` | Trigger destination seed + RSS feed re-crawl |
+| GET | `/health` | Liveness probe with index stats |
+
+## Test the webhook
+
+```bash
+curl -X POST http://localhost:8092/ \
+  -H "Content-Type: application/json" \
+  -d '{"message":{"content":"What are the best destinations in Europe for food lovers?"}}'
+```
+
+## Features
+
+- **Intent detection**: routes queries to destination, itinerary, budget, or weather prompts
+- **Dual collections**: searches both destination profiles and travel articles
+- **Rich cards**: destination cards with highlights, budget, best time, and tag badges
+- **Itinerary cards**: auto-generates day-by-day plans from destination highlights
+- **SSE streaming**: optional streaming mode via `STREAMING_ENABLED=true`
+- **Personalisation**: greets users by name when profile.display_name is provided
+
+## Docker
+
+```bash
+docker build -t nexo-travel-rag .
+docker run -p 8092:8080 -e LLM_MODEL=ollama/llama3.2 nexo-travel-rag
+```
+
+Or use the shared Docker Compose from `examples/`:
+
+```bash
+cd examples && docker compose up travel-rag
+```
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `LLM_MODEL` | `ollama/llama3.2` | litellm model string |
+| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret (skip if empty) |
+| `TRAVEL_FEEDS` | _(built-in)_ | Comma-separated RSS URLs |
+| `REFRESH_INTERVAL_MINUTES` | `60` | Background re-crawl interval |
+| `CHROMA_PERSIST_DIR` | `./chroma_data` | ChromaDB persistence path |
+| `STREAMING_ENABLED` | `false` | Enable SSE streaming |
+| `TOP_K` | `4` | Chunks to retrieve per query |
