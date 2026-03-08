@@ -14,14 +14,15 @@ docker compose up --build
 
 ### Port reference
 
-| Service     | Host port | Endpoint        | Description                              |
-|-------------|-----------|-----------------|------------------------------------------|
-| minimal     | 8080      | POST /webhook   | Echo server, minimal webhook contract    |
-| structured  | 8081      | POST /          | Locale-aware greetings, card hints       |
-| advanced    | 8082      | POST /          | Connector actions, idempotency, retry    |
-| news-rag    | 8090      | POST /          | RSS news RAG via ChromaDB + LLM          |
-| sports-rag  | 8091      | POST /          | Sports RSS + match data RAG              |
-| travel-rag  | 8092      | POST /          | Travel destination + blog RAG            |
+| Service        | Host port | Endpoint        | Language | Description                                  |
+|----------------|-----------|-----------------|----------|----------------------------------------------|
+| minimal        | 8080      | POST /webhook   | Python   | Echo server, minimal webhook contract         |
+| structured     | 8081      | POST /          | Python   | Locale-aware greetings, card hints            |
+| advanced       | 8082      | POST /          | Python   | Connector actions, idempotency, retry         |
+| news-rag       | 8090      | POST /          | Python   | RSS news RAG via ChromaDB + LLM              |
+| sports-rag     | 8091      | POST /          | Python   | Sports RSS + match data RAG                   |
+| travel-rag     | 8092      | POST /          | Python   | Travel destination + blog RAG                 |
+| football-live  | 8093      | POST /          | Python   | Live football scores, standings, scorers RAG  |
 
 ### Quick smoke test
 
@@ -62,12 +63,14 @@ Profile context note:
 
 Folders:
 - `webhook/minimal`
-- `webhook/openclaw-bridge`
 - `webhook/structured`
 - `webhook/advanced`
 - `webhook/news-rag`
 - `webhook/sports-rag`
 - `webhook/travel-rag`
+- `webhook/football-live`
+- `webhook/llm-powered` -- reusable base classes for LLM-powered webhooks (see its README)
+- `webhook/openclaw-bridge`
 - `partner-api/proactive`
 - `hosted/python`
 - `hosted/typescript`
