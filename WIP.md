@@ -1,17 +1,16 @@
 # Work In Progress
 
-**Last Updated:** 2026-03-05
-**Status:** Documentation and example contract alignment complete.
+**Last Updated:** 2026-03-08
+**Status:** Sprint 48 - Cloud Run deployment prep complete.
 
 ## Current state
 
-1. Webhook documentation now uses one canonical response envelope:
-   - `schema_version`
-   - `status`
-   - `content_parts` (or `cards` / `actions`)
-2. Legacy `reply`-style webhook response examples were removed from docs and webhook examples.
-3. All webhook examples (minimal, structured, advanced, hosted Python, hosted TypeScript) now return the same rich envelope.
-4. SDK docs and SDK client tests were updated to match current auth/base URL behavior.
+1. Webhook documentation uses one canonical response envelope (schema_version, status, content_parts).
+2. All webhook examples aligned (minimal, structured, advanced, hosted Python/TypeScript, 4 RAG examples).
+3. **Terraform removed** - unified on Cloud Build for all deployments (RAG examples + demo-receiver).
+4. **Bootstrap script fixed** - dynamic GCP project lookup (no hardcoded project number).
+5. **Integration smoke test** - `scripts/integration-smoke.sh` validates Nexo + deployed webhook end-to-end.
+6. **Hosting docs updated** - Cloud Build is the single deployment pattern.
 
 ## Verification
 
@@ -21,9 +20,12 @@ Executed successfully:
 
 ## Next step
 
-Deploy refreshed examples to Cloud Run after commit:
-- `make deploy-examples`
-- `make verify-examples`
+Deploy to Cloud Run:
+1. `make gcp-bootstrap` (enable APIs, create Artifact Registry)
+2. Create secrets in Secret Manager (WEBHOOK_SECRET, OPENAI_API_KEY)
+3. `GCP_PROJECT_ID=luzia-nexo-api-examples make deploy-examples`
+4. `make verify-examples`
+5. Run smoke test: `./scripts/integration-smoke.sh --webhook-url https://nexo-news-rag-HASH.run.app`
 
 ## Quick links
 

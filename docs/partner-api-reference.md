@@ -97,7 +97,7 @@ Return HTTP `200`:
 }
 ```
 
-`content_parts`, `cards`, or `actions` must include at least one non-empty item.
+`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards).
 
 #### SSE streaming
 
@@ -108,8 +108,11 @@ data: {"type":"delta","text":"Sure - "}
 
 data: {"type":"delta","text":"I can help with that."}
 
-data: {"type":"done"}
+data: {"type":"done","schema_version":"2026-03-01","status":"success"}
 ```
+
+The `done` event is required and must include `schema_version` and `status`.
+It may also include `cards` and `actions` arrays (same shape as the JSON response).
 
 ### Retry behavior
 
@@ -131,6 +134,33 @@ Core endpoints:
 - `POST /apps/{app_id}/threads`
 - `POST /apps/{app_id}/threads/{thread_id}/messages`
 - `POST /apps/{app_id}/threads/{thread_id}/messages/assistant`
+
+## App lifecycle
+
+Apps follow a review workflow before they become available to users:
+
+1. **draft** - initial state after creation
+2. **submitted** - partner submits the app for review via `POST /apps/{app_id}/submit`
+3. **approved** - Nexo team approves the app (it now appears in the catalog)
+4. **rejected** - Nexo team rejects the app with a reason; partner can fix and resubmit via `POST /apps/{app_id}/resubmit`
+
+Only `draft` and `rejected` apps can be submitted for review.
+
+## Catalog API
+
+Public endpoint for app discovery (no authentication required):
+
+- `GET /api/catalog/apps` - returns all approved apps as lightweight entries
+
+## TypeScript SDK
+
+The `@nexo/partner-sdk` package provides:
+
+- Webhook signature verification (`verifyWebhookSignature`)
+- Typed webhook payload parsing (`parseWebhookPayload`)
+- Proactive messaging client (`NexoClient`)
+
+See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript) for install and usage.
 
 ## Examples
 

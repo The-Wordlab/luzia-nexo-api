@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-PROJECT_ID="${PROJECT_ID:-luzia-nexo-api-examples}"
-PROJECT_NUMBER="${PROJECT_NUMBER:-367427598362}"
-REGION="${REGION:-europe-west1}"
+_default_project_id() {
+  # Use GCP_PROJECT_ID env var, then PROJECT_ID, then gcloud config
+  if [[ -n "${GCP_PROJECT_ID:-}" ]]; then
+    echo "${GCP_PROJECT_ID}"
+  elif [[ -n "${PROJECT_ID:-}" ]]; then
+    echo "${PROJECT_ID}"
+  else
+    gcloud config get-value project 2>/dev/null || true
+  fi
+}
+
+PROJECT_ID="$(_default_project_id)"
+REGION="${GCP_REGION:-${REGION:-europe-west1}}"
 ARTIFACT_REPO="${ARTIFACT_REPO:-nexo-examples}"
 
 require_cmd() {
@@ -18,14 +28,12 @@ check_tools() {
   require_cmd gcloud
   require_cmd gsutil
   require_cmd bq
-  require_cmd terraform
   require_cmd docker
 }
 
 print_versions() {
   echo "== Tool versions =="
   gcloud --version | head -n 5
-  terraform version | head -n 1
   docker --version
 }
 
@@ -69,13 +77,13 @@ configure_adc_quota_project() {
 
 verify_project() {
   echo "== Verifying target project =="
-  local actual_number
-  actual_number="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
-  if [[ "${actual_number}" != "${PROJECT_NUMBER}" ]]; then
-    echo "Project number mismatch for ${PROJECT_ID}: expected ${PROJECT_NUMBER}, got ${actual_number}"
+  local project_number
+  project_number="$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')"
+  if [[ -z "${project_number}" ]]; then
+    echo "Could not retrieve project number for ${PROJECT_ID}"
     exit 1
   fi
-  echo "Project verified: ${PROJECT_ID} (${actual_number})"
+  echo "Project verified: ${PROJECT_ID} (${project_number})"
 }
 
 enable_services() {
@@ -112,20 +120,21 @@ Project: ${PROJECT_ID}
 Region:  ${REGION}
 
 Next steps:
-1. Build and deploy demo receiver from source:
-   PROJECT_ID=${PROJECT_ID} REGION=${REGION} SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
+1. Deploy the demo receiver via Cloud Build:
+   GCP_PROJECT_ID=${PROJECT_ID} GCP_REGION=${REGION} make deploy-demo-receiver
 
 2. Deploy hosted example services:
-   make deploy-examples
-
-3. Provision infra with Terraform:
-   cd infra/terraform/gcp-demo-receiver
-   terraform init
-   terraform apply -var="project_id=${PROJECT_ID}" -var="region=${REGION}"
+   GCP_PROJECT_ID=${PROJECT_ID} GCP_REGION=${REGION} make deploy-examples
 EOF
 }
 
 main() {
+  if [[ -z "${PROJECT_ID}" ]]; then
+    echo "ERROR: No project ID found."
+    echo "Set GCP_PROJECT_ID or run: gcloud config set project <your-project-id>"
+    exit 1
+  fi
+
   check_tools
   print_versions
   check_auth

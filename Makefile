@@ -1,10 +1,9 @@
 SHELL := /bin/bash
 
-PROJECT_ID ?= luzia-nexo-api-examples
-PROJECT_NUMBER ?= 367427598362
-REGION ?= europe-west1
+GCP_PROJECT_ID ?= luzia-nexo-api-examples
+GCP_REGION ?= europe-west1
 
-.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples verify-examples docs-build docs-serve
+.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 check-toolchain:
 	./scripts/check-toolchain.sh
@@ -27,24 +26,33 @@ test-sdk:
 test-all: test-demo-receiver test-examples test-hosted-examples test-sdk
 
 gcp-bootstrap:
-	PROJECT_ID=$(PROJECT_ID) PROJECT_NUMBER=$(PROJECT_NUMBER) REGION=$(REGION) ./scripts/bootstrap-gcp.sh
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh
 
 gcp-bootstrap-check:
-	PROJECT_ID=$(PROJECT_ID) PROJECT_NUMBER=$(PROJECT_NUMBER) REGION=$(REGION) ./scripts/bootstrap-gcp.sh >/dev/null
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh >/dev/null
 
 deploy-demo-receiver:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
 
 deploy-examples-py:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh
 
 deploy-examples-ts:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) SERVICE_NAME=nexo-examples-ts ./examples/hosted/typescript/deploy/cloudrun/deploy.sh
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-examples-ts ./examples/hosted/typescript/deploy/cloudrun/deploy.sh
 
 deploy-examples: deploy-examples-py deploy-examples-ts
 
 verify-examples:
-	PROJECT_ID=$(PROJECT_ID) REGION=$(REGION) ./scripts/verify-hosted-examples.sh
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/verify-hosted-examples.sh
+
+seed-demo-local: ## Seed demo apps against local Nexo (http://localhost:8000)
+	python3 scripts/seed-demo-apps.py --env local
+
+seed-demo: ## Seed demo apps (reads --env flag, default: local)
+	python3 scripts/seed-demo-apps.py
+
+seed-demo-dry-run: ## Preview demo seed without making changes
+	python3 scripts/seed-demo-apps.py --dry-run
 
 docs-build:
 	$(MAKE) check-toolchain

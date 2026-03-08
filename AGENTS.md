@@ -66,7 +66,7 @@ In scope:
 - `examples/`
 - `docs/`
 - `sdk/`
-- `infra/terraform/`
+- `scripts/`
 
 Out of scope:
 - production ECS/AWS runtime implementation

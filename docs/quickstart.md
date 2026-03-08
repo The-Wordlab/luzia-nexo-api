@@ -122,9 +122,21 @@ Expected response shape:
 }
 ```
 
+## 5) Submit your app for review
+
+Once your webhook is working and configured in the partner portal, submit your app for review:
+
+1. Go to your app in [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+2. Click **Submit for review**
+3. The Nexo team will approve or reject with feedback
+4. Once approved, your app appears in the public catalog
+
+See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for the full workflow.
+
 ## Next
 
 - Full contract and examples: [API Reference](partner-api-reference.md)
+- TypeScript SDK: [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript)
 - Direct examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - OpenClaw Bridge example: [examples/webhook/openclaw-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge)
 - Signed webhook examples:

@@ -78,11 +78,37 @@ Read the full integration guide: [API Documentation](https://the-wordlab.github.
 - Additional attributes are added over time while keeping backward compatibility.
 - Recommended: parse profile fields defensively and ignore unknown fields.
 
+## Demo app seeding
+
+This repository is the single source of truth for demo app definitions. The seed script creates demo apps in a Nexo instance via the HTTP API.
+
+```bash
+# Preview what would happen
+python3 scripts/seed-demo-apps.py --dry-run
+
+# Seed against local Nexo (http://localhost:8000)
+python3 scripts/seed-demo-apps.py --env local
+
+# Seed against production
+NEXO_API_URL=https://nexo.example.com \
+NEXO_ADMIN_EMAIL=admin@example.com \
+NEXO_ADMIN_PASSWORD=secret \
+python3 scripts/seed-demo-apps.py --env production
+
+# CI-safe mode (skip webhook apps that need external services)
+python3 scripts/seed-demo-apps.py --ci-safe
+```
+
+Demo app definitions are in `scripts/demo-apps.json`. Environment profiles are in `scripts/seed-config.json`. Environment variables always override config file values.
+
 ## Repository map
 
+- [`scripts/demo-apps.json`](scripts/demo-apps.json) - demo app definitions (9 apps, org, character, card trigger rules)
+- [`scripts/seed-demo-apps.py`](scripts/seed-demo-apps.py) - HTTP-based demo seeder
+- [`scripts/seed-config.json`](scripts/seed-config.json) - environment profiles (local, production)
 - [`examples/`](examples/) - local webhook and partner API examples
 - [`examples/hosted/`](examples/hosted/) - Cloud Run deployable example services (including demo receiver)
-- [`infra/terraform/`](infra/terraform/) - GCP infrastructure
+- [`sdk/javascript/`](sdk/javascript/) - TypeScript SDK (`@nexo/partner-sdk`) for webhook verification and proactive messaging
 - [`docs/`](docs/) - documentation source for the published docs site
 
 ## Local toolchain setup

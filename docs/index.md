@@ -72,6 +72,17 @@ If you are connecting through OpenClaw, use the OpenClaw Bridge example:
 - Additional attributes are added over time while keeping backward compatibility.
 - Parse defensively and ignore unknown fields.
 
+## App lifecycle
+
+Apps go through a review workflow: **draft** -> **submitted** -> **approved** (or **rejected**).
+Once approved, your app appears in the public catalog (`GET /api/catalog/apps`).
+See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for details.
+
+## TypeScript SDK
+
+The `@nexo/partner-sdk` package provides webhook signature verification and a proactive messaging client.
+See [API Reference - TypeScript SDK](partner-api-reference.md#typescript-sdk) for details.
+
 ## Optional deployment examples
 
 - Docker and Cloud Run examples: [Hosting (Optional)](hosting.md)

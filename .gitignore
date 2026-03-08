@@ -16,6 +16,9 @@ coverage/
 *.tfstate
 *.tfstate.*
 
+# Environment files
+.env
+
 # OS
 .DS_Store
 
