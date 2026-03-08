@@ -60,12 +60,16 @@ from ingest import (
     SEED_MATCHES,
     SEED_STANDINGS,
     embed_texts,
+    fetch_live_matches,
     get_collection,
     run_full_ingest,
     run_live_ingest,
     seed_matches,
     seed_standings,
 )
+from event_detector import DetectedEvent, EventDetector
+from event_store import EventStore
+from match_state import MatchStateTracker
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -78,7 +82,20 @@ WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL: str = os.environ.get("LLM_MODEL", "ollama/llama3.2")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "15"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
+LIVE_POLL_INTERVAL_SECONDS: int = int(os.environ.get("LIVE_POLL_INTERVAL_SECONDS", "60"))
 TOP_K = 3
+
+# ---------------------------------------------------------------------------
+# Event detection — module-level singletons
+# ---------------------------------------------------------------------------
+
+_match_state_tracker: MatchStateTracker = MatchStateTracker()
+_event_detector: EventDetector = EventDetector(
+    llm_model=LLM_MODEL,
+    significance_threshold=0.5,
+)
+_event_store: EventStore = EventStore()
+_live_monitor_task: asyncio.Task | None = None
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -540,6 +557,46 @@ def _personalise(response: dict[str, Any], display_name: str) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
+# Event detection cycle
+# ---------------------------------------------------------------------------
+
+
+async def run_detection_cycle() -> list[DetectedEvent]:
+    """Fetch live matches, run state tracker, store any detected events.
+
+    Returns the list of DetectedEvent objects that passed the significance
+    threshold and were stored. Returns an empty list on any fetch failure.
+    """
+    try:
+        current_matches = await fetch_live_matches()
+    except Exception as exc:
+        logger.warning("Detection cycle: fetch_live_matches failed: %s", exc)
+        return []
+
+    match_events = _match_state_tracker.track(current_matches)
+    detected: list[DetectedEvent] = []
+
+    for match_event in match_events:
+        event = _event_detector.evaluate_match_event(match_event)
+        if event is None:
+            continue
+        try:
+            _event_store.store(event)
+        except Exception as exc:
+            logger.warning("Detection cycle: store failed for %s: %s", event.event_type, exc)
+            continue
+        logger.info(
+            "Event detected: %s (significance=%.2f) — %s",
+            event.event_type,
+            event.significance,
+            event.summary[:80],
+        )
+        detected.append(event)
+
+    return detected
+
+
+# ---------------------------------------------------------------------------
 # Background refresh
 # ---------------------------------------------------------------------------
 
@@ -547,7 +604,7 @@ _refresh_task: asyncio.Task | None = None
 
 
 async def _background_refresh_loop() -> None:
-    """Periodically re-crawl feeds and refresh live match data."""
+    """Periodically re-crawl feeds and refresh live match data, then run event detection."""
     while True:
         interval = REFRESH_INTERVAL_MINUTES * 60
         await asyncio.sleep(interval)
@@ -557,6 +614,31 @@ async def _background_refresh_loop() -> None:
         except Exception as exc:
             logger.warning("Background refresh failed: %s", exc)
 
+        # After ingest, run event detection
+        try:
+            events = await run_detection_cycle()
+            if events:
+                logger.info("Background refresh: %d event(s) detected", len(events))
+        except Exception as exc:
+            logger.warning("Background refresh: event detection failed: %s", exc)
+
+
+async def _live_monitor_loop() -> None:
+    """Faster polling loop for live match event detection.
+
+    Polls at LIVE_POLL_INTERVAL_SECONDS (default 60s) regardless of the
+    slower RSS crawl cadence. Only runs detection — does not re-crawl feeds.
+    """
+    while True:
+        await asyncio.sleep(LIVE_POLL_INTERVAL_SECONDS)
+        logger.debug("Live monitor poll triggered")
+        try:
+            events = await run_detection_cycle()
+            if events:
+                logger.info("Live monitor: %d event(s) detected", len(events))
+        except Exception as exc:
+            logger.warning("Live monitor failed: %s", exc)
+
 
 # ---------------------------------------------------------------------------
 # Application lifecycle
@@ -565,7 +647,7 @@ async def _background_refresh_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
-    global _refresh_task
+    global _refresh_task, _live_monitor_task
 
     logger.info("Sports RAG startup: seeding data...")
     seed_matches()
@@ -578,6 +660,7 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
         logger.warning("Initial feed crawl failed (demo will work from seed data): %s", exc)
 
     _refresh_task = asyncio.create_task(_background_refresh_loop())
+    _live_monitor_task = asyncio.create_task(_live_monitor_loop())
     logger.info(
         "Sports RAG ready. Collections: articles=%d match_results=%d standings=%d",
         get_collection(COLLECTION_ARTICLES).count(),
@@ -589,6 +672,8 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 
     if _refresh_task:
         _refresh_task.cancel()
+    if _live_monitor_task:
+        _live_monitor_task.cancel()
 
 
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
@@ -821,5 +906,65 @@ async def admin_refresh(background_tasks: BackgroundTasks) -> JSONResponse:
         {
             "status": "refresh_scheduled",
             "message": "Full ingest queued in background.",
+        }
+    )
+
+
+@app.get("/admin/events")
+async def admin_events(
+    type: str | None = None,
+    team: str | None = None,
+    limit: int = 20,
+) -> JSONResponse:
+    """Return recent detected events from the event store.
+
+    Query parameters:
+      type   Filter by event_type (e.g. "goal", "score_change", "match_start")
+      team   Filter to events involving this team name
+      limit  Maximum number of results to return (default 20)
+    """
+    events = _event_store.query(
+        event_type=type,
+        team=team,
+        limit=limit,
+    )
+    return JSONResponse(
+        {
+            "status": "ok",
+            "events": events,
+            "total": len(events),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
+        }
+    )
+
+
+@app.post("/admin/detect")
+async def admin_detect() -> JSONResponse:
+    """Manually trigger an event detection cycle (for testing/debugging).
+
+    Runs the same logic as the live monitor background loop: fetches current
+    match states, diffs against previous, stores any new events, and returns
+    the list of detected events in this cycle.
+    """
+    detected = await run_detection_cycle()
+    serialised = [
+        {
+            "event_type": e.event_type,
+            "significance": e.significance,
+            "summary": e.summary,
+            "detail": e.detail,
+            "teams": e.teams,
+            "card": e.card,
+            "timestamp": e.timestamp.isoformat(),
+            "content_hash": e.content_hash,
+        }
+        for e in detected
+    ]
+    return JSONResponse(
+        {
+            "status": "ok",
+            "events_detected": len(detected),
+            "events": serialised,
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
     )
