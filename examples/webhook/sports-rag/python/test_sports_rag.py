@@ -266,7 +266,8 @@ class TestWebhookStandings:
 
     def test_standings_card_is_standings_table_type(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
-        with patch.object(_server_module, "search_standings", return_value=[]), \
+        mock_standings = [{"text": "Premier League Standings:\n1. Arsenal: P28 W20 D5 L3 GD+42 Pts65", "competition": "Premier League", "date": "2026-03-05", "top_team": "Arsenal"}]
+        with patch.object(_server_module, "search_standings", return_value=mock_standings), \
              patch.object(_server_module, "search_articles", return_value=[]), \
              patch.object(_server_module, "call_llm", return_value="Arsenal lead with 65 pts."):
             data = client.post("/", json={"message": {"content": "Premier League standings"}}).json()
@@ -277,7 +278,8 @@ class TestWebhookStandings:
 
     def test_standings_actions_contain_see_full_standings(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
-        with patch.object(_server_module, "search_standings", return_value=[]), \
+        mock_standings = [{"text": "Premier League Standings:\n1. Arsenal", "competition": "Premier League", "date": "2026-03-05", "top_team": "Arsenal"}]
+        with patch.object(_server_module, "search_standings", return_value=mock_standings), \
              patch.object(_server_module, "search_articles", return_value=[]), \
              patch.object(_server_module, "call_llm", return_value="Top of the table."):
             data = client.post("/", json={"message": {"content": "league table"}}).json()
