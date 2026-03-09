@@ -8,11 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy and install Python dependencies first (better layer caching)
-COPY requirements.txt .
+COPY examples/webhook/sports-rag/python/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy shared base modules
+COPY examples/shared/base_event_detector.py examples/shared/base_event_store.py examples/shared/base_state_tracker.py ./
+
 # Copy application source
-COPY ingest.py server.py ./
+COPY examples/webhook/sports-rag/python/ingest.py examples/webhook/sports-rag/python/server.py ./
+COPY examples/webhook/sports-rag/python/event_detector.py examples/webhook/sports-rag/python/event_store.py examples/webhook/sports-rag/python/match_state.py ./
 
 # ChromaDB persistence directory (mounted as a volume in production)
 RUN mkdir -p /data/chroma

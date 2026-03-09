@@ -17,6 +17,7 @@ Three ChromaDB collections (managed by ingest.py):
   - "standings"      League table snapshots as text embeddings
 
 Endpoints:
+  GET  /health       Liveness probe (returns collection counts)
   POST /             Main webhook endpoint (RAG + response)
   POST /ingest       Crawl feeds + fetch live match results + standings
   POST /ingest/live  Lightweight: fetch only live match results + standings
@@ -677,6 +678,28 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 
 
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
+
+
+# ---------------------------------------------------------------------------
+# Health endpoint
+# ---------------------------------------------------------------------------
+
+
+@app.get("/health")
+async def health() -> JSONResponse:
+    """Liveness probe — returns index stats per collection."""
+    return JSONResponse(
+        {
+            "status": "ok",
+            "collections": {
+                "articles": get_collection(COLLECTION_ARTICLES).count(),
+                "match_results": get_collection(COLLECTION_MATCHES).count(),
+                "standings": get_collection(COLLECTION_STANDINGS).count(),
+            },
+            "llm_model": LLM_MODEL,
+            "streaming_enabled": STREAMING_ENABLED,
+        }
+    )
 
 
 # ---------------------------------------------------------------------------

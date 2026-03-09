@@ -44,8 +44,9 @@ steps:
       - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/${_SERVICE_NAME}:${_IMAGE_TAG}"
       - "-t"
       - "${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPO}/${_SERVICE_NAME}:latest"
+      - "-f"
+      - "examples/webhook/sports-rag/python/Dockerfile"
       - "."
-    dir: "examples/webhook/sports-rag/python"
 
   # -------------------------------------------------------------------------
   # Step 2: Push the image to Artifact Registry
