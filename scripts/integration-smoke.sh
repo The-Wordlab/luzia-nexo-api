@@ -17,7 +17,7 @@ set -euo pipefail
 # ── Defaults ──────────────────────────────────────────────────────────────────
 NEXO_URL="http://localhost:8000"
 WEBHOOK_URL=""
-EMAIL="e2e-smoke@luzia.com"
+EMAIL="tester@luzia.com"
 PASSWORD="NexoPass#99"
 WEBHOOK_SECRET="${WEBHOOK_SECRET:-test-secret}"
 
@@ -47,6 +47,10 @@ ACCESS_TOKEN=""
 pass() { echo "[PASS] $*"; }
 fail() { echo "[FAIL] $*"; exit 1; }
 step() { echo ""; echo "==> $*"; }
+
+# Portable "all lines except last" (macOS head doesn't support -n -1)
+body_of() { echo "$1" | sed '$ d'; }
+last_line() { echo "$1" | tail -n 1; }
 
 cleanup() {
   if [[ -n "$APP_ID" && -n "$ACCESS_TOKEN" ]]; then
@@ -80,8 +84,8 @@ AUTH_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -d "username=${EMAIL}&password=${PASSWORD}" \
   "$NEXO_URL/api/auth/jwt/login")
 
-AUTH_BODY=$(echo "$AUTH_RESPONSE" | head -n -1)
-AUTH_STATUS=$(echo "$AUTH_RESPONSE" | tail -n 1)
+AUTH_BODY=$(body_of "$AUTH_RESPONSE")
+AUTH_STATUS=$(last_line "$AUTH_RESPONSE")
 
 if [[ "$AUTH_STATUS" != "200" ]]; then
   fail "Authentication failed (HTTP $AUTH_STATUS). Body: $AUTH_BODY"
@@ -94,6 +98,27 @@ fi
 
 pass "Authenticated (HTTP $AUTH_STATUS)"
 
+# ── Step 1b: Get user's org ID ────────────────────────────────────────────────
+step "Step 1b: Resolve org_id"
+
+ORG_RESPONSE=$(curl -s -w "\n%{http_code}" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  "$NEXO_URL/api/organizations/")
+
+ORG_BODY=$(body_of "$ORG_RESPONSE")
+ORG_STATUS=$(last_line "$ORG_RESPONSE")
+
+if [[ "$ORG_STATUS" != "200" ]]; then
+  fail "Organizations fetch failed (HTTP $ORG_STATUS). Body: $ORG_BODY"
+fi
+
+ORG_ID=$(echo "$ORG_BODY" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+if [[ -z "$ORG_ID" ]]; then
+  fail "Could not extract org_id from response: $ORG_BODY"
+fi
+
+pass "Org ID: $ORG_ID"
+
 # ── Step 2: Create test app ───────────────────────────────────────────────────
 step "Step 2: Create test app"
 
@@ -104,13 +129,15 @@ APP_RESPONSE=$(curl -s -w "\n%{http_code}" \
   -d "{
     \"name\": \"Smoke Test App [$TIMESTAMP]\",
     \"description\": \"Integration smoke test\",
+    \"org_id\": \"$ORG_ID\",
     \"webhook_url\": \"$WEBHOOK_URL\",
-    \"webhook_secret\": \"$WEBHOOK_SECRET\"
+    \"webhook_secret\": \"$WEBHOOK_SECRET\",
+    \"config_json\": {\"integration_mode\": \"webhook\"}
   }" \
-  "$NEXO_URL/api/apps")
+  "$NEXO_URL/api/apps/")
 
-APP_BODY=$(echo "$APP_RESPONSE" | head -n -1)
-APP_STATUS=$(echo "$APP_RESPONSE" | tail -n 1)
+APP_BODY=$(body_of "$APP_RESPONSE")
+APP_STATUS=$(last_line "$APP_RESPONSE")
 
 if [[ "$APP_STATUS" != "200" && "$APP_STATUS" != "201" ]]; then
   fail "App creation failed (HTTP $APP_STATUS). Body: $APP_BODY"
@@ -137,8 +164,8 @@ MSG_RESPONSE=$(curl -s -w "\n%{http_code}" \
   }" \
   "$NEXO_URL/api/responses")
 
-MSG_BODY=$(echo "$MSG_RESPONSE" | head -n -1)
-MSG_STATUS=$(echo "$MSG_RESPONSE" | tail -n 1)
+MSG_BODY=$(body_of "$MSG_RESPONSE")
+MSG_STATUS=$(last_line "$MSG_RESPONSE")
 
 if [[ "$MSG_STATUS" != "200" ]]; then
   fail "Send message failed (HTTP $MSG_STATUS). Body: $MSG_BODY"
