@@ -101,7 +101,7 @@ GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make deploy-examples
 ### Deploy RAG partner examples
 
 ```bash
-GCP_PROJECT_ID=<your-project-id> ./scripts/deploy-rag-examples.sh all
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/deploy-rag-examples.sh all
 ```
 
 Individual targets: `news`, `sports`, `travel`.
@@ -110,14 +110,14 @@ Each example service has a `cloudbuild.yaml` that handles the full build-push-de
 
 ### Current deployment (luzia-nexo-api-examples project)
 
-| Service | Region | URL |
-|---|---|---|
-| nexo-demo-receiver | europe-west1 | `https://nexo-demo-receiver-367427598362.europe-west1.run.app` |
-| nexo-examples-py | europe-west1 | `https://nexo-examples-py-367427598362.europe-west1.run.app` |
-| nexo-examples-ts | europe-west1 | `https://nexo-examples-ts-367427598362.europe-west1.run.app` |
-| nexo-news-rag | europe-west1 | `https://nexo-news-rag-367427598362.europe-west1.run.app` |
-| nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-367427598362.europe-west1.run.app` |
-| nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-367427598362.europe-west1.run.app` |
+| Service | Region | URL | Health |
+|---|---|---|---|
+| nexo-demo-receiver | europe-west1 | `https://nexo-demo-receiver-367427598362.europe-west1.run.app` | - |
+| nexo-examples-py | europe-west1 | `https://nexo-examples-py-367427598362.europe-west1.run.app` | - |
+| nexo-examples-ts | europe-west1 | `https://nexo-examples-ts-367427598362.europe-west1.run.app` | - |
+| nexo-news-rag | europe-west1 | `https://nexo-news-rag-367427598362.europe-west1.run.app` | `/health` |
+| nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-367427598362.europe-west1.run.app` | `/health` |
+| nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-367427598362.europe-west1.run.app` | `/health` |
 
 ### Secrets inventory (luzia-nexo-api-examples project)
 
