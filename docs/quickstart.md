@@ -143,3 +143,65 @@ See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for 
   - Python: [examples/webhook/minimal/python/server.py](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/python/server.py)
   - TypeScript: [examples/webhook/minimal/typescript/webhook-server.mjs](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/typescript/webhook-server.mjs)
 - Optional hosting/deployment examples: [Hosting (Optional)](hosting.md)
+
+## What to build next
+
+Once your webhook is working, consider these patterns:
+
+### Add rich cards and actions
+
+Return `cards` and `actions` alongside `content_parts` to give users structured UI:
+
+```json
+{
+  "schema_version": "2026-03-01",
+  "status": "success",
+  "content_parts": [{ "type": "text", "text": "Here are today's top stories." }],
+  "cards": [
+    {
+      "type": "source",
+      "title": "Article title",
+      "subtitle": "Publisher — date",
+      "description": "Excerpt...",
+      "metadata": { "url": "https://example.com/article" }
+    }
+  ],
+  "actions": [
+    { "id": "read_1", "label": "Read full article", "url": "https://example.com/article", "style": "secondary" }
+  ]
+}
+```
+
+### Add RAG
+
+If your integration has a knowledge base (news, product catalogue, documentation), add retrieval-augmented generation. See the production examples:
+
+- [News Feed RAG](examples-showcase.md#news-feed-rag) — RSS + ChromaDB + LLM + source cards
+- [Sports Feed RAG](examples-showcase.md#sports-feed-rag) — Live match data + intent detection + streaming
+- [Travel RAG](examples-showcase.md#travel-rag) — Destination guides + itinerary advice
+
+### Add live event push
+
+If your domain has time-sensitive data (scores, price changes, flight updates, breaking news), push events proactively to subscriber threads:
+
+```bash
+curl -X POST "https://nexo.luzia.com/api/apps/YOUR_APP_ID/events" \
+  -H "X-App-Secret: YOUR_APP_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "price_drop",
+    "significance": 0.75,
+    "summary": "MacBook Pro 30% off",
+    "detail": "The MacBook Pro M4 is now $1399, down from $1999. Deal expires in 4 hours.",
+    "card": {
+      "type": "product",
+      "title": "MacBook Pro M4",
+      "subtitle": "$1399 (was $1999)",
+      "badges": ["30% off", "Limited time"],
+      "metadata": { "url": "https://store.example.com/macbook" }
+    },
+    "priority": "high"
+  }'
+```
+
+Full reference: [API Reference - Push Events API](partner-api-reference.md#push-events-api-partner-initiated)

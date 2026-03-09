@@ -43,14 +43,26 @@ Use [API Reference](partner-api-reference.md) for payload, signature, and respon
 
 Note: the app secret is required to receive real traffic from Nexo. For local/offline development, you can run and test the example webhook servers directly without creating a partner app first.
 
-## Live examples
+## What you can build
 
-Hosted reference services you can test before building your own:
+Three reference implementations showing what a production Nexo partner looks like:
+
+| Example | What it does | Live service | Source |
+|---------|-------------|-------------|--------|
+| **News Feed RAG** | Answers questions about current events using live RSS feeds. Returns source attribution cards. | [nexo-news-rag](https://nexo-news-rag-367427598362.europe-west1.run.app/) | [news-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) |
+| **Sports Feed RAG** | Football scores, standings, transfers. Intent detection routes to the right data. SSE streaming + live event detection. | [nexo-sports-rag](https://nexo-sports-rag-367427598362.europe-west1.run.app/) | [sports-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) |
+| **Travel RAG** | Destination guides with itinerary advice and blog content. Rich destination cards. | [nexo-travel-rag](https://nexo-travel-rag-367427598362.europe-west1.run.app/) | [travel-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-rag/python) |
+
+Full walkthrough with architecture diagrams and example responses: [Examples Showcase](examples-showcase.md)
+
+## Live examples (minimal reference)
+
+Minimal hosted reference services (echo + profile context):
 
 | Language | Live service | Source code |
 |----------|-------------|-------------|
-| Python | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [examples/hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
-| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [examples/hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
+| Python | [nexo-examples-py](https://nexo-examples-py-367427598362.europe-west1.run.app/) | [examples/hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
+| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-367427598362.europe-west1.run.app/) | [examples/hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
 
 For standalone webhook snippets see [examples/webhook](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook).
 
@@ -71,6 +83,14 @@ If you are connecting through OpenClaw, use the OpenClaw Bridge example:
 - Availability depends on app permissions and user consent.
 - Additional attributes are added over time while keeping backward compatibility.
 - Parse defensively and ignore unknown fields.
+
+## Push events (partner-initiated)
+
+Partners can push events proactively into subscriber threads using `POST /api/apps/{app_id}/events`. This turns the chat thread into a live feed — goals appear as they happen, breaking news streams in without the user asking.
+
+The sports-rag example includes a working event detection pipeline: it polls football-data.org, diffs match state, classifies significance with an LLM, and pushes to Nexo whenever something worth notifying happens.
+
+See [API Reference - Push Events API](partner-api-reference.md#push-events-api-partner-initiated) for the full contract.
 
 ## App lifecycle
 

@@ -135,6 +135,128 @@ Core endpoints:
 - `POST /apps/{app_id}/threads/{thread_id}/messages`
 - `POST /apps/{app_id}/threads/{thread_id}/messages/assistant`
 
+## Push Events API (partner-initiated)
+
+Partners push events to subscriber threads via this endpoint. Use it for live feeds — sports scores, breaking news, price alerts, flight updates — anything time-sensitive that users should receive without having to ask.
+
+### POST /api/apps/{app_id}/events
+
+```
+POST https://nexo.luzia.com/api/apps/{app_id}/events
+X-App-Secret: <app_secret>
+Content-Type: application/json
+```
+
+Request body (`PartnerEvent`):
+
+```json
+{
+  "event_type": "goal",
+  "significance": 0.85,
+  "summary": "Arsenal 2-1 Chelsea",
+  "detail": "Declan Rice scores for Arsenal in the 67th minute. A long-range strike that gave Sanchez no chance. Arsenal are now two goals ahead.",
+  "card": {
+    "type": "match_result",
+    "title": "Arsenal 2-1 Chelsea",
+    "subtitle": "Premier League - Matchday 28",
+    "badges": ["Premier League", "Live"],
+    "fields": [
+      { "label": "Goal", "value": "Rice 67'" },
+      { "label": "Venue", "value": "Emirates Stadium" }
+    ],
+    "metadata": { "capability_state": "live" }
+  },
+  "subscriber_ids": ["user_001", "user_002"],
+  "priority": "high",
+  "character_voice": false,
+  "metadata": {}
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `event_type` | string | yes | Domain-specific label. e.g. `goal`, `match_start`, `breaking_news`, `price_alert` |
+| `significance` | float 0-1 | yes | How important is this event? Nexo uses this for delivery decisions. |
+| `summary` | string | yes | Short title used as push notification title. |
+| `detail` | string | yes | Full event text delivered as the assistant message body. |
+| `card` | object | no | Nexo card envelope. Rendered inline in the chat thread. |
+| `subscriber_ids` | string[] | no | Target specific subscribers by `customer_id`. Omit to broadcast to all app subscribers. |
+| `priority` | `"normal"` \| `"high"` | no | `"high"` triggers a push notification (requires push subscription). Default: `"normal"`. |
+| `character_voice` | bool | no | Reserved for future use. Default: `false`. |
+| `metadata` | object | no | Arbitrary key-value pairs passed through to `content_json`. |
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "delivered_to": 2,
+  "push_sent": 1
+}
+```
+
+| Field | Description |
+|---|---|
+| `delivered_to` | Number of subscriber threads that received the event message. |
+| `push_sent` | Number of push notifications sent (only for `priority: "high"`). |
+
+### Significance guide
+
+| Score | Meaning | Delivery |
+|---|---|---|
+| 0.0 – 0.3 | Routine | Create thread message; no push |
+| 0.3 – 0.6 | Notable | Create thread message; no push |
+| 0.6 – 0.8 | Important | Thread message + card |
+| 0.8 – 1.0 | Breaking | Thread message + card + push notification |
+
+Note: push notifications are only sent when `priority: "high"` is set regardless of significance score.
+
+### Example: push a goal notification
+
+```bash
+curl -X POST "https://nexo.luzia.com/api/apps/YOUR_APP_ID/events" \
+  -H "X-App-Secret: YOUR_APP_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_type": "goal",
+    "significance": 0.85,
+    "summary": "Arsenal 2-1 Chelsea",
+    "detail": "Rice scores from distance in the 67th minute. Arsenal take a two-goal lead.",
+    "card": {
+      "type": "match_result",
+      "title": "Arsenal 2-1 Chelsea",
+      "subtitle": "Premier League - Matchday 28",
+      "badges": ["Premier League", "Live"],
+      "fields": [
+        { "label": "Goal", "value": "Rice 67''" },
+        { "label": "Venue", "value": "Emirates Stadium" }
+      ],
+      "metadata": { "capability_state": "live" }
+    },
+    "priority": "high"
+  }'
+```
+
+### How subscriber targeting works
+
+- `subscriber_ids` contains `customer_id` values you assigned when users connected your app.
+- Omit `subscriber_ids` to deliver to all active subscribers for this app.
+- For each target subscriber, Nexo finds or creates a thread scoped to your app, then appends the event as an assistant message.
+- Users can reply in the same thread — replies are forwarded to your webhook endpoint as normal.
+
+### Pattern: live feed partner
+
+A partner that sends events continuously:
+
+1. **Ingest data** on a background loop (RSS, APIs, websockets)
+2. **Detect events** worth notifying using rules + LLM classification
+3. **Score significance** — not everything deserves a push
+4. **Call this endpoint** with the event, card, and target subscribers
+
+See [examples-showcase.md](examples-showcase.md) for a working implementation in the sports-rag example.
+
+---
+
 ## App lifecycle
 
 Apps follow a review workflow before they become available to users:
