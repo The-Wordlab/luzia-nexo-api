@@ -1,9 +1,5 @@
 # Design: Live Streaming Intelligence
 
-**Status:** design phase
-**Author:** Sprint 48
-**Updated:** 2026-03-09
-
 ## Problem
 
 Today's RAG examples are **pull-based**: a user asks a question, we search ChromaDB, call an LLM, and return a response. The data is there (RSS feeds refresh every 15 min, football-data.org has live scores) but nothing happens until someone asks.
@@ -34,43 +30,25 @@ The partner owns domain detection. Nexo owns the user experience.
 
 ## Architecture
 
-```
-  PARTNER SIDE (luzia-nexo-api)                    NEXO SIDE (luzia-nexo)
-  ─────────────────────────────                    ─────────────────────
+```mermaid
+flowchart LR
+    subgraph P[Partner side - luzia-nexo-api]
+        A[Data sources<br/>RSS APIs WebSockets] --> B[Ingestion pipeline<br/>chunk embed store]
+        B --> C[Event detector<br/>LLM #1 domain intelligence]
+        C --> D[POST /api/apps/{id}/events<br/>event_type significance summary card teams]
+    end
 
-  ┌─────────────┐                                  ┌─────────────────────────────────┐
-  │ Data Sources │                                  │  INCOMING EVENT PROCESSOR       │
-  │  - RSS feeds │                                  │                                 │
-  │  - APIs      │                                  │  For each (event, subscriber):  │
-  │  - Websockets│                                  │                                 │
-  └──────┬──────┘                                  │  1. Load subscriber context     │
-         │                                          │     - profile, locale, prefs    │
-  ┌──────▼──────┐                                  │     - conversation history      │
-  │  Ingestion  │                                  │     - character relationship    │
-  │  Pipeline   │                                  │                                 │
-  │  chunk +    │                                  │  2. Cross-app dedup             │
-  │  embed +    │                                  │     - same event from 2 apps?   │
-  │  store      │                                  │     - merge into one briefing   │
-  └──────┬──────┘                                  │                                 │
-         │                                          │  3. LLM personalisation         │
-  ┌──────▼──────┐                                  │     - character voice            │
-  │  Event      │                                  │     - user-specific framing      │
-  │  Detector   │                                  │     - locale translation         │
-  │  (LLM #1)  │                                  │                                 │
-  │  "is this   │                                  │  4. Delivery strategy            │
-  │   worth     │                                  │     - quiet hours?               │
-  │   sending?" │                                  │     - rate limit ok?             │
-  │             │                                  │     - push vs card vs batch?     │
-  └──────┬──────┘                                  │                                 │
-         │                                          └──────────┬──────────────────────┘
-         │  POST /api/apps/{id}/events                         │
-         │  { event_type, significance,            ┌───────────┼──────────────┐
-         │    summary, card, teams[] }             │           │              │
-         └─────────────────────────────────>┌──────▼──┐  ┌────▼────┐  ┌─────▼─────┐
-                                            │  Push   │  │ Thread  │  │  Batched  │
-                                            │  Notif  │  │ Message │  │  Briefing │
-                                            │ (VAPID) │  │ + Card  │  │  (digest) │
-                                            └─────────┘  └─────────┘  └───────────┘
+    subgraph N[Nexo side - luzia-nexo]
+        E[Incoming Event Processor] --> E1[Load subscriber context]
+        E --> E2[Cross-app dedup]
+        E --> E3[LLM #2 personalisation]
+        E --> E4[Delivery strategy]
+        E4 --> F[Push notification]
+        E4 --> G[Thread message + card]
+        E4 --> H[Batched briefing]
+    end
+
+    D --> E
 ```
 
 ### Two-LLM pipeline explained
@@ -93,45 +71,22 @@ The partner owns domain detection. Nexo owns the user experience.
 
 The Nexo chat thread becomes a **living feed**, not a static Q&A. The user sees events streaming in - goals, news, updates - as messages from their AI character. But critically, they can **talk back**.
 
-```
-┌─────────────────────────────────────────────────────┐
-│  ⚽ World Cup Companion                              │
-│                                                      │
-│  [14:00] Match starting! England vs Brazil at the    │
-│  Lusail Stadium. Bellingham starts in midfield,      │
-│  Saka on the right. This is going to be electric!    │
-│                                                      │
-│  [14:23] ┌─────────────────────────────┐             │
-│          │ ⚽ GOAL! England 1-0 Brazil │             │
-│          │ Bellingham (23')            │             │
-│          │ PL · Lusail Stadium         │             │
-│          │ Assist: Saka               │             │
-│          └─────────────────────────────┘             │
-│                                                      │
-│  What a header from Bellingham! Saka's cross was     │
-│  perfect. Brazil's defence was caught flat-footed.   │
-│                                                      │
-│  > User: How has Saka been playing?                  │
-│                                                      │
-│  Saka's been brilliant - he's completed 3 dribbles,  │
-│  created 2 chances, and delivered that gorgeous       │
-│  assist. He's been running Militao ragged down the   │
-│  right side. Definitely man of the match so far.     │
-│                                                      │
-│  [14:45] Half-time: England 1-0 Brazil. Bellingham   │
-│  the difference. Brazil need to find an answer to    │
-│  Saka in the second half.                            │
-│                                                      │
-│  > User: What are the other scores?                  │
-│                                                      │
-│  Here's the latest from the other quarter-finals:    │
-│  ┌─────────────────────────────────────┐             │
-│  │ France 2-1 Argentina (HT)          │             │
-│  │ Germany 0-0 Spain (Live, 38')      │             │
-│  └─────────────────────────────────────┘             │
-│                                                      │
-│  [💬 Ask about the match...]                         │
-└─────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Feed as Live event feed
+    participant Thread as Nexo thread
+    participant User as User
+    participant Partner as Partner webhook
+
+    Feed->>Thread: [14:00] Match starting England vs Brazil
+    Feed->>Thread: [14:23] Goal card England 1-0 Brazil
+    Feed->>Thread: Commentary update
+    User->>Thread: How has Saka been playing?
+    Thread->>Partner: Forward question with live context
+    Partner-->>Thread: Contextual answer with stats
+    Feed->>Thread: [14:45] Half-time summary
+    User->>Thread: What are the other scores?
+    Thread-->>User: Multi-match update card
 ```
 
 ### How this works
@@ -167,20 +122,15 @@ When Sarah asks "How are Arsenal doing today?", the LLM doesn't need to search t
 
 **The decision tree for answering questions:**
 
-```
-User asks a question in a live feed thread
-  │
-  ├─ Can be answered from thread context alone?
-  │   YES → Nexo LLM answers directly (fast, no partner call)
-  │         "Based on what we've seen: Arsenal are winning 2-1, Saka has been excellent"
-  │
-  ├─ Needs current data from partner?
-  │   YES → Forward to partner webhook as normal /responses flow
-  │         Partner RAG searches live index, returns detailed answer + cards
-  │
-  └─ Is a platform action? (reminder, mute, preference change)
-      YES → Nexo handles directly
-            "I'll remind you when the second half starts"
+```mermaid
+flowchart TD
+    A[User asks question in live feed thread] --> B{Answerable from thread context?}
+    B -- Yes --> C[Nexo LLM answers directly<br/>fast no partner call]
+    B -- No --> D{Needs fresh partner data?}
+    D -- Yes --> E[Forward to partner webhook<br/>RAG returns detailed answer + cards]
+    D -- No --> F{Platform action?<br/>reminder mute preference}
+    F -- Yes --> G[Nexo handles directly]
+    F -- No --> H[Nexo default assistant response]
 ```
 
 This is powerful because the thread context means Nexo can answer most casual questions **without calling the partner at all**. The partner webhook is only invoked for questions that need fresh data or domain-specific intelligence.

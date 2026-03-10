@@ -68,6 +68,7 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 | `OPENAI_API_KEY` | All RAG services | [platform.openai.com](https://platform.openai.com/api-keys) |
 | `FOOTBALL_DATA_API_KEY` | sports-rag, football-live | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
+| `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
 | `EXAMPLES_SHARED_API_SECRET` | hosted python/typescript services | Shared auth secret used by hosted reference endpoints |
 
 ```bash
@@ -76,7 +77,7 @@ echo -n "your-value" | gcloud secrets create SECRET_NAME --data-file=-
 
 # Grant Cloud Run access
 PROJECT_NUM=$(gcloud projects describe $GCP_PROJECT_ID --format='value(projectNumber)')
-for SECRET in WEBHOOK_SECRET OPENAI_API_KEY FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN EXAMPLES_SHARED_API_SECRET; do
+for SECRET in WEBHOOK_SECRET OPENAI_API_KEY FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE EXAMPLES_SHARED_API_SECRET; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" --quiet
@@ -137,6 +138,19 @@ curl -sS -X POST "$BASE" \
 Expected: `200` with a response payload.
 If auth is wrong, expect `401`.
 If auth is correct but input shape is wrong, expect `400` (for example array-style `input`).
+
+### OpenClaw hardening and obfuscation model
+
+The bridge-to-OpenClaw path is intentionally protected by layered controls:
+
+1. `X-Nexo-Bridge-Key` header allowlist at reverse proxy (Caddy)
+2. `Authorization: Bearer <OPENCLAW_GATEWAY_TOKEN>` at OpenClaw gateway
+3. Optional bridge ingress key (`BRIDGE_ACCESS_KEY`) at the Cloud Run bridge endpoint
+
+Public docs never include raw secret values. We only document:
+- secret names (`OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_ORIGIN_HEADER_VALUE`)
+- where they are used
+- how to validate behavior via expected status codes (`401/403/200`)
 
 ### Deploy RAG partner examples
 

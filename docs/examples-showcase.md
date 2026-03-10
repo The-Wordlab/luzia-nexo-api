@@ -16,13 +16,15 @@ A news assistant that answers questions about current events using live RSS feed
 
 ### Architecture
 
-```
-  RSS feeds                ChromaDB              LLM
-  (BBC/Reuters/AP)         (news_articles)
-       │                        │                 │
-       ▼                        ▼                 ▼
-  feedparser ──chunk+embed──► query ──context──► litellm ──► Nexo response
-  (every 30 min)            top-K chunks                     + source cards
+```mermaid
+flowchart LR
+    A[RSS feeds<br/>BBC Reuters AP] --> B[feedparser crawl<br/>every 30 min]
+    B --> C[Chunk + embed]
+    C --> D[(ChromaDB<br/>news_articles)]
+    U[User query] --> E[Retrieve top-K chunks]
+    D --> E
+    E --> F[litellm completion]
+    F --> G[Nexo response<br/>text + source cards + actions]
 ```
 
 ### What a conversation looks like
@@ -118,16 +120,18 @@ A football assistant with live match data, league standings, and news analysis. 
 
 ### Architecture
 
-```
-  Data sources            ChromaDB (3 collections)     LLM
-  ─────────────           ────────────────────────     ───
-  RSS sports feeds   ──► articles                 │
-  football-data.org  ──► match_results            ├──► litellm
-  (live scores)          standings                │
-                              │                   │
-                              ▼                   ▼
-                        intent detection ──► context ──► response + cards
-                        (scores/standings/news)
+```mermaid
+flowchart LR
+    A[RSS sports feeds] --> C1[(articles)]
+    B[football-data.org<br/>live scores + standings] --> C2[(match_results)]
+    B --> C3[(standings)]
+    Q[User query] --> I[Intent detection<br/>scores standings news]
+    I --> R[Retrieve context]
+    C1 --> R
+    C2 --> R
+    C3 --> R
+    R --> L[litellm]
+    L --> O[Nexo response<br/>text + cards + actions]
 ```
 
 Three ChromaDB collections, each tuned for different query types:
@@ -212,19 +216,15 @@ data: {"type":"done","schema_version":"2026-03-01","status":"completed","cards":
 
 The sports server includes an event detection pipeline that monitors live match state and detects significant moments:
 
-```
-football-data.org API
-        │
-        ▼
-  MatchStateTracker  ──── diff ────► match events (score_change, red_card, match_start)
-        │
-        ▼
-  EventDetector      ──── LLM ────► significance score + summary
-  (two-stage filter:
-   rules → LLM)
-        │
-        ▼
-  EventStore         ──── POST ───► POST /api/apps/{id}/events (Nexo Partner API)
+```mermaid
+flowchart TD
+    A[football-data.org API] --> B[MatchStateTracker]
+    B --> C[Diff engine]
+    C --> D[Match events<br/>score_change red_card match_start]
+    D --> E[EventDetector<br/>rules then LLM]
+    E --> F[Significance + summary]
+    F --> G[EventStore]
+    G --> H[POST /api/apps/{id}/events<br/>Nexo Partner API]
 ```
 
 Partners call the Nexo events endpoint to push detected events to subscriber threads. See [Push Events API](#push-events-api) below.
@@ -273,15 +273,16 @@ A travel assistant with destination guides, itinerary advice, and blog content. 
 
 ### Architecture
 
-```
-  Data sources                 ChromaDB (2 collections)
-  ────────────                 ────────────────────────
-  Seed destinations (10+) ──► destinations   │
-  Travel RSS blogs       ──► travel_articles ├──► LLM ──► response + destination cards
-  (Lonely Planet,                            │
-   Nomadic Matt, etc.)                       ▼
-                                       intent routing
-                                       (destination/activity/itinerary)
+```mermaid
+flowchart LR
+    A[Seed destinations 10+] --> C1[(destinations)]
+    B[Travel RSS blogs] --> C2[(travel_articles)]
+    Q[User query] --> I[Intent routing<br/>destination activity itinerary]
+    I --> R[Retrieve travel context]
+    C1 --> R
+    C2 --> R
+    R --> L[litellm]
+    L --> O[Nexo response<br/>text + destination cards + actions]
 ```
 
 ### Example interaction
@@ -372,44 +373,32 @@ The RAG examples can push events proactively to subscriber threads using the Nex
 
 ### How it works
 
-```
-  Partner server                            Nexo
-  ──────────────                            ────
-  EventDetector detects a goal
-         │
-         ▼
-  POST /api/apps/{app_id}/events  ────────► find/create subscriber thread
-  {                                         create assistant message
-    "event_type": "goal",                   push notification (if priority=high)
-    "significance": 0.85,
-    "summary": "Arsenal 2-1 Chelsea",
-    "detail": "Rice scores for Arsenal...",
-    "card": { "type": "match_result", ... },
-    "subscriber_ids": ["user_001", "user_002"],
-    "priority": "high"
-  }
-         │
-         ▼
-  { "status": "ok", "delivered_to": 2, "push_sent": 1 }
+```mermaid
+sequenceDiagram
+    participant Partner as Partner server
+    participant Nexo as Nexo API
+    Partner->>Partner: EventDetector detects goal
+    Partner->>Nexo: POST /api/apps/{app_id}/events<br/>event_type=goal, significance, card, subscribers
+    Nexo->>Nexo: Find or create subscriber thread
+    Nexo->>Nexo: Create assistant message + optional push
+    Nexo-->>Partner: {status: ok, delivered_to, push_sent}
 ```
 
-The result is a thread that looks like this:
+The result is a thread that behaves like this:
 
-```
-[14:23]  Match starting! Arsenal vs Chelsea at the Emirates.
+```mermaid
+sequenceDiagram
+    participant Partner as Partner event detector
+    participant Thread as Nexo thread
+    participant User as User
+    participant Webhook as Partner RAG webhook
 
-[14:34]  ┌─────────────────────────────┐
-         │ ⚽ GOAL! Arsenal 1-0 Chelsea │
-         │ Rice (34')                  │
-         │ Premier League - Matchday 28│
-         │ Emirates Stadium            │
-         └─────────────────────────────┘
-
-         Rice pounces on a loose ball in the box...
-
-> User: How has Rice been playing today?
-
-Based on the match events so far, Rice has been excellent...
+    Partner->>Thread: [14:23] Match starting update
+    Partner->>Thread: [14:34] Goal card Arsenal 1-0 Chelsea
+    Partner->>Thread: Commentary text
+    User->>Thread: How has Rice been playing today?
+    Thread->>Webhook: Forward user question with thread context
+    Webhook-->>Thread: Contextual answer + optional cards
 ```
 
 The user can ask questions in the same thread. The message flows through the normal webhook path back to the partner's RAG endpoint, which has all the live data indexed. The LLM sees the full conversation history — including the event cards — and can give contextual answers.

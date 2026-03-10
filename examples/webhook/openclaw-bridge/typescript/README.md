@@ -8,6 +8,7 @@ Nexo-compatible webhook implementation that forwards user requests to OpenClaw G
 2. Verifies signature (`X-Timestamp`, `X-Signature`) when `WEBHOOK_SECRET` is set
 3. Calls OpenClaw `POST /v1/responses`
 4. Returns canonical Nexo rich response envelope (JSON mode) or Nexo SSE (`delta`/`done`) in stream mode
+5. Exposes `GET /` service discovery metadata (routes, auth expectations, schema version)
 
 ## Streaming support
 

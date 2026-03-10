@@ -121,7 +121,7 @@ deploy_openclaw_bridge() {
   deploy_source_service \
     "nexo-openclaw-bridge" \
     "${REPO_ROOT}/examples/webhook/openclaw-bridge/typescript" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENCLAW_GATEWAY_TOKEN=OPENCLAW_GATEWAY_TOKEN:latest --set-env-vars OPENCLAW_BASE_URL=${OPENCLAW_BASE_URL},OPENCLAW_AGENT_ID=${OPENCLAW_AGENT_ID}"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENCLAW_GATEWAY_TOKEN=OPENCLAW_GATEWAY_TOKEN:latest,OPENCLAW_ORIGIN_HEADER_VALUE=OPENCLAW_ORIGIN_HEADER_VALUE:latest --set-env-vars OPENCLAW_BASE_URL=${OPENCLAW_BASE_URL},OPENCLAW_AGENT_ID=${OPENCLAW_AGENT_ID}"
 }
 
 deploy_hosted_py() {
