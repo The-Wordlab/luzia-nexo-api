@@ -1,5 +1,8 @@
 # Luzia Nexo Partner Integration APIs
 
+Nexo provides a managed Agent Runtime with consented profile context and reliable webhook delivery.
+Nexo handles runtime orchestration. Your partner service focuses on domain logic.
+
 Build partner experiences on top of Nexo with:
 
 - Signed webhook delivery
@@ -7,9 +10,6 @@ Build partner experiences on top of Nexo with:
 - Rich cards and actions
 - Streaming responses
 - Proactive push events
-
-Nexo provides a managed Agent Runtime with consented profile context and reliable webhook delivery.
-Nexo handles runtime orchestration. Your partner service focuses on domain logic.
 
 ## Start Here
 

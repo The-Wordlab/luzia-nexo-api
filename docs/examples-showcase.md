@@ -224,7 +224,7 @@ flowchart TD
     D --> E[EventDetector<br/>rules then LLM]
     E --> F[Significance + summary]
     F --> G[EventStore]
-    G --> H[POST /api/apps/{id}/events<br/>Nexo Partner API]
+    G --> H["POST /api/apps/{id}/events<br/>Nexo Partner API"]
 ```
 
 Partners call the Nexo events endpoint to push detected events to subscriber threads. See [Push Events API](#push-events-api) below.
