@@ -663,6 +663,9 @@ class TestHealthEndpoint:
         assert "llm_model" in data
         assert "embedding_model" in data
         assert "streaming_enabled" in data
+        assert "vector_store" in data
+        assert "backend" in data["vector_store"]
+        assert "durable" in data["vector_store"]
 
 
 # ---------------------------------------------------------------------------

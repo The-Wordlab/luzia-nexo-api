@@ -681,3 +681,6 @@ async def test_health_endpoint_returns_ok(app):
     assert "chunks" in data
     assert "llm_model" in data
     assert "embedding_model" in data
+    assert "vector_store" in data
+    assert "backend" in data["vector_store"]
+    assert "durable" in data["vector_store"]

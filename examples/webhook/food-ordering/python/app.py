@@ -416,9 +416,9 @@ async def webhook(request: Request):
             for item in visible_items
         )
         actions = [
-            {"type": "primary", "label": "Build My Order", "action": "build_order"},
-            {"type": "secondary", "label": "Vegan Options", "action": "filter_vegan"},
-            {"type": "secondary", "label": "Gluten-Free Options", "action": "filter_gluten_free"},
+            {"id": "build_order", "type": "primary", "label": "Build My Order", "action": "build_order"},
+            {"id": "filter_vegan", "type": "secondary", "label": "Vegan Options", "action": "filter_vegan"},
+            {"id": "filter_gluten_free", "type": "secondary", "label": "Gluten-Free Options", "action": "filter_gluten_free"},
         ]
 
     elif intent == "order_build":
@@ -434,8 +434,8 @@ async def webhook(request: Request):
             + f"\n  Total: ${total:.2f}"
         )
         actions = [
-            {"type": "primary", "label": "Confirm Order", "action": "confirm_order"},
-            {"type": "secondary", "label": "Modify Order", "action": "modify_order"},
+            {"id": "confirm_order", "type": "primary", "label": "Confirm Order", "action": "confirm_order"},
+            {"id": "modify_order", "type": "secondary", "label": "Modify Order", "action": "modify_order"},
         ]
 
     elif intent == "order_track":
@@ -448,8 +448,8 @@ async def webhook(request: Request):
             "Restaurant: Nexo Kitchen (Simulated)"
         )
         actions = [
-            {"type": "primary", "label": "Refresh Status", "action": "refresh_status"},
-            {"type": "secondary", "label": "Contact Support", "action": "contact_support"},
+            {"id": "refresh_status", "type": "primary", "label": "Refresh Status", "action": "refresh_status"},
+            {"id": "contact_support", "type": "secondary", "label": "Contact Support", "action": "contact_support"},
         ]
 
     # Build LLM prompt

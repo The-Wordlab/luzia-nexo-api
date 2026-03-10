@@ -348,8 +348,8 @@ async def webhook(request: Request):
             f"Top priorities:\n{priorities_summary}"
         )
         actions = [
-            {"type": "primary", "label": "View Schedule", "action": "show_schedule"},
-            {"type": "secondary", "label": "Set a Reminder", "action": "show_reminders"},
+            {"id": "show_schedule", "type": "primary", "label": "View Schedule", "action": "show_schedule"},
+            {"id": "show_reminders", "type": "secondary", "label": "Set a Reminder", "action": "show_reminders"},
         ]
 
     elif intent == "schedule_management":
@@ -359,8 +359,8 @@ async def webhook(request: Request):
         )
         context_block = f"Today's schedule:\n{schedule_summary}"
         actions = [
-            {"type": "primary", "label": "Add Event", "action": "add_event"},
-            {"type": "secondary", "label": "Morning Briefing", "action": "show_briefing"},
+            {"id": "add_event", "type": "primary", "label": "Add Event", "action": "add_event"},
+            {"id": "show_briefing", "type": "secondary", "label": "Morning Briefing", "action": "show_briefing"},
         ]
 
     elif intent == "follow_up":
@@ -371,9 +371,9 @@ async def webhook(request: Request):
         )
         context_block = f"Action items:\n{tasks_summary}"
         actions = [
-            {"type": "primary", "label": "Mark Done", "action": "mark_complete"},
-            {"type": "secondary", "label": "Snooze 1h", "action": "snooze_reminder"},
-            {"type": "secondary", "label": "Remind Tomorrow", "action": "remind_tomorrow"},
+            {"id": "mark_complete", "type": "primary", "label": "Mark Done", "action": "mark_complete"},
+            {"id": "snooze_reminder", "type": "secondary", "label": "Snooze 1h", "action": "snooze_reminder"},
+            {"id": "remind_tomorrow", "type": "secondary", "label": "Remind Tomorrow", "action": "remind_tomorrow"},
         ]
 
     # Build LLM prompt

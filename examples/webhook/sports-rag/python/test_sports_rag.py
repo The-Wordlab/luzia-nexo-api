@@ -579,6 +579,29 @@ class TestIngestEndpoints:
 
 
 # ---------------------------------------------------------------------------
+# Integration: health endpoint
+# ---------------------------------------------------------------------------
+
+
+class TestHealthEndpoint:
+    def test_health_includes_vector_store_metadata(self, monkeypatch) -> None:
+        client = _make_client(monkeypatch)
+        mock_col = MagicMock()
+        mock_col.count.return_value = 7
+
+        with patch.object(_server_module, "get_collection", return_value=mock_col):
+            resp = client.get("/health")
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["status"] == "ok"
+        assert "collections" in data
+        assert "vector_store" in data
+        assert "backend" in data["vector_store"]
+        assert "durable" in data["vector_store"]
+
+
+# ---------------------------------------------------------------------------
 # Integration: admin endpoints
 # ---------------------------------------------------------------------------
 

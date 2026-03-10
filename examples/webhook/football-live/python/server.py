@@ -21,6 +21,7 @@ import litellm
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
+import ingest as _ingest_module
 from football_api import COMPETITIONS, FootballDataClient
 from ingest import (
     COLLECTION_MATCHES,
@@ -47,8 +48,34 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 REFRESH_INTERVAL = int(os.environ.get("REFRESH_INTERVAL", "300"))  # 5 min default
 TOP_K = int(os.environ.get("TOP_K", "5"))
+VECTOR_STORE_BACKEND = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_DURABLE_OVERRIDE = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
 
 SCHEMA_VERSION = "2026-03-01"
+
+
+def _vector_store_metadata() -> dict[str, Any]:
+    """Return runtime vector-store metadata for health/debug endpoints."""
+    backend = VECTOR_STORE_BACKEND or "chroma"
+    if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
+        durable = True
+    elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
+        durable = False
+    else:
+        durable = backend in {"vertex", "vertex-ai", "vertex-vector-search", "pgvector", "alloydb", "cloudsql"}
+
+    is_cloud_run = bool(os.environ.get("K_SERVICE"))
+    warning: str | None = None
+    if is_cloud_run and backend == "chroma" and not durable:
+        warning = "ChromaDB on Cloud Run uses instance-local disk. Use a managed vector backend for durable production state."
+
+    return {
+        "backend": backend,
+        "durable": durable,
+        "is_cloud_run": is_cloud_run,
+        "chroma_persist_dir": _ingest_module.CHROMA_PERSIST_DIR if backend == "chroma" else None,
+        "warning": warning,
+    }
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -572,6 +599,7 @@ async def health():
             "standings": get_collection(COLLECTION_STANDINGS).count(),
             "scorers": get_collection(COLLECTION_SCORERS).count(),
         },
+        "vector_store": _vector_store_metadata(),
         "timestamp": time.time(),
     }
 

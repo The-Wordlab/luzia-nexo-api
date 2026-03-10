@@ -76,6 +76,8 @@ REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "
 CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
 OLLAMA_API_BASE: str = os.environ.get("OLLAMA_API_BASE", "http://localhost:11434")
 TOP_K: int = int(os.environ.get("TOP_K", "5"))
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
 
 _raw_feeds = os.environ.get("NEWS_FEEDS", "")
 NEWS_FEEDS: list[str] = (
@@ -101,6 +103,30 @@ _index_stats: dict[str, Any] = {
     "last_refresh": None,
     "feeds": NEWS_FEEDS,
 }
+
+
+def _vector_store_metadata() -> dict[str, Any]:
+    """Return runtime vector-store metadata for health/debug endpoints."""
+    backend = VECTOR_STORE_BACKEND or "chroma"
+    if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
+        durable = True
+    elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
+        durable = False
+    else:
+        durable = backend in {"vertex", "vertex-ai", "vertex-vector-search", "pgvector", "alloydb", "cloudsql"}
+
+    is_cloud_run = bool(os.environ.get("K_SERVICE"))
+    warning: str | None = None
+    if is_cloud_run and backend == "chroma" and not durable:
+        warning = "ChromaDB on Cloud Run uses instance-local disk. Use a managed vector backend for durable production state."
+
+    return {
+        "backend": backend,
+        "durable": durable,
+        "is_cloud_run": is_cloud_run,
+        "chroma_persist_dir": CHROMA_PERSIST_DIR if backend == "chroma" else None,
+        "warning": warning,
+    }
 
 
 def get_collection() -> chromadb.Collection:
@@ -582,5 +608,6 @@ async def health() -> JSONResponse:
             "feeds": _index_stats.get("feeds"),
             "llm_model": LLM_MODEL,
             "embedding_model": EMBEDDING_MODEL,
+            "vector_store": _vector_store_metadata(),
         }
     )

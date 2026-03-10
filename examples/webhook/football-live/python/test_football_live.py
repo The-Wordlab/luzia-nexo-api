@@ -799,10 +799,13 @@ class TestHealthEndpoint:
         resp = client.get("/health")
         data = resp.json()
         assert "collections" in data
+        assert "vector_store" in data
         assert "timestamp" in data
         assert "matches" in data["collections"]
         assert "standings" in data["collections"]
         assert "scorers" in data["collections"]
+        assert "backend" in data["vector_store"]
+        assert "durable" in data["vector_store"]
 
 
 # ---------------------------------------------------------------------------

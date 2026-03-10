@@ -81,6 +81,32 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "ollama/llama3.2")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "60"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 TOP_K: int = int(os.environ.get("TOP_K", "4"))
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
+
+
+def _vector_store_metadata() -> dict[str, Any]:
+    """Return runtime vector-store metadata for health/debug endpoints."""
+    backend = VECTOR_STORE_BACKEND or "chroma"
+    if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
+        durable = True
+    elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
+        durable = False
+    else:
+        durable = backend in {"vertex", "vertex-ai", "vertex-vector-search", "pgvector", "alloydb", "cloudsql"}
+
+    is_cloud_run = bool(os.environ.get("K_SERVICE"))
+    warning: str | None = None
+    if is_cloud_run and backend == "chroma" and not durable:
+        warning = "ChromaDB on Cloud Run uses instance-local disk. Use a managed vector backend for durable production state."
+
+    return {
+        "backend": backend,
+        "durable": durable,
+        "is_cloud_run": is_cloud_run,
+        "chroma_persist_dir": _ingest_module.CHROMA_PERSIST_DIR if backend == "chroma" else None,
+        "warning": warning,
+    }
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -823,6 +849,7 @@ async def health() -> JSONResponse:
             "embedding_model": _ingest_module.EMBEDDING_MODEL,
             "streaming_enabled": STREAMING_ENABLED,
             "feeds": _ingest_module.TRAVEL_FEEDS,
+            "vector_store": _vector_store_metadata(),
             "timestamp": datetime.utcnow().isoformat() + "Z",
         }
     )

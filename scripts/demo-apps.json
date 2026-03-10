@@ -337,6 +337,25 @@
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8095",
       "card_trigger_rules": []
+    },
+    {
+      "demo_key": "travel-planning",
+      "name": "Travel Planning",
+      "description": "Multi-step travel planning orchestration - trip itinerary with budget breakdown, expense tracking, and flight disruption replanning",
+      "config_json": {
+        "demo_key": "travel-planning",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "map",
+        "demo_color": "#0EA5E9",
+        "demo_order": 14
+      },
+      "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8096",
+      "card_trigger_rules": []
     }
   ],
   "open_claw": {
