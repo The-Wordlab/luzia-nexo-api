@@ -15,14 +15,15 @@ jobs:
       - name: Install python deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r demo-receiver/requirements.txt
+          pip install -r examples/hosted/demo-receiver/requirements.txt
           pip install -r examples/webhook/minimal/python/requirements.txt
           pip install -r examples/webhook/structured/python/requirements.txt
           pip install -r examples/webhook/advanced/python/requirements.txt
-          pip install -r examples-hosted/python/requirements.txt
+          pip install -r examples/webhook/football-live/python/requirements.txt
+          pip install -r examples/hosted/python/requirements.txt
       - name: Run demo receiver tests
         run: |
-          cd demo-receiver
+          cd examples/hosted/demo-receiver
           pytest -q
       - name: Run minimal webhook tests
         run: |
@@ -36,9 +37,13 @@ jobs:
         run: |
           cd examples/webhook/advanced/python
           pytest -q
+      - name: Run football live webhook tests
+        run: |
+          cd examples/webhook/football-live/python
+          pytest -q
       - name: Run hosted Python examples tests
         run: |
-          cd examples-hosted/python
+          cd examples/hosted/python
           pytest -q
 
   node-tests:
@@ -56,7 +61,7 @@ jobs:
           node --test test-webhook-server.mjs
       - name: Run hosted TypeScript examples tests
         run: |
-          cd examples-hosted/typescript
+          cd examples/hosted/typescript
           node --test test-server.mjs
       - name: Run SDK tests
         run: |
