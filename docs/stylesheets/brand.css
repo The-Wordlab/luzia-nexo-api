@@ -1,24 +1,24 @@
 /* Luzia Nexo docs theme tuning - capability-first visual hierarchy. */
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #0f3b4f;
-  --md-primary-fg-color--light: #1d5d78;
-  --md-primary-fg-color--dark: #0a2a38;
-  --md-accent-fg-color: #dd6e42;
-  --md-typeset-a-color: #0f6f8f;
-  --md-default-bg-color: #fffdf9;
+  --md-primary-fg-color: #0c3c63;
+  --md-primary-fg-color--light: #145987;
+  --md-primary-fg-color--dark: #082941;
+  --md-accent-fg-color: #0ea5c6;
+  --md-typeset-a-color: #0c8aa8;
+  --md-default-bg-color: #ffffff;
   --md-default-fg-color: #171717;
   --md-typeset-color: #1f2933;
-  --md-code-bg-color: #f5f3ee;
+  --md-code-bg-color: #f4f7fb;
 }
 
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #133f50;
-  --md-primary-fg-color--light: #235f78;
-  --md-primary-fg-color--dark: #0c2d3a;
-  --md-accent-fg-color: #f58d63;
-  --md-typeset-a-color: #72d2f0;
-  --md-default-bg-color: #0c1520;
-  --md-code-bg-color: #111e2a;
+  --md-primary-fg-color: #0a3356;
+  --md-primary-fg-color--light: #0f4c81;
+  --md-primary-fg-color--dark: #072744;
+  --md-accent-fg-color: #4dd0e1;
+  --md-typeset-a-color: #8de7f3;
+  --md-default-bg-color: #06111c;
+  --md-code-bg-color: #102031;
 }
 
 .md-typeset .admonition,
@@ -63,7 +63,7 @@
 }
 
 .md-typeset table:not([class]) th {
-  background: linear-gradient(90deg, rgba(15, 59, 79, 0.08), rgba(221, 110, 66, 0.08));
+  background: linear-gradient(90deg, rgba(12, 60, 99, 0.1), rgba(14, 165, 198, 0.08));
   font-weight: 650;
 }
 
@@ -83,8 +83,8 @@
 }
 
 .md-typeset blockquote {
-  border-left: 3px solid #dd6e42;
-  background: rgba(221, 110, 66, 0.06);
+  border-left: 3px solid #0ea5c6;
+  background: rgba(14, 165, 198, 0.08);
   padding: 0.5rem 0.9rem;
   border-radius: 6px;
 }
