@@ -33,15 +33,15 @@ The partner owns domain detection. Nexo owns the user experience.
 ```mermaid
 flowchart LR
     subgraph P[Partner side - luzia-nexo-api]
-        A[Data sources<br/>RSS APIs WebSockets] --> B[Ingestion pipeline<br/>chunk embed store]
-        B --> C[Event detector<br/>LLM #1 domain intelligence]
-        C --> D[POST /api/apps/{id}/events<br/>event_type significance summary card teams]
+        A["Data sources<br/>RSS APIs WebSockets"] --> B["Ingestion pipeline<br/>chunk embed store"]
+        B --> C["Event detector<br/>LLM 1 domain intelligence"]
+        C --> D["POST /api/apps/:app_id/events<br/>event_type significance summary card teams"]
     end
 
     subgraph N[Nexo side - luzia-nexo]
         E[Incoming Event Processor] --> E1[Load subscriber context]
         E --> E2[Cross-app dedup]
-        E --> E3[LLM #2 personalisation]
+        E --> E3[LLM 2 personalisation]
         E --> E4[Delivery strategy]
         E4 --> F[Push notification]
         E4 --> G[Thread message + card]
@@ -128,7 +128,7 @@ flowchart TD
     B -- Yes --> C[Nexo LLM answers directly<br/>fast no partner call]
     B -- No --> D{Needs fresh partner data?}
     D -- Yes --> E[Forward to partner webhook<br/>RAG returns detailed answer + cards]
-    D -- No --> F{Platform action?<br/>reminder mute preference}
+    D -- No --> F{Platform action - reminder or mute preference?}
     F -- Yes --> G[Nexo handles directly]
     F -- No --> H[Nexo default assistant response]
 ```
