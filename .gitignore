@@ -34,3 +34,8 @@ examples/webhook/openclaw-bridge/typescript/.env
 
 # Docs build output
 site/
+
+# Runtime artifacts from local example runs
+examples/.e2e-venv/
+examples/webhook/*/python/events.db
+examples/webhook/*/python/chroma_*/
