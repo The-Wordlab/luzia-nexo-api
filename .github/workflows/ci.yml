@@ -20,6 +20,7 @@ jobs:
           pip install -r examples/webhook/structured/python/requirements.txt
           pip install -r examples/webhook/advanced/python/requirements.txt
           pip install -r examples/webhook/football-live/python/requirements.txt
+          pip install -r examples/webhook/routines/python/requirements.txt
           pip install -r examples/hosted/python/requirements.txt
       - name: Run demo receiver tests
         run: |
@@ -40,6 +41,10 @@ jobs:
       - name: Run football live webhook tests
         run: |
           cd examples/webhook/football-live/python
+          pytest -q
+      - name: Run routines webhook tests
+        run: |
+          cd examples/webhook/routines/python
           pytest -q
       - name: Run hosted Python examples tests
         run: |
