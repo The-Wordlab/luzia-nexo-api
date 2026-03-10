@@ -21,6 +21,7 @@ jobs:
           pip install -r examples/webhook/advanced/python/requirements.txt
           pip install -r examples/webhook/football-live/python/requirements.txt
           pip install -r examples/webhook/routines/python/requirements.txt
+          pip install -r examples/webhook/food-ordering/python/requirements.txt
           pip install -r examples/hosted/python/requirements.txt
       - name: Run demo receiver tests
         run: |
@@ -45,6 +46,10 @@ jobs:
       - name: Run routines webhook tests
         run: |
           cd examples/webhook/routines/python
+          pytest -q
+      - name: Run food ordering webhook tests
+        run: |
+          cd examples/webhook/food-ordering/python
           pytest -q
       - name: Run hosted Python examples tests
         run: |

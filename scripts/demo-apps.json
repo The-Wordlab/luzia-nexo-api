@@ -318,6 +318,25 @@
       "webhook_url_env": "DEMO_ROUTINES_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8094",
       "card_trigger_rules": []
+    },
+    {
+      "demo_key": "food-ordering",
+      "name": "Food Ordering",
+      "description": "Simulated food ordering assistant - browse menu, build an order with dietary and budget constraints, track delivery status",
+      "config_json": {
+        "demo_key": "food-ordering",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "utensils",
+        "demo_color": "#F97316",
+        "demo_order": 13
+      },
+      "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8095",
+      "card_trigger_rules": []
     }
   ],
   "open_claw": {
