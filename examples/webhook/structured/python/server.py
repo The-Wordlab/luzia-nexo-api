@@ -45,6 +45,26 @@ from fastapi.responses import JSONResponse
 app = FastAPI(title="intermediate-webhook")
 
 
+@app.get("/")
+async def root() -> JSONResponse:
+    """Service discovery endpoint for local/manual testing."""
+    return JSONResponse(
+        {
+            "service": "webhook-structured-python",
+            "description": "Structured webhook example with profile-aware replies and card hints.",
+            "routes": [
+                {
+                    "path": "/",
+                    "method": "POST",
+                    "description": "Main webhook endpoint returning schema_version/status/content_parts/cards.",
+                    "auth": "Optional WEBHOOK_SECRET (X-Signature)",
+                }
+            ],
+            "schema_version": "2026-03-01",
+        }
+    )
+
+
 # ---------------------------------------------------------------------------
 # HMAC signature validation (same pattern as webhook-basics)
 # ---------------------------------------------------------------------------

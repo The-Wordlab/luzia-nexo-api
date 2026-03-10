@@ -75,6 +75,32 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI(title="advanced-connector-webhook")
 
+
+@app.get("/")
+async def root() -> JSONResponse:
+    """Service discovery endpoint for local/manual testing."""
+    return JSONResponse(
+        {
+            "service": "webhook-advanced-python",
+            "description": "Advanced connector webhook with action routing, idempotency, and retry metadata.",
+            "routes": [
+                {
+                    "path": "/",
+                    "method": "POST",
+                    "description": "Main webhook endpoint that routes by context.intent.",
+                    "auth": "Optional WEBHOOK_SECRET (X-Signature)",
+                },
+                {
+                    "path": "/actions/{action_type}",
+                    "method": "POST",
+                    "description": "Direct action execution endpoint (order_status, schedule_appointment).",
+                    "auth": "None",
+                },
+            ],
+            "schema_version": "2026-03-01",
+        }
+    )
+
 # ---------------------------------------------------------------------------
 # In-memory action log (idempotency store)
 # ---------------------------------------------------------------------------

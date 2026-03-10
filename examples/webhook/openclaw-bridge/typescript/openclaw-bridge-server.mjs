@@ -510,6 +510,31 @@ export function createServer(configProvider = () => ({
   allowRequestOpenClawToken: process.env.ALLOW_REQUEST_OPENCLAW_TOKEN === "true",
 })) {
   return http.createServer((req, res) => {
+    if (req.method === "GET" && req.url === "/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          service: "webhook-openclaw-bridge-typescript",
+          description: "Bridge from Nexo webhook payloads to OpenClaw /v1/responses.",
+          routes: [
+            {
+              path: "/webhook",
+              method: "POST",
+              description: "Main webhook endpoint (JSON and SSE modes).",
+              auth: "Optional WEBHOOK_SECRET and optional BRIDGE_ACCESS_KEY",
+            },
+          ],
+          upstream: {
+            base_url_env: "OPENCLAW_BASE_URL",
+            token_env: "OPENCLAW_GATEWAY_TOKEN",
+            origin_header_env: "OPENCLAW_ORIGIN_HEADER_VALUE",
+          },
+          schema_version: DEFAULT_SCHEMA_VERSION,
+        }),
+      );
+      return;
+    }
+
     if (req.method !== "POST" || req.url !== "/webhook") {
       res.writeHead(405, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Method Not Allowed" }));

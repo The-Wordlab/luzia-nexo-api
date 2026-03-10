@@ -418,6 +418,25 @@ async def lifespan(app_instance: FastAPI):
 app = FastAPI(title="Football Live Webhook", lifespan=lifespan)
 
 
+@app.get("/")
+async def root():
+    """Service discovery endpoint for local/manual testing."""
+    return {
+        "service": "webhook-football-live-python",
+        "description": "Live football webhook with matches, standings, scorers, and optional SSE output.",
+        "routes": [
+            {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+            {"path": "/health", "method": "GET", "description": "Collection counts and timestamp"},
+            {"path": "/admin/status", "method": "GET", "description": "Admin status and config"},
+            {"path": "/admin/refresh", "method": "POST", "description": "Run full refresh from football-data.org"},
+            {"path": "/ingest", "method": "POST", "description": "Run full ingest"},
+            {"path": "/ingest/live", "method": "POST", "description": "Run live matches ingest"},
+        ],
+        "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature) on webhook path",
+        "schema_version": SCHEMA_VERSION,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Webhook endpoint
 # ---------------------------------------------------------------------------

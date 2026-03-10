@@ -680,6 +680,28 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
 
 
+@app.get("/")
+async def root() -> JSONResponse:
+    """Service discovery endpoint for local/manual testing."""
+    return JSONResponse(
+        {
+            "service": "webhook-sports-rag-python",
+            "description": "Sports RAG webhook with intent routing, streaming, and live event detection.",
+            "routes": [
+                {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+                {"path": "/health", "method": "GET", "description": "Collection counts and runtime state"},
+                {"path": "/ingest", "method": "POST", "description": "Full ingest (articles, matches, standings)"},
+                {"path": "/ingest/live", "method": "POST", "description": "Live-only ingest"},
+                {"path": "/admin/status", "method": "GET", "description": "Admin status summary"},
+                {"path": "/admin/events", "method": "GET", "description": "Recent detected events"},
+                {"path": "/admin/detect", "method": "POST", "description": "Force one event detection cycle"},
+            ],
+            "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
+            "schema_version": "2026-03-01",
+        }
+    )
+
+
 # ---------------------------------------------------------------------------
 # Health endpoint
 # ---------------------------------------------------------------------------

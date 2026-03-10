@@ -95,6 +95,24 @@ def _require_signature(request: Request, raw_body: bytes) -> None:
 app = FastAPI(title="nexo-examples minimal webhook")
 
 
+@app.get("/")
+async def root() -> dict:
+    """Service discovery endpoint for local/manual testing."""
+    return {
+        "service": "webhook-minimal-python",
+        "description": "Minimal Nexo webhook example with optional HMAC verification.",
+        "routes": [
+            {
+                "path": "/webhook",
+                "method": "POST",
+                "description": "Receive Nexo webhook payload and return response envelope.",
+                "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
+            }
+        ],
+        "schema_version": "2026-03-01",
+    }
+
+
 @app.post("/webhook", response_model=WebhookResponseOut)
 async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookResponseOut:
     raw_body = await request.body()

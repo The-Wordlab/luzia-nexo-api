@@ -445,6 +445,24 @@ app = FastAPI(
 )
 
 
+@app.get("/")
+async def root() -> JSONResponse:
+    """Service discovery endpoint for local/manual testing."""
+    return JSONResponse(
+        {
+            "service": "webhook-news-rag-python",
+            "description": "News RAG webhook using RSS ingestion, Chroma retrieval, and source cards.",
+            "routes": [
+                {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint"},
+                {"path": "/ingest", "method": "POST", "description": "Trigger feed crawl + re-index"},
+                {"path": "/health", "method": "GET", "description": "Index and model health details"},
+            ],
+            "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
+            "schema_version": "2026-03-01",
+        }
+    )
+
+
 @app.on_event("startup")
 async def _startup() -> None:
     """Start the initial feed crawl and schedule periodic refreshes."""

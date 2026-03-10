@@ -63,6 +63,26 @@ export function processWebhook(raw, headers = {}, secret = "") {
 
 export function createServer(secretProvider = () => process.env.WEBHOOK_SECRET || "") {
   return http.createServer((req, res) => {
+    if (req.method === "GET" && req.url === "/") {
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
+          service: "webhook-minimal-typescript",
+          description: "Minimal Nexo webhook example with optional HMAC verification.",
+          routes: [
+            {
+              path: "/",
+              method: "POST",
+              description: "Receive Nexo webhook payload and return response envelope.",
+              auth: "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
+            },
+          ],
+          schema_version: "2026-03-01",
+        }),
+      );
+      return;
+    }
+
     if (req.method !== "POST") {
       res.writeHead(405);
       res.end();

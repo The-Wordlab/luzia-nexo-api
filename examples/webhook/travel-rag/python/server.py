@@ -609,6 +609,24 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 app = FastAPI(title="nexo-travel-rag-webhook", lifespan=lifespan)
 
 
+@app.get("/")
+async def root() -> JSONResponse:
+    """Service discovery endpoint for local/manual testing."""
+    return JSONResponse(
+        {
+            "service": "webhook-travel-rag-python",
+            "description": "Travel RAG webhook with destination and article retrieval plus structured cards.",
+            "routes": [
+                {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+                {"path": "/ingest", "method": "POST", "description": "Run full destination + RSS ingest"},
+                {"path": "/health", "method": "GET", "description": "Collection counts and model config"},
+            ],
+            "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
+            "schema_version": "2026-03-01",
+        }
+    )
+
+
 # ---------------------------------------------------------------------------
 # Main webhook endpoint
 # ---------------------------------------------------------------------------
