@@ -113,3 +113,39 @@
     padding-top: 0.1rem;
   }
 }
+
+/* Keep Mermaid diagrams on a single docs palette across all diagram types. */
+.md-typeset .mermaid svg {
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif !important;
+}
+
+.md-typeset .mermaid .actor,
+.md-typeset .mermaid .labelBox,
+.md-typeset .mermaid .section0,
+.md-typeset .mermaid .section2 {
+  fill: #e8f1ff !important;
+  stroke: #1d4ed8 !important;
+}
+
+.md-typeset .mermaid .note,
+.md-typeset .mermaid .section1,
+.md-typeset .mermaid .section3 {
+  fill: #ecfeff !important;
+  stroke: #0891b2 !important;
+}
+
+.md-typeset .mermaid .messageLine0,
+.md-typeset .mermaid .messageLine1,
+.md-typeset .mermaid .flowchart-link,
+.md-typeset .mermaid .arrowheadPath,
+.md-typeset .mermaid .edgePath .path {
+  stroke: #0f4c81 !important;
+}
+
+.md-typeset .mermaid .label,
+.md-typeset .mermaid text,
+.md-typeset .mermaid .actor > text,
+.md-typeset .mermaid .loopText > text {
+  fill: #0f172a !important;
+}
