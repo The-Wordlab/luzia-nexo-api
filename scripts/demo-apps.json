@@ -276,9 +276,28 @@
         },
         "demo_icon": "link",
         "demo_color": "#EC4899",
-        "demo_order": 9
+        "demo_order": 10
       },
       "webhook_url": null,
+      "card_trigger_rules": []
+    },
+    {
+      "demo_key": "football-live",
+      "name": "Football Live",
+      "description": "Live football assistant - scores, standings, and top scorers with structured cards",
+      "config_json": {
+        "demo_key": "football-live",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "goal",
+        "demo_color": "#2563EB",
+        "demo_order": 9
+      },
+      "webhook_url_env": "DEMO_FOOTBALL_LIVE_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8093",
       "card_trigger_rules": []
     }
   ],
@@ -292,7 +311,7 @@
       "demo_key": "open-claw",
       "demo_icon": "cpu",
       "demo_color": "#0EA5E9",
-      "demo_order": 10,
+      "demo_order": 11,
       "integration_mode": "webhook",
       "integration": {
         "mode": "webhook",

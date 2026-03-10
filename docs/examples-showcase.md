@@ -2,7 +2,7 @@
 
 Real-world partner integrations built on Nexo. Each example is a full webhook server you can clone, run locally, and deploy to Cloud Run.
 
-All three use the same pattern:
+All four use the same pattern:
 - Ingest domain data (RSS, APIs) into ChromaDB
 - Accept Nexo webhook requests
 - Retrieve relevant chunks, call an LLM, return rich responses
@@ -409,7 +409,7 @@ For the full architecture and design: [design-live-streaming.md](design-live-str
 
 ## Running all examples locally
 
-All three services can run together using the Makefile:
+All four services can run together using the Makefile:
 
 ```bash
 git clone git@github.com:The-Wordlab/luzia-nexo-api.git
@@ -442,7 +442,7 @@ OPENAI_API_KEY=sk-... FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
 
 ## Deploying to Cloud Run
 
-Deploy all three RAG services with a single command:
+Deploy all four RAG services with a single command:
 
 ```bash
 GCP_PROJECT_ID=your-project ./scripts/deploy-rag-examples.sh all
