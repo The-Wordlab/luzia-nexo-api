@@ -1,8 +1,13 @@
 # Demo Catalog
 
-This page is the fastest way to understand what this repository can do in practice.
+This page is the fastest way to see what partners can launch with Nexo today.
 
-All **server-side** demos are deployable to Cloud Run.  
+Think of these demos as reusable growth accelerators:
+- proven integration patterns you can clone
+- live examples you can validate immediately
+- starter architectures you can adapt to your own domain
+
+All **server-side** demos are deployable to Cloud Run.
 The only examples that are not deployed as services are CLI scripts under `examples/partner-api/proactive`.
 
 All webhook demos now expose a clean `GET /` service-discovery response so teams can inspect:
@@ -18,7 +23,7 @@ The folder split is by **contract type**, not by local-vs-production:
 - `examples/webhook/*`: services that receive Nexo webhook events and return Nexo response envelopes.
 - `examples/hosted/*`: reference HTTP APIs used for capability demos and contract testing.
 
-Both are deployable.
+Both are deployable and production-oriented.
 
 ## Live deployed demos
 
