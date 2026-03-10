@@ -66,3 +66,5 @@ cd examples && docker compose up travel-rag
 | `CHROMA_PERSIST_DIR` | `./chroma_data` | ChromaDB persistence path |
 | `STREAMING_ENABLED` | `false` | Enable SSE streaming |
 | `TOP_K` | `4` | Chunks to retrieve per query |
+| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
+| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |

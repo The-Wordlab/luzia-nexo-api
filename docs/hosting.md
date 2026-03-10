@@ -162,6 +162,30 @@ Individual targets: `news`, `sports`, `travel`, `football`.
 
 Each example service has a `cloudbuild.yaml` that handles the full build-push-deploy pipeline on Cloud Run.
 
+### Vector storage on Cloud Run (important)
+
+Current RAG demos default to `VECTOR_STORE_BACKEND=chroma`.
+That works for demos, but on Cloud Run the local Chroma path is instance-local disk.
+
+- Good for demo/prototyping.
+- Not sufficient for durable production vector state.
+
+Each RAG `/health` endpoint now returns:
+- `vector_store.backend`
+- `vector_store.durable`
+- `vector_store.is_cloud_run`
+- `vector_store.warning` (when running non-durable Chroma on Cloud Run)
+
+Recommended production posture:
+1. Use a managed vector backend (for example Vertex AI Vector Search or pgvector on AlloyDB/Cloud SQL).
+2. Set `VECTOR_STORE_BACKEND` to that backend.
+3. Set `VECTOR_STORE_DURABLE=true`.
+4. Run ingest as a scheduled job and keep serving instances stateless.
+
+If you intentionally run Chroma in demo mode on Cloud Run, keep:
+- `VECTOR_STORE_BACKEND=chroma`
+- `VECTOR_STORE_DURABLE=false`
+
 ### Current deployment (luzia-nexo-api-examples project)
 
 Regenerate this table when needed:

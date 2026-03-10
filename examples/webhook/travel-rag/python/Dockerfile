@@ -20,6 +20,8 @@ RUN mkdir -p /data/chroma
 
 # Environment defaults - override via Cloud Run env vars or docker run -e
 ENV CHROMA_PERSIST_DIR=/data/chroma \
+    VECTOR_STORE_BACKEND=chroma \
+    VECTOR_STORE_DURABLE=false \
     LLM_MODEL=ollama/llama3.2 \
     EMBEDDING_MODEL=text-embedding-3-small \
     REFRESH_INTERVAL_MINUTES=60 \

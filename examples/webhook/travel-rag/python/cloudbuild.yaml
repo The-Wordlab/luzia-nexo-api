@@ -82,7 +82,7 @@ steps:
       # Environment variables sourced from Secret Manager
       - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest"
       # Non-secret configuration
-      - "--set-env-vars=LLM_MODEL=openai/gpt-4o-mini,EMBEDDING_MODEL=text-embedding-3-small,REFRESH_INTERVAL_MINUTES=60,STREAMING_ENABLED=true,TOP_K=4"
+      - "--set-env-vars=LLM_MODEL=openai/gpt-4o-mini,EMBEDDING_MODEL=text-embedding-3-small,REFRESH_INTERVAL_MINUTES=60,STREAMING_ENABLED=true,TOP_K=4,VECTOR_STORE_BACKEND=chroma,VECTOR_STORE_DURABLE=false"
     waitFor:
       - "push"
 

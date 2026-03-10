@@ -58,6 +58,9 @@ The webhook detects 4 intents from user messages:
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming |
 | `REFRESH_INTERVAL` | `300` | Background refresh interval (seconds) |
 | `TOP_K` | `5` | Number of search results per query |
+| `CHROMA_PERSIST_DIR` | `./chroma_football_live` | ChromaDB persistence path |
+| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
+| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
 
 ## Architecture
 

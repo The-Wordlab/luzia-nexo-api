@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from typing import Any
 
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 # ChromaDB setup
 # ---------------------------------------------------------------------------
 
-CHROMA_PERSIST_DIR = "./chroma_football_live"
+CHROMA_PERSIST_DIR = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_football_live")
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 COLLECTION_MATCHES = "matches"

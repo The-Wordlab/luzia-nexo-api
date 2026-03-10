@@ -61,7 +61,7 @@ steps:
       - "--concurrency=80"
       - "--timeout=60"
       - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest"
-      - "--set-env-vars=LLM_MODEL=openai/gpt-4o-mini,STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5"
+      - "--set-env-vars=LLM_MODEL=openai/gpt-4o-mini,STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5,CHROMA_PERSIST_DIR=/data/chroma,VECTOR_STORE_BACKEND=chroma,VECTOR_STORE_DURABLE=false"
     waitFor:
       - "push"
 

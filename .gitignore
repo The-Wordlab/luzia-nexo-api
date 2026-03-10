@@ -39,3 +39,5 @@ site/
 examples/.e2e-venv/
 examples/webhook/*/python/events.db
 examples/webhook/*/python/chroma_*/
+events.db
+chroma_*/

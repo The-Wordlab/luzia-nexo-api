@@ -80,6 +80,8 @@ services:
       REFRESH_INTERVAL_MINUTES: "${REFRESH_INTERVAL_MINUTES:-30}"
       TOP_K: "${TOP_K:-5}"
       CHROMA_PERSIST_DIR: "/data/chroma"
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
     volumes:
       - news-rag-chroma:/data/chroma
     healthcheck:
@@ -108,6 +110,8 @@ services:
       FOOTBALL_DATA_COMPETITION: "${FOOTBALL_DATA_COMPETITION:-PL}"
       REFRESH_INTERVAL_MINUTES: "${REFRESH_INTERVAL_MINUTES:-15}"
       CHROMA_PERSIST_DIR: "/data/chroma"
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
     volumes:
       - sports-rag-chroma:/data/chroma
     healthcheck:
@@ -136,6 +140,8 @@ services:
       TOP_K: "${TOP_K:-4}"
       CHROMA_PERSIST_DIR: "/data/chroma"
       STREAMING_ENABLED: "${STREAMING_ENABLED:-false}"
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
     volumes:
       - travel-rag-chroma:/data/chroma
     healthcheck:
@@ -159,6 +165,11 @@ services:
       STREAMING_ENABLED: "${STREAMING_ENABLED:-true}"
       REFRESH_INTERVAL: "${REFRESH_INTERVAL:-300}"
       TOP_K: "${TOP_K:-5}"
+      CHROMA_PERSIST_DIR: "/data/chroma"
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
+    volumes:
+      - football-live-chroma:/data/chroma
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
       interval: 30s
@@ -171,3 +182,4 @@ volumes:
   news-rag-chroma:
   sports-rag-chroma:
   travel-rag-chroma:
+  football-live-chroma:

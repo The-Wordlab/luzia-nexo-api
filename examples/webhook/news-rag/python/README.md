@@ -172,6 +172,8 @@ no secret configuration.
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret; verification skipped if empty |
 | `REFRESH_INTERVAL_MINUTES` | `30` | How often the background loop re-crawls all feeds |
 | `CHROMA_PERSIST_DIR` | `./chroma_data` | Path for ChromaDB persistence |
+| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
+| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Ollama server base URL |
 | `OPENAI_API_KEY` | _(empty)_ | Required for OpenAI embeddings or completions |
 | `TOP_K` | `5` | Number of chunks to retrieve per query |
@@ -224,3 +226,5 @@ The included `cloudbuild.yaml` builds and deploys to Cloud Run. Before first dep
 For a persistent vector index on Cloud Run, mount a Cloud Filestore NFS volume or
 replace ChromaDB with a managed vector DB (e.g. AlloyDB with pgvector, Vertex AI
 Vector Search) and point `CHROMA_PERSIST_DIR` accordingly.
+
+`GET /health` now includes a `vector_store` block showing backend and durability.

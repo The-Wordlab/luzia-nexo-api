@@ -53,6 +53,8 @@ unreachable, because the match seed data is hardcoded.
 | `REFRESH_INTERVAL_MINUTES` | `15` | Background refresh cadence (minutes). |
 | `CHROMA_PERSIST_DIR` | `./chroma_data` | Where ChromaDB stores its index on disk. |
 | `STREAMING_ENABLED` | `false` | Set to `true` to enable SSE streaming on `POST /`. |
+| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
+| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
 
 ## Using OpenAI
 
