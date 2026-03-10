@@ -41,13 +41,10 @@ extra_css:
   - stylesheets/brand.css
 
 nav:
-  - Overview:
-    - Home: index.md
-    - Quickstart: quickstart.md
-    - Demo Catalog: demos.md
-    - Examples Deep Dive: examples-showcase.md
-  - Integrate:
-    - API Reference: partner-api-reference.md
-    - Hosting: hosting.md
-  - Architecture:
-    - Live Streaming Design: design-live-streaming.md
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - API Reference: partner-api-reference.md
+  - Hosting (Optional): hosting.md
+  - Demo Catalog: demos.md
+  - Examples Showcase: examples-showcase.md
+  - Live Streaming Design: design-live-streaming.md
