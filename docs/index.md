@@ -45,13 +45,14 @@ Note: the app secret is required to receive real traffic from Nexo. For local/of
 
 ## What you can build
 
-Three reference implementations showing what a production Nexo partner looks like:
+Reference implementations showing what a production Nexo partner looks like:
 
 | Example | What it does | Live service | Source |
 |---------|-------------|-------------|--------|
-| **News Feed RAG** | Answers questions about current events using live RSS feeds. Returns source attribution cards. | [nexo-news-rag](https://nexo-news-rag-367427598362.europe-west1.run.app/) | [news-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) |
-| **Sports Feed RAG** | Football scores, standings, transfers. Intent detection routes to the right data. SSE streaming + live event detection. | [nexo-sports-rag](https://nexo-sports-rag-367427598362.europe-west1.run.app/) | [sports-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) |
-| **Travel RAG** | Destination guides with itinerary advice and blog content. Rich destination cards. | [nexo-travel-rag](https://nexo-travel-rag-367427598362.europe-west1.run.app/) | [travel-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-rag/python) |
+| **News Feed RAG** | Answers questions about current events using live RSS feeds. Returns source attribution cards. | [nexo-news-rag](https://nexo-news-rag-v3me5awkta-ew.a.run.app/) | [news-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) |
+| **Sports Feed RAG** | Football scores, standings, transfers. Intent detection routes to the right data. SSE streaming + live event detection. | [nexo-sports-rag](https://nexo-sports-rag-v3me5awkta-ew.a.run.app/) | [sports-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) |
+| **Travel RAG** | Destination guides with itinerary advice and blog content. Rich destination cards. | [nexo-travel-rag](https://nexo-travel-rag-v3me5awkta-ew.a.run.app/) | [travel-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-rag/python) |
+| **Football Live RAG** | Live scores, standings, and top scorers across multiple leagues with real-time updates and rich cards. | [nexo-football-live](https://nexo-football-live-v3me5awkta-ew.a.run.app/) | [football-live/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python) |
 
 Full walkthrough with architecture diagrams and example responses: [Examples Showcase](examples-showcase.md)
 
@@ -61,8 +62,17 @@ Minimal hosted reference services (echo + profile context):
 
 | Language | Live service | Source code |
 |----------|-------------|-------------|
-| Python | [nexo-examples-py](https://nexo-examples-py-367427598362.europe-west1.run.app/) | [examples/hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
-| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-367427598362.europe-west1.run.app/) | [examples/hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
+| Python | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [examples/hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
+| TypeScript | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [examples/hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
+
+Core webhook examples are also deployable as dedicated Cloud Run services:
+- minimal (Python + TypeScript)
+- structured (Python)
+- advanced (Python)
+- OpenClaw bridge (TypeScript)
+- all RAG services (news, sports, travel, football-live)
+
+See [Hosting (Optional)](hosting.md) for the full deployment matrix and commands.
 
 For standalone webhook snippets see [examples/webhook](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook).
 

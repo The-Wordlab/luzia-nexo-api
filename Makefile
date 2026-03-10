@@ -3,7 +3,7 @@ SHELL := /bin/bash
 GCP_PROJECT_ID ?= luzia-nexo-api-examples
 GCP_REGION ?= europe-west1
 
-.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-all-examples verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 check-toolchain:
 	./scripts/check-toolchain.sh
@@ -41,6 +41,12 @@ deploy-examples-ts:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-examples-ts ./examples/hosted/typescript/deploy/cloudrun/deploy.sh
 
 deploy-examples: deploy-examples-py deploy-examples-ts
+
+deploy-rag-examples:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-rag-examples.sh all
+
+deploy-all-examples:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-all-examples.sh all
 
 verify-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/verify-hosted-examples.sh

@@ -80,7 +80,7 @@ def build_source_cards(hits: list[dict]) -> list[dict]:
 ### Try it
 
 ```bash
-curl -X POST "https://nexo-news-rag-367427598362.europe-west1.run.app/" \
+curl -X POST "https://nexo-news-rag-v3me5awkta-ew.a.run.app/" \
   -H "Content-Type: application/json" \
   -d '{
     "event": "message_received",
@@ -195,7 +195,7 @@ _NEWS_RE      = re.compile(r"\b(news|latest|transfer|injury|manager)\b", re.I)
 The server supports SSE streaming when the client sends `Accept: text/event-stream`. Cards and actions are delivered in the final `done` event.
 
 ```bash
-curl -X POST "https://nexo-sports-rag-367427598362.europe-west1.run.app/" \
+curl -X POST "https://nexo-sports-rag-v3me5awkta-ew.a.run.app/" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
   -d '{ "message": { "content": "Who scored for Arsenal?" }, "thread": { "id": "t1" }, "timestamp": "2026-03-09T10:00:00Z" }'
@@ -232,7 +232,7 @@ Partners call the Nexo events endpoint to push detected events to subscriber thr
 ### Try it
 
 ```bash
-curl -X POST "https://nexo-sports-rag-367427598362.europe-west1.run.app/" \
+curl -X POST "https://nexo-sports-rag-v3me5awkta-ew.a.run.app/" \
   -H "Content-Type: application/json" \
   -d '{
     "event": "message_received",
@@ -312,7 +312,7 @@ Seed data covers 10+ destinations including Paris, Tokyo, Barcelona, New York, B
 ### Try it
 
 ```bash
-curl -X POST "https://nexo-travel-rag-367427598362.europe-west1.run.app/" \
+curl -X POST "https://nexo-travel-rag-v3me5awkta-ew.a.run.app/" \
   -H "Content-Type: application/json" \
   -d '{
     "event": "message_received",
@@ -335,9 +335,40 @@ Source: [examples/webhook/travel-rag/python](https://github.com/The-Wordlab/luzi
 
 ---
 
+## Football Live RAG
+
+A real-time football assistant focused on scores, standings, and top scorers across multiple leagues.
+It supports intent routing (`scores`, `standings`, `scorers`, `general`) and returns rich sports cards
+with live-aware metadata.
+
+### Try it
+
+```bash
+curl -X POST "https://nexo-football-live-v3me5awkta-ew.a.run.app/" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "message_received",
+    "message": { "content": "Who is top scorer in the Premier League?" },
+    "thread": { "id": "thread-004" },
+    "timestamp": "2026-03-09T10:00:00Z"
+  }'
+```
+
+### Run locally
+
+```bash
+cd examples/webhook/football-live/python
+pip install -r requirements.txt
+OPENAI_API_KEY=sk-... FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
+```
+
+Source: [examples/webhook/football-live/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python)
+
+---
+
 ## Push Events API
 
-All three RAG examples can push events proactively to subscriber threads using the Nexo Partner API. This turns the chat thread from a static Q&A into a live feed.
+The RAG examples can push events proactively to subscriber threads using the Nexo Partner API. This turns the chat thread from a static Q&A into a live feed.
 
 ### How it works
 
@@ -414,6 +445,10 @@ OPENAI_API_KEY=sk-... uvicorn server:app --port 8082
 # Travel RAG on :8083
 cd examples/webhook/travel-rag/python
 OPENAI_API_KEY=sk-... uvicorn server:app --port 8083
+
+# Football Live RAG on :8003
+cd examples/webhook/football-live/python
+OPENAI_API_KEY=sk-... FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
 ```
 
 ## Deploying to Cloud Run
@@ -424,7 +459,7 @@ Deploy all three RAG services with a single command:
 GCP_PROJECT_ID=your-project ./scripts/deploy-rag-examples.sh all
 ```
 
-Individual targets: `news`, `sports`, `travel`.
+Individual targets: `news`, `sports`, `travel`, `football`.
 
 Prerequisites and full deployment guide: [Hosting](hosting.md)
 

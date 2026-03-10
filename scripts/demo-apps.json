@@ -1,0 +1,307 @@
+{
+  "organization": {
+    "slug": "demo",
+    "name": "Demo Organization",
+    "description": "Organisation holding all stakeholder demo apps"
+  },
+  "character": {
+    "slug": "nexo",
+    "name": "Nexo",
+    "description": "Your AI assistant powered by Luzia",
+    "system_prompt": "You are Nexo, an AI assistant powered by Luzia. You are helpful, friendly, and capable of assisting with a wide variety of tasks. Be conversational and helpful.",
+    "greeting": "Hi! I'm Nexo, your AI assistant. How can I help you today?",
+    "suggestions": [
+      "Help me write something",
+      "Explain a topic",
+      "Brainstorm ideas"
+    ],
+    "assets": {
+      "avatarSmall": "/luzia/logos/nexo-octopus-avatar.png",
+      "avatarLight": "/luzia/logos/nexo-octopus-avatar.png",
+      "avatarDark": "/luzia/logos/nexo-octopus-avatar.png",
+      "avatarStatic": "/luzia/logos/nexo-octopus-avatar.png"
+    },
+    "brand": {
+      "primaryColor": "#4264FC",
+      "font": "Plus Jakarta Sans"
+    }
+  },
+  "apps": [
+    {
+      "demo_key": "ifood",
+      "name": "iFood Demo",
+      "description": "Food ordering flow demo - inline consent card, profile scoping",
+      "config_json": {
+        "demo_key": "ifood",
+        "integration_mode": "simulator",
+        "simulator_type": "generic",
+        "disclaimer": false,
+        "requested_scopes": [
+          "basic",
+          "preferences"
+        ],
+        "demo_icon": "utensils-crossed",
+        "demo_color": "#EF4444",
+        "demo_order": 1
+      },
+      "webhook_url": null,
+      "card_trigger_rules": [
+        {
+          "trigger_type": "partner_skill",
+          "keywords": [
+            "skill",
+            "partner",
+            "integration"
+          ],
+          "priority": 10,
+          "cooldown_seconds": 60
+        }
+      ]
+    },
+    {
+      "demo_key": "privacy",
+      "name": "Privacy Demo",
+      "description": "Profile data scoping demo - all 4 consent scopes",
+      "config_json": {
+        "demo_key": "privacy",
+        "integration_mode": "simulator",
+        "simulator_type": "generic",
+        "disclaimer": false,
+        "requested_scopes": [
+          "basic",
+          "preferences",
+          "memory",
+          "contact"
+        ],
+        "demo_icon": "shield-check",
+        "demo_color": "#8B5CF6",
+        "demo_order": 2
+      },
+      "webhook_url": null,
+      "card_trigger_rules": [
+        {
+          "trigger_type": "consent_request",
+          "keywords": [
+            "consent",
+            "permission",
+            "privacy",
+            "data"
+          ],
+          "priority": 30,
+          "cooldown_seconds": 60
+        }
+      ]
+    },
+    {
+      "demo_key": "fitness-coach",
+      "name": "Fitness Coach",
+      "description": "Webhook-based fitness coaching - workouts, nutrition, progress",
+      "config_json": {
+        "demo_key": "fitness-coach",
+        "integration_mode": "webhook",
+        "disclaimer": false,
+        "demo_icon": "dumbbell",
+        "demo_color": "#10B981",
+        "demo_order": 3
+      },
+      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/fitness-coach",
+      "webhook_url_default": "http://localhost:8080/v1/ingest/fitness-coach",
+      "card_trigger_rules": [
+        {
+          "trigger_type": "partner_skill",
+          "keywords": [
+            "skill",
+            "partner",
+            "integration"
+          ],
+          "priority": 10,
+          "cooldown_seconds": 120
+        }
+      ]
+    },
+    {
+      "demo_key": "travel-planner",
+      "name": "Travel Planner",
+      "description": "Webhook-based travel planning - destinations, restaurants, booking",
+      "config_json": {
+        "demo_key": "travel-planner",
+        "integration_mode": "webhook",
+        "disclaimer": false,
+        "demo_icon": "plane",
+        "demo_color": "#3B82F6",
+        "demo_order": 4
+      },
+      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/travel-planner",
+      "webhook_url_default": "http://localhost:8080/v1/ingest/travel-planner",
+      "card_trigger_rules": [
+        {
+          "trigger_type": "partner_skill",
+          "keywords": [
+            "skill",
+            "partner",
+            "integration"
+          ],
+          "priority": 10,
+          "cooldown_seconds": 120
+        }
+      ]
+    },
+    {
+      "demo_key": "language-tutor",
+      "name": "Language Tutor",
+      "description": "Webhook-based language learning - lessons, quizzes, study plans",
+      "config_json": {
+        "demo_key": "language-tutor",
+        "integration_mode": "webhook",
+        "disclaimer": false,
+        "demo_icon": "book-open",
+        "demo_color": "#F59E0B",
+        "demo_order": 5
+      },
+      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/language-tutor",
+      "webhook_url_default": "http://localhost:8080/v1/ingest/language-tutor",
+      "card_trigger_rules": [
+        {
+          "trigger_type": "character_transfer",
+          "keywords": [
+            "transfer",
+            "switch character",
+            "talk to"
+          ],
+          "priority": 20,
+          "cooldown_seconds": 120
+        }
+      ]
+    },
+    {
+      "demo_key": "news-rag",
+      "name": "News RAG",
+      "description": "RAG-powered news assistant - crawls RSS feeds, answers questions with source cards",
+      "config_json": {
+        "demo_key": "news-rag",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "newspaper",
+        "demo_color": "#6366F1",
+        "demo_order": 6
+      },
+      "webhook_url_env": "DEMO_NEWS_RAG_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8090",
+      "card_trigger_rules": []
+    },
+    {
+      "demo_key": "sports-rag",
+      "name": "Sports RAG",
+      "description": "RAG-powered sports assistant - match results, standings, and sports news with structured cards",
+      "config_json": {
+        "demo_key": "sports-rag",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "trophy",
+        "demo_color": "#F97316",
+        "demo_order": 7
+      },
+      "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8091",
+      "card_trigger_rules": []
+    },
+    {
+      "demo_key": "travel-rag",
+      "name": "Travel RAG",
+      "description": "RAG-powered travel assistant - destination profiles, itineraries, and travel blog articles with rich cards",
+      "config_json": {
+        "demo_key": "travel-rag",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "map-pin",
+        "demo_color": "#14B8A6",
+        "demo_order": 8
+      },
+      "webhook_url_env": "DEMO_TRAVEL_RAG_WEBHOOK_URL",
+      "webhook_url_default": "http://localhost:8092",
+      "card_trigger_rules": []
+    },
+    {
+      "demo_key": "chain-demo",
+      "name": "Chain Demo",
+      "description": "Multi-step chained experience: search -> confirm -> execute",
+      "config_json": {
+        "demo_key": "chain-demo",
+        "integration_mode": "simulator",
+        "simulator_type": "generic",
+        "disclaimer": false,
+        "chaining": {
+          "enabled": true,
+          "default_chain_id": "restaurant-chain",
+          "chains": [
+            {
+              "chain_id": "restaurant-chain",
+              "name": "Restaurant Booking",
+              "description": "Search, confirm, and book a restaurant",
+              "steps": [
+                {
+                  "app_id": "search-step",
+                  "input_mapping": {
+                    "query": "initial_input"
+                  },
+                  "timeout_seconds": 15
+                },
+                {
+                  "app_id": "confirm-step",
+                  "input_mapping": {
+                    "selection": "step_0_output"
+                  },
+                  "timeout_seconds": 15
+                },
+                {
+                  "app_id": "execute-step",
+                  "input_mapping": {
+                    "confirmation": "step_1_output"
+                  },
+                  "timeout_seconds": 15
+                }
+              ],
+              "created_at": "2026-01-01T00:00:00Z"
+            }
+          ]
+        },
+        "demo_icon": "link",
+        "demo_color": "#EC4899",
+        "demo_order": 9
+      },
+      "webhook_url": null,
+      "card_trigger_rules": []
+    }
+  ],
+  "open_claw": {
+    "_comment": "Optional Open CLAW demo app - only seeded when DEMO_OPENCLAW_ENABLED=true",
+    "demo_key": "open-claw",
+    "name_env": "DEMO_OPENCLAW_APP_NAME",
+    "name_default": "Open CLAW Demo",
+    "description": "Open CLAW bridge showcase - webhook mode with seeded credentials",
+    "config_json": {
+      "demo_key": "open-claw",
+      "demo_icon": "cpu",
+      "demo_color": "#0EA5E9",
+      "demo_order": 10,
+      "integration_mode": "webhook",
+      "integration": {
+        "mode": "webhook",
+        "template": "open_claw"
+      },
+      "disclaimer": false
+    },
+    "webhook_url_env": "DEMO_OPENCLAW_WEBHOOK_URL",
+    "webhook_url_default": "http://localhost:8082/webhook",
+    "webhook_secret_env": "DEMO_OPENCLAW_WEBHOOK_SECRET"
+  }
+}

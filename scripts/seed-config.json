@@ -1,0 +1,12 @@
+{
+  "local": {
+    "api_url": "http://localhost:8000",
+    "admin_email": "admin@test.com",
+    "admin_password": "password"
+  },
+  "production": {
+    "api_url": "https://nexo.example.com",
+    "admin_email": "${NEXO_ADMIN_EMAIL}",
+    "admin_password": "${NEXO_ADMIN_PASSWORD}"
+  }
+}

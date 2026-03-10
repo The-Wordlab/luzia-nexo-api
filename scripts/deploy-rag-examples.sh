@@ -5,7 +5,7 @@
 # Usage:
 #   ./scripts/deploy-rag-examples.sh <target> [--dry-run]
 #
-# Targets: all, news, sports, travel
+# Targets: all, news, sports, travel, football
 #
 # Required environment variables:
 #   GCP_PROJECT_ID   GCP project ID
@@ -31,6 +31,7 @@ get_service_name() {
     news)   echo "nexo-news-rag" ;;
     sports) echo "nexo-sports-rag" ;;
     travel) echo "nexo-travel-rag" ;;
+    football) echo "nexo-football-live" ;;
   esac
 }
 
@@ -39,16 +40,17 @@ get_example_dir() {
     news)   echo "examples/webhook/news-rag/python" ;;
     sports) echo "examples/webhook/sports-rag/python" ;;
     travel) echo "examples/webhook/travel-rag/python" ;;
+    football) echo "examples/webhook/football-live/python" ;;
   esac
 }
 
-ALL_TARGETS="news sports travel"
+ALL_TARGETS="news sports travel football"
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 usage() {
-  echo "Usage: $0 <all|news|sports|travel> [--dry-run]"
+  echo "Usage: $0 <all|news|sports|travel|football> [--dry-run]"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: us-central1), AR_REPO (default: nexo-examples)"
@@ -123,7 +125,7 @@ case "$TARGET" in
   all)
     targets="$ALL_TARGETS"
     ;;
-  news|sports|travel)
+  news|sports|travel|football)
     targets="$TARGET"
     ;;
   *)

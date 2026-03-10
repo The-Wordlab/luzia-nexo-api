@@ -128,6 +128,7 @@ source .venv/bin/activate
 make check-toolchain
 make test-all
 make docs-build
+make deploy-all-examples   # deploy all server-side examples to Cloud Run
 ```
 
 ## Support
