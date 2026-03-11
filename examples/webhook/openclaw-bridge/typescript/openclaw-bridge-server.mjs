@@ -282,7 +282,7 @@ export async function processWebhook(raw, headers = {}, opts = {}) {
     status: 200,
     body: {
       schema_version: DEFAULT_SCHEMA_VERSION,
-      status: "success",
+      status: "completed",
       content_parts: [{ type: "text", text }],
       metadata: {
         provider: "openclaw",
