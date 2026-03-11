@@ -498,7 +498,7 @@ export async function streamWebhook(raw, headers = {}, res, opts = {}) {
 }
 
 export function createServer(configProvider = () => ({
-  secret: process.env.WEBHOOK_SECRET || "",
+  secret: process.env.OPENCLAW_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET || "",
   bridgeAccessKey: process.env.BRIDGE_ACCESS_KEY || "",
   openclawBaseUrl: process.env.OPENCLAW_BASE_URL || "http://127.0.0.1:18789",
   openclawToken: process.env.OPENCLAW_GATEWAY_TOKEN || "",
@@ -521,7 +521,7 @@ export function createServer(configProvider = () => ({
               path: "/webhook",
               method: "POST",
               description: "Main webhook endpoint (JSON and SSE modes).",
-              auth: "Optional WEBHOOK_SECRET and optional BRIDGE_ACCESS_KEY",
+              auth: "Optional OPENCLAW_WEBHOOK_SECRET (or WEBHOOK_SECRET fallback) and optional BRIDGE_ACCESS_KEY",
             },
           ],
           upstream: {

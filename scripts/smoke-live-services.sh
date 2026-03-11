@@ -218,10 +218,17 @@ echo
 
 echo "Resolving runtime secrets..."
 WEBHOOK_SECRET="$(gcloud secrets versions access latest --secret=WEBHOOK_SECRET --project="$PROJECT_ID")"
+OPENCLAW_WEBHOOK_SECRET="$(
+  gcloud secrets versions access latest --secret=OPENCLAW_WEBHOOK_SECRET --project="$PROJECT_ID" 2>/dev/null || true
+)"
 
 if [[ -z "$WEBHOOK_SECRET" ]]; then
   echo "ERROR: WEBHOOK_SECRET resolved empty"
   exit 1
+fi
+if [[ -z "$OPENCLAW_WEBHOOK_SECRET" ]]; then
+  echo "WARN: OPENCLAW_WEBHOOK_SECRET not found - falling back to WEBHOOK_SECRET for OpenClaw checks"
+  OPENCLAW_WEBHOOK_SECRET="$WEBHOOK_SECRET"
 fi
 
 echo "Resolving service URLs..."
@@ -297,7 +304,7 @@ http_post_signed_check \
   "${URL_MINIMAL_TS}/" \
   '{"event":"message_created","message":{"role":"user","content":"hello from smoke"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+WEBHOOK_SECRET="$OPENCLAW_WEBHOOK_SECRET" http_post_signed_check \
   "openclaw-bridge webhook" \
   "${URL_OPENCLAW_BRIDGE}/webhook" \
   '{"event":"message_created","app":{"id":"smoke-openclaw"},"thread":{"id":"smoke-openclaw-thread"},"message":{"role":"user","content":"say hello from smoke test"},"profile":{"display_name":"Mark"}}' \

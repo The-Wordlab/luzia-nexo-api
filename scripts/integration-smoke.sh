@@ -10,7 +10,7 @@
 #   --webhook-url    Deployed Cloud Run webhook URL (required)
 #   --email          Test user email (default: e2e-smoke@luzia.com)
 #   --password       Test user password (default: NexoPass#99)
-#   --webhook-secret Webhook secret (default: test-secret, or $WEBHOOK_SECRET env var)
+#   --webhook-secret Webhook secret (default: nexo-example-secret, or $WEBHOOK_SECRET env var)
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ NEXO_URL="http://localhost:8000"
 WEBHOOK_URL=""
 EMAIL="tester@luzia.com"
 PASSWORD="NexoPass#99"
-WEBHOOK_SECRET="${WEBHOOK_SECRET:-test-secret}"
+WEBHOOK_SECRET="${WEBHOOK_SECRET:-nexo-example-secret}"
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do

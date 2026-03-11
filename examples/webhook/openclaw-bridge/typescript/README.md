@@ -5,7 +5,7 @@ Nexo-compatible webhook implementation that forwards user requests to OpenClaw G
 ## What it does
 
 1. Receives Nexo webhook payloads at `POST /webhook`
-2. Verifies signature (`X-Timestamp`, `X-Signature`) when `WEBHOOK_SECRET` is set
+2. Verifies signature (`X-Timestamp`, `X-Signature`) when `OPENCLAW_WEBHOOK_SECRET` is set
 3. Calls OpenClaw `POST /v1/responses`
 4. Returns canonical Nexo rich response envelope (JSON mode) or Nexo SSE (`delta`/`done`) in stream mode
 5. Exposes `GET /` service discovery metadata (routes, auth expectations, schema version)
@@ -30,7 +30,8 @@ data: {"type":"done"}
 - `OPENCLAW_GATEWAY_TOKEN` (required)
 - `OPENCLAW_BASE_URL` (default: `http://127.0.0.1:18789`)
 - `OPENCLAW_AGENT_ID` (default: `main`)
-- `WEBHOOK_SECRET` (optional, but recommended)
+- `OPENCLAW_WEBHOOK_SECRET` (optional, but recommended)
+- `WEBHOOK_SECRET` (optional fallback for compatibility)
 - `BRIDGE_ACCESS_KEY` (recommended in hosted environments; requires `X-Bridge-Key` header on requests)
 - `ALLOW_REQUEST_SESSION_KEY` (default: `false`; when `true`, accepts `X-OpenClaw-Session-Key` or `metadata.openclaw_session_key`)
 - `ALLOW_REQUEST_OPENCLAW_TOKEN` (default: `false`; when `true`, accepts `X-OpenClaw-Gateway-Token` if server token is unset)

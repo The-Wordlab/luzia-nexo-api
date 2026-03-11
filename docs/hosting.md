@@ -83,7 +83,8 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 
 | Secret | Used by | Source |
 |---|---|---|
-| `WEBHOOK_SECRET` | All webhook services | Shared HMAC signing secret with Nexo |
+| `WEBHOOK_SECRET` | Standard webhook services | Shared HMAC signing secret with Nexo (recommended value: `nexo-example-secret`) |
+| `OPENCLAW_WEBHOOK_SECRET` | openclaw-bridge | Dedicated OpenClaw webhook signing secret (recommended value: `nexo-openclaw-secret`) |
 | `FOOTBALL_DATA_API_KEY` | sports-rag, football-live | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
 | `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
@@ -95,7 +96,7 @@ echo -n "your-value" | gcloud secrets create SECRET_NAME --data-file=-
 
 # Grant Cloud Run access
 PROJECT_NUM=$(gcloud projects describe $GCP_PROJECT_ID --format='value(projectNumber)')
-for SECRET in WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE NEXO_PGVECTOR_DSN; do
+for SECRET in WEBHOOK_SECRET OPENCLAW_WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE NEXO_PGVECTOR_DSN; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" --quiet
@@ -359,7 +360,8 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 
 | Secret Manager key | Description |
 |---|---|
-| `WEBHOOK_SECRET` | HMAC-SHA256 signing secret shared with Nexo |
+| `WEBHOOK_SECRET` | HMAC-SHA256 signing secret for standard webhook demos (`nexo-example-secret`) |
+| `OPENCLAW_WEBHOOK_SECRET` | HMAC-SHA256 signing secret for openclaw-bridge (`nexo-openclaw-secret`) |
 | `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services with `VECTOR_STORE_BACKEND=pgvector` |
 | `FOOTBALL_DATA_API_KEY` | football-data.org API key for live match/standings data |
 | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw gateway bearer token for openclaw-bridge |
