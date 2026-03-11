@@ -22,7 +22,7 @@ Endpoints:
 
 Environment variables:
   WEBHOOK_SECRET              HMAC secret for verifying Nexo requests
-  LLM_MODEL                   litellm model string (default: vertex_ai/gemini-2.0-flash-001)
+  LLM_MODEL                   litellm model string (default: vertex_ai/gemini-2.5-flash)
   EMBEDDING_MODEL             Embedding model (default: vertex_ai/text-embedding-004)
   TRAVEL_FEEDS                Comma-separated RSS feed URLs
   REFRESH_INTERVAL_MINUTES    Background refresh cadence (default: 60)
@@ -97,7 +97,7 @@ def _configure_vertex_env_defaults() -> None:
 _configure_vertex_env_defaults()
 
 WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
-LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
+LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "60"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 TOP_K: int = int(os.environ.get("TOP_K", "4"))

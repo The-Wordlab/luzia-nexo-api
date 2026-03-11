@@ -31,9 +31,19 @@ test("auth with X-App-Secret works", () => {
   assert.equal(ok, true);
 });
 
+test("auth is disabled when shared secret is unset", () => {
+  const ok = isAuthorized({}, "");
+  assert.equal(ok, true);
+});
+
 test("webhook rejects unauthorized request", () => {
   const result = processRequest("POST", "/webhook/minimal", {}, "{}", secret);
   assert.equal(result.status, 401);
+});
+
+test("webhook allows request when shared secret is unset", () => {
+  const result = processRequest("POST", "/webhook/minimal", {}, "{}", "");
+  assert.equal(result.status, 200);
 });
 
 test("webhook accepts authorized request", () => {

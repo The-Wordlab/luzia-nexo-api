@@ -20,6 +20,7 @@ function infoPayload() {
     docs_url: "https://the-wordlab.github.io/luzia-nexo-api/",
     auth: {
       shared_secret_env: "EXAMPLES_SHARED_API_SECRET",
+      mode: "optional",
       headers: ["X-App-Secret", "Authorization: Bearer <secret>"],
     },
     endpoints: [
@@ -86,7 +87,7 @@ function webhookResponse(text, options = {}) {
 }
 
 export function isAuthorized(headers, expectedSecret) {
-  if (!expectedSecret) return false;
+  if (!expectedSecret) return true;
   const appSecret = (headers["x-app-secret"] ?? "").toString();
   if (appSecret && appSecret === expectedSecret) return true;
 
@@ -158,7 +159,7 @@ export function processRequest(method, url, headers, rawBody, expectedSecret) {
         },
         headers: {
           "X-App-Id": "<app-id>",
-          "X-App-Secret": "<shared-secret>",
+          "X-App-Secret": "<app-secret>",
         },
       },
       contentType: "application/json",

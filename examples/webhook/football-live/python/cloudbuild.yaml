@@ -62,7 +62,7 @@ steps:
       - "--concurrency=80"
       - "--timeout=60"
       - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest,PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest"
-      - "--set-env-vars=LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${_PROJECT_ID},VERTEXAI_LOCATION=${_REGION},STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5,VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football"
+      - "--set-env-vars=LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${_PROJECT_ID},VERTEXAI_LOCATION=${_REGION},STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5,VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football"
     waitFor:
       - "push"
 

@@ -95,7 +95,7 @@
     {
       "demo_key": "fitness-coach",
       "name": "Fitness Coach",
-      "description": "Webhook-based fitness coaching - workouts, nutrition, progress",
+      "description": "Webhook fitness coach - workout planning, progress reviews, and nutrition guidance",
       "config_json": {
         "demo_key": "fitness-coach",
         "integration_mode": "webhook",
@@ -104,8 +104,8 @@
         "demo_color": "#10B981",
         "demo_order": 3
       },
-      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/fitness-coach",
-      "webhook_url_default": "http://localhost:8080/v1/ingest/fitness-coach",
+      "webhook_url_env": "DEMO_FITNESS_COACH_WEBHOOK_URL",
+      "webhook_url_default": "https://nexo-fitness-coach-367427598362.europe-west1.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "partner_skill",
@@ -122,7 +122,7 @@
     {
       "demo_key": "travel-planner",
       "name": "Travel Planner",
-      "description": "Webhook-based travel planning - destinations, restaurants, booking",
+      "description": "Webhook travel planner - itinerary creation, flight options, and booking handoff",
       "config_json": {
         "demo_key": "travel-planner",
         "integration_mode": "webhook",
@@ -131,8 +131,8 @@
         "demo_color": "#3B82F6",
         "demo_order": 4
       },
-      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/travel-planner",
-      "webhook_url_default": "http://localhost:8080/v1/ingest/travel-planner",
+      "webhook_url_env": "DEMO_TRAVEL_PLANNER_WEBHOOK_URL",
+      "webhook_url_default": "https://nexo-travel-planner-367427598362.europe-west1.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "partner_skill",
@@ -149,7 +149,7 @@
     {
       "demo_key": "language-tutor",
       "name": "Language Tutor",
-      "description": "Webhook-based language learning - lessons, quizzes, study plans",
+      "description": "Webhook language tutor - phrase help, conversation quizzes, and lesson plans",
       "config_json": {
         "demo_key": "language-tutor",
         "integration_mode": "webhook",
@@ -158,8 +158,8 @@
         "demo_color": "#F59E0B",
         "demo_order": 5
       },
-      "webhook_url_template": "${DEMO_WEBHOOK_BASE}/v1/ingest/language-tutor",
-      "webhook_url_default": "http://localhost:8080/v1/ingest/language-tutor",
+      "webhook_url_env": "DEMO_LANGUAGE_TUTOR_WEBHOOK_URL",
+      "webhook_url_default": "https://nexo-language-tutor-367427598362.europe-west1.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "character_transfer",

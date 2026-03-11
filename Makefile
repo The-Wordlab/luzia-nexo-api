@@ -5,7 +5,7 @@ GCP_REGION ?= europe-west1
 VENV_BIN ?= $(CURDIR)/.venv/bin
 PYTEST ?= $(VENV_BIN)/pytest
 
-.PHONY: setup-dev check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler check-rag-scheduler check-rag-worker-scheduler setup-rag-production setup-rag-production-workers verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: setup-dev check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 setup-dev:
 	./scripts/setup-dev.sh
@@ -71,18 +71,32 @@ setup-rag-worker-scheduler:
 	@if [ -z "$$SCHEDULER_RUNNER_SA" ]; then echo "ERROR: SCHEDULER_RUNNER_SA is required"; exit 1; fi
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SCHEDULER_RUNNER_SA=$$SCHEDULER_RUNNER_SA ./scripts/setup-rag-worker-scheduler.sh all
 
+set-rag-mode-worker:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/set-rag-scheduler-mode.sh worker
+
+set-rag-mode-endpoint:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/set-rag-scheduler-mode.sh endpoint
+
 check-rag-scheduler:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh worker
+
+check-rag-scheduler-legacy-endpoint:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh endpoint
 
 check-rag-worker-scheduler:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh worker
 
-setup-rag-production: deploy-rag-examples setup-rag-scheduler check-rag-scheduler
+setup-rag-production: deploy-rag-examples deploy-rag-workers setup-rag-worker-scheduler set-rag-mode-worker check-rag-worker-scheduler
 
 setup-rag-production-workers: deploy-rag-examples deploy-rag-workers setup-rag-worker-scheduler check-rag-worker-scheduler
 
+setup-rag-production-legacy-endpoint: deploy-rag-examples setup-rag-scheduler set-rag-mode-endpoint check-rag-scheduler
+
 verify-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/verify-hosted-examples.sh
+
+smoke-live-services:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/smoke-live-services.sh
 
 seed-demo-local: ## Seed demo apps against local Nexo (http://localhost:8000)
 	python3 scripts/seed-demo-apps.py --env local

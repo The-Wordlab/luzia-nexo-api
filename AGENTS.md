@@ -60,6 +60,18 @@ This repository covers two distinct integration interfaces. Do not conflate them
 
 When editing docs or examples, always verify which contract you are working with.
 
+## Secret separation rule (required)
+
+Keep these secrets explicitly separate in docs and examples:
+
+1. `WEBHOOK_SECRET` / app `X-App-Secret`:
+   - app-level auth for Partner API calls
+   - webhook signing boundary between Nexo and partner webhook
+2. `EXAMPLES_SHARED_API_SECRET`:
+   - optional auth hardening for hosted reference services (`examples/hosted`)
+
+Never describe `EXAMPLES_SHARED_API_SECRET` as the secret used by Nexo dashboard apps.
+
 ## Scope boundaries
 
 In scope:

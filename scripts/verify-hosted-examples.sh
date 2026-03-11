@@ -7,11 +7,6 @@ PY_SERVICE_NAME="${PY_SERVICE_NAME:-nexo-examples-py}"
 TS_SERVICE_NAME="${TS_SERVICE_NAME:-nexo-examples-ts}"
 SHARED_SECRET="${EXAMPLES_SHARED_API_SECRET:-}"
 
-if [[ -z "${SHARED_SECRET}" ]]; then
-  echo "EXAMPLES_SHARED_API_SECRET is required for verification"
-  exit 1
-fi
-
 py_url="$(gcloud run services describe "${PY_SERVICE_NAME}" --project "${PROJECT_ID}" --region "${REGION}" --format='value(status.url)')"
 ts_url="$(gcloud run services describe "${TS_SERVICE_NAME}" --project "${PROJECT_ID}" --region "${REGION}" --format='value(status.url)')"
 
@@ -23,14 +18,24 @@ curl -fsS "${py_url}/health" >/dev/null
 curl -fsS "${ts_url}/health" >/dev/null
 
 echo "== Auth checks =="
-curl -fsS -X POST "${py_url}/webhook/minimal" \
-  -H "Content-Type: application/json" \
-  -H "X-App-Secret: ${SHARED_SECRET}" \
-  -d '{"message":{"content":"ping"}}' >/dev/null
+if [[ -n "${SHARED_SECRET}" ]]; then
+  curl -fsS -X POST "${py_url}/webhook/minimal" \
+    -H "Content-Type: application/json" \
+    -H "X-App-Secret: ${SHARED_SECRET}" \
+    -d '{"message":{"content":"ping"}}' >/dev/null
 
-curl -fsS -X POST "${ts_url}/webhook/minimal" \
-  -H "Content-Type: application/json" \
-  -H "X-App-Secret: ${SHARED_SECRET}" \
-  -d '{"message":{"content":"ping"}}' >/dev/null
+  curl -fsS -X POST "${ts_url}/webhook/minimal" \
+    -H "Content-Type: application/json" \
+    -H "X-App-Secret: ${SHARED_SECRET}" \
+    -d '{"message":{"content":"ping"}}' >/dev/null
+else
+  curl -fsS -X POST "${py_url}/webhook/minimal" \
+    -H "Content-Type: application/json" \
+    -d '{"message":{"content":"ping"}}' >/dev/null
+
+  curl -fsS -X POST "${ts_url}/webhook/minimal" \
+    -H "Content-Type: application/json" \
+    -d '{"message":{"content":"ping"}}' >/dev/null
+fi
 
 echo "Hosted examples verification passed"

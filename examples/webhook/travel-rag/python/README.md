@@ -9,7 +9,7 @@ pip install -r requirements.txt
 
 # Production-aligned defaults (Gemini via ADC):
 GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> \
-LLM_MODEL=vertex_ai/gemini-2.0-flash-001 EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
+LLM_MODEL=vertex_ai/gemini-2.5-flash EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
 uvicorn server:app --port 8092
 
 # Development override (OpenAI):
@@ -51,7 +51,7 @@ docker build -t nexo-travel-rag .
 docker run -p 8092:8080 \
   -e GOOGLE_CLOUD_PROJECT=<your-project-id> \
   -e GOOGLE_CLOUD_LOCATION=<your-region> \
-  -e LLM_MODEL=vertex_ai/gemini-2.0-flash-001 \
+  -e LLM_MODEL=vertex_ai/gemini-2.5-flash \
   -e EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
   nexo-travel-rag
 ```
@@ -66,7 +66,7 @@ cd examples && docker compose up travel-rag
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | litellm model string |
 | `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | Embedding model |
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret (skip if empty) |
 | `TRAVEL_FEEDS` | _(built-in)_ | Comma-separated RSS URLs |

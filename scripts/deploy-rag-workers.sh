@@ -81,16 +81,16 @@ job_args() {
 job_env_vars() {
   case "$1" in
     news)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_news,LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_news,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     sports)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports,SPORTS_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports,SPORTS_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     travel)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_travel,LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_travel,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     football)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football,FOOTBALL_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football,FOOTBALL_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
   esac
 }

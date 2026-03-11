@@ -54,7 +54,7 @@ The webhook detects 4 intents from user messages:
 |----------|---------|-------------|
 | `FOOTBALL_DATA_API_KEY` | (empty) | football-data.org API key |
 | `WEBHOOK_SECRET` | (empty) | HMAC secret for signature verification |
-| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | LiteLLM model identifier (production default via ADC) |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | LiteLLM model identifier (production default via ADC) |
 | `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | LiteLLM embedding model (production default via ADC) |
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming |
 | `REFRESH_INTERVAL` | `300` | Background refresh interval (seconds) |

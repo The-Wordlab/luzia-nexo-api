@@ -16,7 +16,20 @@ Demonstrates 3 intents with simulated data - no real travel API required.
 
 ```bash
 pip install -r requirements.txt
+
+# Production-style default (Vertex via ADC)
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=your-gcp-project
+export GOOGLE_CLOUD_LOCATION=europe-west1
+
 uvicorn app:app --port 8096
+```
+
+Optional development override (OpenAI):
+
+```bash
+export OPENAI_API_KEY=sk-...
+export LLM_MODEL=openai/gpt-4o-mini
 ```
 
 Or with Docker:
@@ -37,7 +50,7 @@ pytest -q
 | Variable | Default | Description |
 |---|---|---|
 | `WEBHOOK_SECRET` | `""` | HMAC secret for request signing (optional) |
-| `LLM_MODEL` | `gpt-4o-mini` | LiteLLM model identifier |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | LiteLLM model identifier |
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming responses |
 
 ## Endpoints

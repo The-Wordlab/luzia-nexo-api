@@ -14,18 +14,18 @@ Endpoints:
 - `POST /partner/proactive/preview`
 
 Auth:
-- Shared secret required on non-health endpoints via `X-App-Secret` or `Authorization: Bearer <secret>`
-- Env var: `EXAMPLES_SHARED_API_SECRET`
+- By default, hosted endpoints are open for easier demo onboarding.
+- Optional hardening: set `EXAMPLES_SHARED_API_SECRET` to require `X-App-Secret` or `Authorization: Bearer <secret>` on webhook/proactive routes.
 
 Run locally:
 
 ```bash
-EXAMPLES_SHARED_API_SECRET=dev-secret node server.mjs
+node server.mjs
 ```
 
 Run with Docker:
 
 ```bash
 docker build -t nexo-examples-ts .
-docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-ts
+docker run --rm -p 8080:8080 nexo-examples-ts
 ```

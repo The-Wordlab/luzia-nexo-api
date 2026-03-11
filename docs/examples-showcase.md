@@ -24,11 +24,17 @@ These examples focus on end-to-end orchestration flows rather than retrieval pip
 | Routines | Morning briefing, schedule checks, follow-up reminders | <https://nexo-routines-367427598362.europe-west1.run.app/> |
 | Food Ordering | Menu search, order composition, checkout handoff | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
 | Travel Planning | Itinerary generation, budget framing, disruption replanning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
+| Fitness Coach | Workout plans, progress checks, nutrition guidance | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
+| Travel Planner | Conversational trip planning and booking handoff | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
+| Language Tutor | Phrase coaching, quiz drills, lesson plans | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
 
 Source:
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python>
 
 ---
 

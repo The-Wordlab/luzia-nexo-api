@@ -66,7 +66,7 @@ def _configure_vertex_env_defaults() -> None:
 
 _configure_vertex_env_defaults()
 
-LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
+LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 REFRESH_INTERVAL = int(os.environ.get("REFRESH_INTERVAL", "300"))  # 5 min default
 TOP_K = int(os.environ.get("TOP_K", "5"))

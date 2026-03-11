@@ -19,9 +19,8 @@ Useful shortcuts:
 
 ```bash
 make deploy-rag-examples
-make setup-rag-scheduler
-make check-rag-scheduler
 make setup-rag-production
+make check-rag-worker-scheduler
 ```
 
 ## Docker (recommended example)
@@ -32,18 +31,20 @@ These containers can run in any environment that supports Docker (local machine,
 
 ```bash
 docker build -t nexo-examples-py ./examples/hosted/python
-docker run --rm -p 8080:8080 \
-  -e EXAMPLES_SHARED_API_SECRET=dev-secret \
-  nexo-examples-py
+docker run --rm -p 8080:8080 nexo-examples-py
 ```
 
 ### TypeScript example service
 
 ```bash
 docker build -t nexo-examples-ts ./examples/hosted/typescript
-docker run --rm -p 8080:8080 \
-  -e EXAMPLES_SHARED_API_SECRET=dev-secret \
-  nexo-examples-ts
+docker run --rm -p 8080:8080 nexo-examples-ts
+```
+
+Optional hardening for hosted examples:
+```bash
+docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-py
+docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-ts
 ```
 
 ## GCP Cloud Run (unified Cloud Build approach)
@@ -86,7 +87,6 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 | `FOOTBALL_DATA_API_KEY` | sports-rag, football-live | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
 | `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
-| `EXAMPLES_SHARED_API_SECRET` | hosted python/typescript services | Shared auth secret used by hosted reference endpoints |
 | `NEXO_PGVECTOR_DSN` | RAG services | Cloud SQL DSN for pgvector storage |
 
 ```bash
@@ -95,7 +95,7 @@ echo -n "your-value" | gcloud secrets create SECRET_NAME --data-file=-
 
 # Grant Cloud Run access
 PROJECT_NUM=$(gcloud projects describe $GCP_PROJECT_ID --format='value(projectNumber)')
-for SECRET in WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE EXAMPLES_SHARED_API_SECRET NEXO_PGVECTOR_DSN; do
+for SECRET in WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE NEXO_PGVECTOR_DSN; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" --quiet
@@ -128,6 +128,20 @@ OPENCLAW_BASE_URL=https://your-openclaw-gateway \
 ```
 
 This deploys hosted services, core webhook examples, flagship orchestration webhooks, OpenClaw bridge, and all RAG services.
+
+### Full live smoke test (all deployed services)
+
+After deployment, run one command to verify discovery + webhook behavior across all Cloud Run examples:
+
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make smoke-live-services
+```
+
+Notes:
+- Reads `WEBHOOK_SECRET` from Secret Manager.
+- Validates signed webhook flows (including OpenClaw bridge).
+- By default also triggers RAG ingest endpoints (`RUN_INGEST=true`).
+- To skip ingest triggers: `RUN_INGEST=false make smoke-live-services`.
 
 ### OpenClaw connectivity smoke test (recommended before bridge deploy)
 
@@ -176,28 +190,29 @@ Each example service has a `cloudbuild.yaml` that handles the full build-push-de
 
 ### Automated indexing (worker behavior via Cloud Scheduler)
 
-RAG services expose ingest endpoints and can be indexed automatically by scheduled HTTP jobs.
-This is the production indexing mechanism for Cloud Run deployments in this repository.
+Worker mode is the production default for Cloud Run deployments in this repository.
+Cloud Scheduler triggers Cloud Run Jobs workers on a cadence. This avoids public ingest
+endpoint scheduling and keeps indexing topology consistent.
 
-Create/update all schedules:
+Create/update all worker schedules:
 
 ```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/setup-rag-scheduler.sh all
+SCHEDULER_RUNNER_SA=<service-account-email> \
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
+./scripts/setup-rag-worker-scheduler.sh all
 ```
 
 Default schedules:
-- `news`: every 30 minutes -> `POST /ingest`
-- `sports`: every 5 minutes -> `POST /ingest/live`
-- `travel`: hourly -> `POST /ingest`
-- `football`: every 5 minutes -> `POST /ingest/live`
+- `news`: every 30 minutes
+- `sports`: every 5 minutes
+- `travel`: hourly
+- `football`: every 5 minutes
 
-If services are private, provide OIDC settings:
+Set scheduler mode to worker-only:
 
 ```bash
-SCHEDULER_OIDC_SA=<service-account-email> \
-SCHEDULER_OIDC_AUDIENCE=<service-url-or-custom-audience> \
 GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/setup-rag-scheduler.sh all
+./scripts/set-rag-scheduler-mode.sh worker
 ```
 
 ### Model provider policy (partner APIs)
@@ -226,7 +241,8 @@ export EMBEDDING_MODEL=text-embedding-3-small
 
 ### Optional: dedicated worker jobs (private topology path)
 
-If you do not want Scheduler calling service endpoints directly, deploy dedicated Cloud Run Jobs workers:
+Worker mode already uses dedicated Cloud Run Jobs workers. For completeness, legacy endpoint
+mode still exists for compatibility, but should not be used for production by default.
 
 ```bash
 GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/deploy-rag-workers.sh all
@@ -243,11 +259,13 @@ GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
 Validate scheduler drift:
 
 ```bash
-# Endpoint mode
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh endpoint
-
-# Worker mode
 GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh worker
+```
+
+Legacy endpoint mode checks are still available:
+
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh endpoint
 ```
 
 ### Vector storage on Cloud Run (current production setup)
@@ -329,6 +347,9 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | nexo-routines | europe-west1 | `https://nexo-routines-367427598362.europe-west1.run.app` | `/` |
 | nexo-food-ordering | europe-west1 | `https://nexo-food-ordering-367427598362.europe-west1.run.app` | `/` |
 | nexo-travel-planning | europe-west1 | `https://nexo-travel-planning-367427598362.europe-west1.run.app` | `/` |
+| nexo-fitness-coach | europe-west1 | `https://nexo-fitness-coach-367427598362.europe-west1.run.app` | `/` |
+| nexo-travel-planner | europe-west1 | `https://nexo-travel-planner-367427598362.europe-west1.run.app` | `/` |
+| nexo-language-tutor | europe-west1 | `https://nexo-language-tutor-367427598362.europe-west1.run.app` | `/` |
 | nexo-news-rag | europe-west1 | `https://nexo-news-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-v3me5awkta-ew.a.run.app` | `/health` |
@@ -342,7 +363,7 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services with `VECTOR_STORE_BACKEND=pgvector` |
 | `FOOTBALL_DATA_API_KEY` | football-data.org API key for live match/standings data |
 | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw gateway bearer token for openclaw-bridge |
-| `EXAMPLES_SHARED_API_SECRET` | Shared auth secret for hosted python/typescript examples |
+| `EXAMPLES_SHARED_API_SECRET` | Optional auth secret for hosted python/typescript examples (not required by default) |
 
 `OPENAI_API_KEY` is optional and only needed when you explicitly run OpenAI models in development or custom deployments.
 

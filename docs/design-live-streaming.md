@@ -498,17 +498,17 @@ Add Nexo-side processing once the PoC proves value.
 
 ### LLM costs per event evaluation
 
-- Model: gpt-4o-mini (~$0.15 / 1M input tokens, ~$0.60 / 1M output tokens)
+- Model: Gemini Flash on Vertex AI (pricing depends on region and model version)
 - Average classification prompt: ~500 tokens input, ~100 tokens output
-- Cost per evaluation: ~$0.00014
-- At 100 evaluations/hour (during live match): ~$0.014/hour
-- World Cup (64 matches, ~2 hours each, ~200 evaluations/match): ~$1.80 total
+- Cost per evaluation: low single-digit fractions of a cent in typical configs
+- At 100 evaluations/hour (during live match): low hourly cost
+- Tournament-scale operation remains cost-efficient with batching and thresholding
 
 ### Push notification costs
 
 - Web Push (VAPID): free (no third-party service needed)
-- LLM for character voice (optional): same cost model as above, ~$0.00014 per notification
-- 1000 subscribers, 10 events per match: $0.0014 per match for character voice
+- LLM for character voice (optional): same low-cost profile as above
+- 1000 subscribers, 10 events per match: still low with prompt caching and event filtering
 
 **Conclusion: extremely cheap.** Even at scale, the LLM costs for event detection + character voice are negligible.
 

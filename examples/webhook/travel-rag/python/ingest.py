@@ -79,6 +79,7 @@ COLLECTION_ARTICLES = "travel_articles"
 
 CHUNK_SIZE_CHARS = 1500
 CHUNK_OVERLAP_CHARS = 150
+EMBEDDING_MAX_BATCH = 250
 
 # ---------------------------------------------------------------------------
 # Destination seed data
@@ -399,6 +400,18 @@ class _PgVectorCollection:
             )
         self._dim = dim
 
+    def _drop_table(self) -> None:
+        conn = _pg_connection()
+        with conn.cursor() as cur:
+            cur.execute(f"DROP TABLE IF EXISTS {self._table_ref()}")
+
+    @staticmethod
+    def _is_dimension_mismatch(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return "different vector dimensions" in message or (
+            "expected" in message and "dimensions" in message
+        )
+
     def count(self) -> int:
         conn = _pg_connection()
         if not self._exists(conn):
@@ -426,18 +439,41 @@ class _PgVectorCollection:
             for i in range(len(ids))
         ]
         with conn.cursor() as cur:
-            cur.executemany(
-                f"""
-                INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
-                VALUES (%s, %s, %s::vector, %s::jsonb)
-                ON CONFLICT (id) DO UPDATE SET
-                    document = EXCLUDED.document,
-                    embedding = EXCLUDED.embedding,
-                    metadata = EXCLUDED.metadata,
-                    updated_at = now()
-                """,
-                rows,
-            )
+            try:
+                cur.executemany(
+                    f"""
+                    INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
+                    VALUES (%s, %s, %s::vector, %s::jsonb)
+                    ON CONFLICT (id) DO UPDATE SET
+                        document = EXCLUDED.document,
+                        embedding = EXCLUDED.embedding,
+                        metadata = EXCLUDED.metadata,
+                        updated_at = now()
+                    """,
+                    rows,
+                )
+            except Exception as exc:
+                if not self._is_dimension_mismatch(exc):
+                    raise
+                logger.warning(
+                    "Detected pgvector dimension mismatch for %s. Recreating table with dim=%s.",
+                    self._table_ref(),
+                    dim,
+                )
+                self._drop_table()
+                self._ensure_table(dim)
+                cur.executemany(
+                    f"""
+                    INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
+                    VALUES (%s, %s, %s::vector, %s::jsonb)
+                    ON CONFLICT (id) DO UPDATE SET
+                        document = EXCLUDED.document,
+                        embedding = EXCLUDED.embedding,
+                        metadata = EXCLUDED.metadata,
+                        updated_at = now()
+                    """,
+                    rows,
+                )
 
     def query(
         self,
@@ -454,15 +490,28 @@ class _PgVectorCollection:
             return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
         qvec = _vector_literal(query_embeddings[0])
         with conn.cursor() as cur:
-            cur.execute(
-                f"""
-                SELECT id, document, metadata, (embedding <=> %s::vector) AS distance
-                FROM {self._table_ref()}
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """,
-                (qvec, qvec, n_results),
-            )
+            try:
+                cur.execute(
+                    f"""
+                    SELECT id, document, metadata, (embedding <=> %s::vector) AS distance
+                    FROM {self._table_ref()}
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (qvec, qvec, n_results),
+                )
+            except Exception as exc:
+                if not self._is_dimension_mismatch(exc):
+                    raise
+                dim = len(query_embeddings[0])
+                logger.warning(
+                    "Detected pgvector dimension mismatch for %s query. Recreating table with dim=%s.",
+                    self._table_ref(),
+                    dim,
+                )
+                self._drop_table()
+                self._ensure_table(dim)
+                return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
             rows = cur.fetchall()
         ids = [r[0] for r in rows]
         docs = [r[1] for r in rows]
@@ -515,12 +564,19 @@ def reset_client() -> None:
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Embed a batch of texts, falling back to zero vectors on failure."""
-    try:
-        response = litellm.embedding(model=EMBEDDING_MODEL, input=texts)
-        return [item["embedding"] for item in response["data"]]
-    except Exception as exc:
-        logger.warning("Embedding failed (%s); using zero vectors", exc)
-        return [[0.0] * 1536 for _ in texts]
+    if not texts:
+        return []
+    fallback_dim = int(os.environ.get("EMBEDDING_FALLBACK_DIM", "768"))
+    embeddings: list[list[float]] = []
+    for start in range(0, len(texts), EMBEDDING_MAX_BATCH):
+        batch = texts[start:start + EMBEDDING_MAX_BATCH]
+        try:
+            response = litellm.embedding(model=EMBEDDING_MODEL, input=batch)
+            embeddings.extend([item["embedding"] for item in response["data"]])
+        except Exception as exc:
+            logger.warning("Embedding failed (%s); using zero vectors", exc)
+            embeddings.extend([[0.0] * fallback_dim for _ in batch])
+    return embeddings
 
 
 def safe_id(text: str) -> str:

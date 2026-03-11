@@ -27,6 +27,9 @@
 #   routines
 #   food-ordering
 #   travel-planning
+#   fitness-coach
+#   travel-planner
+#   language-tutor
 
 set -euo pipefail
 
@@ -49,6 +52,7 @@ usage() {
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
   echo "  hosted-py | hosted-ts | demo-receiver"
   echo "  news | sports | travel | football | routines | food-ordering | travel-planning"
+  echo "  fitness-coach | travel-planner | language-tutor"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: europe-west1)"
@@ -148,6 +152,27 @@ deploy_travel_planning() {
     "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
 }
 
+deploy_fitness_coach() {
+  deploy_source_service \
+    "nexo-fitness-coach" \
+    "${REPO_ROOT}/examples/webhook/fitness-coach/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
+deploy_travel_planner() {
+  deploy_source_service \
+    "nexo-travel-planner" \
+    "${REPO_ROOT}/examples/webhook/travel-planner/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
+deploy_language_tutor() {
+  deploy_source_service \
+    "nexo-language-tutor" \
+    "${REPO_ROOT}/examples/webhook/language-tutor/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
 deploy_hosted_py() {
   local cmd="cd \"${REPO_ROOT}\" && GCP_PROJECT_ID=\"${PROJECT_ID}\" GCP_REGION=\"${REGION}\" SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh"
   run_cmd "${cmd}"
@@ -183,6 +208,9 @@ run_target() {
       deploy_routines
       deploy_food_ordering
       deploy_travel_planning
+      deploy_fitness_coach
+      deploy_travel_planner
+      deploy_language_tutor
       deploy_rag_target all
       ;;
     hosted)
@@ -201,6 +229,9 @@ run_target() {
     routines) deploy_routines ;;
     food-ordering) deploy_food_ordering ;;
     travel-planning) deploy_travel_planning ;;
+    fitness-coach) deploy_fitness_coach ;;
+    travel-planner) deploy_travel_planner ;;
+    language-tutor) deploy_language_tutor ;;
     hosted-py) deploy_hosted_py ;;
     hosted-ts) deploy_hosted_ts ;;
     demo-receiver) deploy_demo_receiver ;;

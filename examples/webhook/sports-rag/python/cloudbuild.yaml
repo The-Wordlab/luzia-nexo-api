@@ -85,7 +85,7 @@ steps:
       # Environment variables sourced from Secret Manager
       - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest,PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest"
       # Non-secret configuration
-      - "--set-env-vars=LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${_PROJECT_ID},VERTEXAI_LOCATION=${_REGION},REFRESH_INTERVAL_MINUTES=15,STREAMING_ENABLED=true,VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports"
+      - "--set-env-vars=LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${_PROJECT_ID},VERTEXAI_LOCATION=${_REGION},REFRESH_INTERVAL_MINUTES=15,STREAMING_ENABLED=true,VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports"
     waitFor:
       - "push"
 

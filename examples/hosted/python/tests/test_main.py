@@ -41,7 +41,14 @@ def test_info_endpoints_support_json() -> None:
     assert any(e["path"] == "/webhook/minimal" for e in info_resp.json()["endpoints"])
 
 
-def test_webhook_requires_secret(monkeypatch) -> None:
+def test_webhook_allows_unauth_when_shared_secret_unset(monkeypatch) -> None:
+    monkeypatch.delenv("EXAMPLES_SHARED_API_SECRET", raising=False)
+    resp = client.post("/webhook/minimal", json={"message": {"content": "hi"}})
+    assert resp.status_code == 200
+    assert _response_text(resp.json()) == "Echo: hi"
+
+
+def test_webhook_requires_secret_when_shared_secret_is_set(monkeypatch) -> None:
     monkeypatch.setenv("EXAMPLES_SHARED_API_SECRET", "test-secret")
     resp = client.post("/webhook/minimal", json={"message": {"content": "hi"}})
     assert resp.status_code == 401

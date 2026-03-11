@@ -24,6 +24,9 @@ Use these deployable examples as starter blueprints:
 | Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-367427598362.europe-west1.run.app/> |
 | Menu-to-checkout ordering flow | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
 | Trip planning with budget and replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
+| Fitness coaching plans and check-ins | [Fitness Coach](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python) | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
+| Conversational trip planning and booking handoff | [Travel Planner](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python) | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
+| Language tutoring with lesson and quiz cards | [Language Tutor](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python) | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
 | News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
 | Live sports + event detection | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
 | OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
@@ -85,6 +88,9 @@ sequenceDiagram
 | nexo-routines | <https://nexo-routines-367427598362.europe-west1.run.app/> |
 | nexo-food-ordering | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
 | nexo-travel-planning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
+| nexo-fitness-coach | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
+| nexo-travel-planner | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
+| nexo-language-tutor | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |

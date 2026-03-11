@@ -18,14 +18,23 @@ A Nexo partner webhook that demonstrates multi-step orchestration for daily prod
 # Install dependencies
 pip install -r requirements.txt
 
-# Set your LLM key (any litellm-supported provider)
-export OPENAI_API_KEY=sk-...
+# Production-style default (Vertex via ADC)
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=your-gcp-project
+export GOOGLE_CLOUD_LOCATION=europe-west1
 
 # Optional: set webhook signature secret
 export WEBHOOK_SECRET=your-secret
 
 # Start the server
 uvicorn app:app --reload --port 8094
+```
+
+Optional development override (OpenAI):
+
+```bash
+export OPENAI_API_KEY=sk-...
+export LLM_MODEL=openai/gpt-4o-mini
 ```
 
 The service starts at `http://localhost:8094`.
@@ -96,7 +105,7 @@ Include `Accept: text/event-stream` to receive a streaming response. The final `
 | Variable | Default | Description |
 |---|---|---|
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC secret for `X-Timestamp` + `X-Signature` verification |
-| `LLM_MODEL` | `gpt-4o-mini` | litellm model string |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | litellm model string |
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming when `Accept: text/event-stream` |
 
 ## Deploy to Cloud Run
@@ -108,5 +117,5 @@ gcloud run deploy routines-webhook \
   --platform managed \
   --region europe-west1 \
   --allow-unauthenticated \
-  --set-env-vars OPENAI_API_KEY=sk-...
+  --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,GOOGLE_CLOUD_PROJECT=YOUR_PROJECT,GOOGLE_CLOUD_LOCATION=europe-west1
 ```

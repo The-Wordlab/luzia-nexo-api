@@ -28,7 +28,7 @@ Webhook response envelope (canonical Nexo format):
 
 Environment variables:
     NEWS_FEEDS               Comma-separated RSS URLs (defaults below)
-    LLM_MODEL                litellm model string. Default: vertex_ai/gemini-2.0-flash-001
+    LLM_MODEL                litellm model string. Default: vertex_ai/gemini-2.5-flash
     EMBEDDING_MODEL          litellm embedding model. Default: vertex_ai/text-embedding-004
     WEBHOOK_SECRET           HMAC-SHA256 signing secret; skipped if empty
     REFRESH_INTERVAL_MINUTES How often the background loop re-crawls. Default: 30
@@ -98,7 +98,7 @@ def _configure_vertex_env_defaults() -> None:
 
 _configure_vertex_env_defaults()
 
-LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
+LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "30"))
@@ -212,6 +212,18 @@ class _PgVectorCollection:
             )
         self._dim = dim
 
+    def _drop_table(self) -> None:
+        conn = _pg_connection()
+        with conn.cursor() as cur:
+            cur.execute(f"DROP TABLE IF EXISTS {self._table_ref()}")
+
+    @staticmethod
+    def _is_dimension_mismatch(exc: Exception) -> bool:
+        message = str(exc).lower()
+        return "different vector dimensions" in message or (
+            "expected" in message and "dimensions" in message
+        )
+
     def count(self) -> int:
         conn = _pg_connection()
         if not self._exists(conn):
@@ -238,18 +250,41 @@ class _PgVectorCollection:
             for i in range(len(ids))
         ]
         with conn.cursor() as cur:
-            cur.executemany(
-                f"""
-                INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
-                VALUES (%s, %s, %s::vector, %s::jsonb)
-                ON CONFLICT (id) DO UPDATE SET
-                    document = EXCLUDED.document,
-                    embedding = EXCLUDED.embedding,
-                    metadata = EXCLUDED.metadata,
-                    updated_at = now()
-                """,
-                rows,
-            )
+            try:
+                cur.executemany(
+                    f"""
+                    INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
+                    VALUES (%s, %s, %s::vector, %s::jsonb)
+                    ON CONFLICT (id) DO UPDATE SET
+                        document = EXCLUDED.document,
+                        embedding = EXCLUDED.embedding,
+                        metadata = EXCLUDED.metadata,
+                        updated_at = now()
+                    """,
+                    rows,
+                )
+            except Exception as exc:
+                if not self._is_dimension_mismatch(exc):
+                    raise
+                logger.warning(
+                    "Detected pgvector dimension mismatch for %s. Recreating table with dim=%s.",
+                    self._table_ref(),
+                    dim,
+                )
+                self._drop_table()
+                self._ensure_table(dim)
+                cur.executemany(
+                    f"""
+                    INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
+                    VALUES (%s, %s, %s::vector, %s::jsonb)
+                    ON CONFLICT (id) DO UPDATE SET
+                        document = EXCLUDED.document,
+                        embedding = EXCLUDED.embedding,
+                        metadata = EXCLUDED.metadata,
+                        updated_at = now()
+                    """,
+                    rows,
+                )
 
     def query(
         self,
@@ -266,15 +301,28 @@ class _PgVectorCollection:
             return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
         qvec = _vector_literal(query_embeddings[0])
         with conn.cursor() as cur:
-            cur.execute(
-                f"""
-                SELECT id, document, metadata, (embedding <=> %s::vector) AS distance
-                FROM {self._table_ref()}
-                ORDER BY embedding <=> %s::vector
-                LIMIT %s
-                """,
-                (qvec, qvec, n_results),
-            )
+            try:
+                cur.execute(
+                    f"""
+                    SELECT id, document, metadata, (embedding <=> %s::vector) AS distance
+                    FROM {self._table_ref()}
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (qvec, qvec, n_results),
+                )
+            except Exception as exc:
+                if not self._is_dimension_mismatch(exc):
+                    raise
+                dim = len(query_embeddings[0])
+                logger.warning(
+                    "Detected pgvector dimension mismatch for %s query. Recreating table with dim=%s.",
+                    self._table_ref(),
+                    dim,
+                )
+                self._drop_table()
+                self._ensure_table(dim)
+                return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
             rows = cur.fetchall()
         ids = [r[0] for r in rows]
         docs = [r[1] for r in rows]

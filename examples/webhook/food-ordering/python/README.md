@@ -17,11 +17,23 @@ All capabilities are simulated - no real restaurant API or payment integration r
 ```bash
 pip install -r requirements.txt
 
+# Production-style default (Vertex via ADC)
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=your-gcp-project
+export GOOGLE_CLOUD_LOCATION=europe-west1
+
 # Without auth
 uvicorn app:app --reload --port 8095
 
 # With HMAC auth
 WEBHOOK_SECRET=my-secret uvicorn app:app --reload --port 8095
+```
+
+Optional development override (OpenAI):
+
+```bash
+export OPENAI_API_KEY=sk-...
+export LLM_MODEL=openai/gpt-4o-mini
 ```
 
 ## Running with Docker
@@ -43,7 +55,7 @@ pytest -v
 | Variable | Default | Description |
 |---|---|---|
 | `WEBHOOK_SECRET` | `""` | HMAC signing secret (optional) |
-| `LLM_MODEL` | `gpt-4o-mini` | litellm model identifier |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | litellm model identifier |
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming |
 
 ## API endpoints

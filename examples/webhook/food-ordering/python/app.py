@@ -29,8 +29,28 @@ logging.basicConfig(level=logging.INFO)
 # Configuration
 # ---------------------------------------------------------------------------
 
+def _configure_vertex_env_defaults() -> None:
+    """Map common GCP env vars into LiteLLM Vertex vars when unset."""
+    project = (
+        os.environ.get("VERTEXAI_PROJECT")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("GCP_PROJECT_ID")
+    )
+    location = (
+        os.environ.get("VERTEXAI_LOCATION")
+        or os.environ.get("GOOGLE_CLOUD_LOCATION")
+        or os.environ.get("GCP_REGION")
+    )
+    if project:
+        os.environ.setdefault("VERTEXAI_PROJECT", project)
+    if location:
+        os.environ.setdefault("VERTEXAI_LOCATION", location)
+
+
+_configure_vertex_env_defaults()
+
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 
 SCHEMA_VERSION = "2026-03-01"

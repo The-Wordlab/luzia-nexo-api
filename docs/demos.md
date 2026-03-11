@@ -36,6 +36,9 @@ Both are deployable and production-oriented.
 | Daily Routines | Webhook | Morning briefings, schedule actions, follow-up nudges | [nexo-routines](https://nexo-routines-367427598362.europe-west1.run.app/) | [routines/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) |
 | Food Ordering | Webhook | Menu search, order composition, checkout orchestration | [nexo-food-ordering](https://nexo-food-ordering-367427598362.europe-west1.run.app/) | [food-ordering/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) |
 | Travel Planning | Webhook | Itinerary + budget + disruption replanning flow | [nexo-travel-planning](https://nexo-travel-planning-367427598362.europe-west1.run.app/) | [travel-planning/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) |
+| Fitness Coach | Webhook | Workout plans, progress checks, nutrition guidance | [nexo-fitness-coach](https://nexo-fitness-coach-367427598362.europe-west1.run.app/) | [fitness-coach/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python) |
+| Travel Planner | Webhook | Itinerary shaping, flight comparison, booking handoff | [nexo-travel-planner](https://nexo-travel-planner-367427598362.europe-west1.run.app/) | [travel-planner/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python) |
+| Language Tutor | Webhook | Phrase coaching, quick quizzes, lesson plans | [nexo-language-tutor](https://nexo-language-tutor-367427598362.europe-west1.run.app/) | [language-tutor/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python) |
 | OpenClaw Bridge | Webhook | Nexo webhook to OpenClaw `/v1/responses` adapter | [nexo-openclaw-bridge](https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/) | [openclaw-bridge/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) |
 | Hosted Python API | Reference API | Minimal authenticated reference API | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
 | Hosted TypeScript API | Reference API | Minimal authenticated reference API | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
@@ -56,6 +59,9 @@ Both are deployable and production-oriented.
 | `webhook/routines` | Python | Morning briefings, schedule actions, and follow-up nudges |
 | `webhook/food-ordering` | Python | Menu search, order composition, and checkout flow |
 | `webhook/travel-planning` | Python | Multi-step itinerary, budget, and disruption replanning |
+| `webhook/fitness-coach` | Python | Workout plans, progress snapshots, and nutrition guidance |
+| `webhook/travel-planner` | Python | Conversational trip planning with booking handoff cards |
+| `webhook/language-tutor` | Python | Language phrase help, quizzes, and lesson plans |
 
 ## Partner API proactive scripts (CLI, not service deployments)
 

@@ -15,6 +15,15 @@ Model/runtime policy for partner RAG examples:
 - Durable vectors in Cloud Run: pgvector on Cloud SQL
 - Automated indexing: Cloud Scheduler endpoint jobs or Cloud Run worker jobs
 
+## Secret boundaries (important)
+
+Do not conflate app auth with hosted example auth:
+
+- `WEBHOOK_SECRET`: shared with Nexo for webhook signature verification. Also used as the app-level secret (`X-App-Secret`) when Partner API calls are made from an app context.
+- `EXAMPLES_SHARED_API_SECRET`: optional hardening secret for hosted reference services in `examples/hosted` (python/typescript examples).
+
+If you are integrating a real partner app with Nexo Agent Runtime, use app credentials (`X-App-Id` + `X-App-Secret`) and webhook signing with `WEBHOOK_SECRET`, not `EXAMPLES_SHARED_API_SECRET`.
+
 ## Links
 
 - API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
@@ -131,9 +140,10 @@ make check-toolchain
 make test-all
 make docs-build
 make deploy-all-examples   # deploy all server-side examples to Cloud Run
-make setup-rag-production  # deploy RAG + scheduler endpoint indexing
-# or:
-# SCHEDULER_RUNNER_SA=<sa-email> make setup-rag-production-workers
+SCHEDULER_RUNNER_SA=<sa-email> make setup-rag-production  # deploy RAG with worker-only scheduler mode
+make check-rag-scheduler    # verify worker scheduler mode
+# Legacy endpoint scheduler mode (compat only):
+# make setup-rag-production-legacy-endpoint
 ```
 
 ## Support

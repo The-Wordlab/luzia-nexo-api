@@ -43,7 +43,7 @@ export WEBHOOK_SECRET=your_secret_here   # omit to skip validation locally
 # ADC-first defaults (production-aligned)
 export GOOGLE_CLOUD_PROJECT=<your-project-id>
 export GOOGLE_CLOUD_LOCATION=<your-region>
-export LLM_MODEL=vertex_ai/gemini-2.0-flash-001
+export LLM_MODEL=vertex_ai/gemini-2.5-flash
 export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 
 # Development override (OpenAI)
@@ -88,7 +88,7 @@ http://<your-host>:8080/
 
 | Use case | `LLM_MODEL` | Notes |
 |---|---|---|
-| Production default | `vertex_ai/gemini-2.0-flash-001` | Uses ADC (`gcloud auth application-default login`) |
+| Production default | `vertex_ai/gemini-2.5-flash` | Uses ADC (`gcloud auth application-default login`) |
 | OpenAI | `gpt-4o-mini` | Requires `OPENAI_API_KEY` |
 | Local Ollama | `ollama/llama3.2` | Requires [Ollama](https://ollama.com) running |
 | Any litellm provider | see [litellm docs](https://docs.litellm.ai/docs/providers) | Provider-agnostic |
@@ -172,7 +172,7 @@ no secret configuration.
 | Variable | Default | Description |
 |---|---|---|
 | `NEWS_FEEDS` | BBC, Reuters, AP News | Comma-separated RSS URLs |
-| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string for completions |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | litellm model string for completions |
 | `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | litellm model string for embeddings |
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret; verification skipped if empty |
 | `REFRESH_INTERVAL_MINUTES` | `30` | How often the background loop re-crawls all feeds |
@@ -203,7 +203,7 @@ docker build -t nexo-news-rag .
 docker run -p 8080:8080 \
   -e GOOGLE_CLOUD_PROJECT=<your-project-id> \
   -e GOOGLE_CLOUD_LOCATION=<your-region> \
-  -e LLM_MODEL=vertex_ai/gemini-2.0-flash-001 \
+  -e LLM_MODEL=vertex_ai/gemini-2.5-flash \
   -e EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
   -e WEBHOOK_SECRET=your_secret \
   -v $(pwd)/chroma_data:/data/chroma \

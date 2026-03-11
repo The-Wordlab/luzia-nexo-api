@@ -32,7 +32,7 @@ pip install -r requirements.txt
 # Production-aligned config (Gemini via ADC)
 export GOOGLE_CLOUD_PROJECT=<your-project-id>
 export GOOGLE_CLOUD_LOCATION=<your-region>
-export LLM_MODEL=vertex_ai/gemini-2.0-flash-001
+export LLM_MODEL=vertex_ai/gemini-2.5-flash
 export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 
 # Start the server
@@ -47,7 +47,7 @@ unreachable, because the match seed data is hardcoded.
 | Variable | Default | Description |
 |---|---|---|
 | `WEBHOOK_SECRET` | *(empty)* | HMAC secret for Nexo request verification. Leave empty to skip during dev. |
-| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string. Production default uses ADC. |
+| `LLM_MODEL` | `vertex_ai/gemini-2.5-flash` | litellm model string. Production default uses ADC. |
 | `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | Embedding model. Production default uses ADC. |
 | `SPORT_FEEDS` | BBC Sport, ESPN FC, Sky Sports | Comma-separated RSS feed URLs to crawl. |
 | `FOOTBALL_DATA_API_KEY` | *(empty)* | [football-data.org](https://www.football-data.org/) API key. Leave empty to use seed data. |

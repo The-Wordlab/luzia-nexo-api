@@ -40,7 +40,7 @@ def _shared_secret() -> str:
 def _is_authorized(x_app_secret: str | None, authorization: str | None) -> bool:
     expected = _shared_secret()
     if not expected:
-        return False
+        return True
     if x_app_secret and x_app_secret == expected:
         return True
     if authorization and authorization.startswith("Bearer "):
@@ -83,6 +83,7 @@ def _info_payload() -> dict[str, Any]:
         "docs_url": "https://the-wordlab.github.io/luzia-nexo-api/",
         "auth": {
             "shared_secret_env": "EXAMPLES_SHARED_API_SECRET",
+            "mode": "optional",
             "headers": ["X-App-Secret", "Authorization: Bearer <secret>"],
         },
         "endpoints": [
@@ -271,6 +272,6 @@ async def proactive_preview(
         },
         "headers": {
             "X-App-Id": "<app-id>",
-            "X-App-Secret": "<shared-secret>",
+            "X-App-Secret": "<app-secret>",
         },
     }

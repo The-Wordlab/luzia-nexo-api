@@ -22,7 +22,13 @@ fi
 : "${PROJECT_ID:?PROJECT_ID is required}"
 : "${REGION:=europe-west1}"
 : "${SERVICE_NAME:=nexo-examples-py}"
-: "${EXAMPLES_SHARED_API_SECRET:?EXAMPLES_SHARED_API_SECRET is required}"
+
+EXTRA_ENV_ARGS=()
+if [[ -n "${EXAMPLES_SHARED_API_SECRET:-}" ]]; then
+  EXTRA_ENV_ARGS+=(--set-env-vars "EXAMPLES_SHARED_API_SECRET=${EXAMPLES_SHARED_API_SECRET}")
+else
+  EXTRA_ENV_ARGS+=(--remove-env-vars "EXAMPLES_SHARED_API_SECRET")
+fi
 
 gcloud run deploy "${SERVICE_NAME}" \
   --project "${PROJECT_ID}" \
@@ -30,7 +36,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --source "${ROOT_DIR}/examples/hosted/python" \
   --clear-base-image \
   --allow-unauthenticated \
-  --set-env-vars "EXAMPLES_SHARED_API_SECRET=${EXAMPLES_SHARED_API_SECRET}" \
+  "${EXTRA_ENV_ARGS[@]}" \
   --quiet
 
 echo "Deployed ${SERVICE_NAME} in ${PROJECT_ID}/${REGION}"
