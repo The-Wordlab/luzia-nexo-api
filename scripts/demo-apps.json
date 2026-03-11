@@ -316,7 +316,7 @@
         "demo_order": 12
       },
       "webhook_url_env": "DEMO_ROUTINES_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8094",
+      "webhook_url_default": "https://nexo-routines-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     },
     {
@@ -335,7 +335,7 @@
         "demo_order": 13
       },
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8095",
+      "webhook_url_default": "https://nexo-food-ordering-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     },
     {
@@ -354,7 +354,7 @@
         "demo_order": 14
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8096",
+      "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     }
   ],
