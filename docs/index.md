@@ -2,7 +2,7 @@
 
 Connect your agent or API to Luzia characters through the Nexo Agent Runtime API.
 
-The Nexo Agent Runtime provides webhook delivery, consented profile context, and orchestration so you can implement domain logic and ship integrations.
+The Nexo Agent Runtime provides reliable webhook delivery, consented profile context, and trusted boundaries your customers can understand.
 
 Launch faster with:
 
@@ -96,4 +96,5 @@ For source links and what each demo does, use [Demo Catalog](demos.md).
 - Contract-first: same schema rules across local and production.
 - Capability-first: docs describe what can be built, not only minimal setup.
 - Deployable-by-default: all server demos are deployment-ready.
+- Privacy is structural: consent and profile boundaries are part of the runtime contract.
 - Safe configuration: no secrets hardcoded in code or docs.

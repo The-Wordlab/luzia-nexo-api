@@ -1,6 +1,6 @@
 # Demo Catalog
 
-This page is the fastest way to see what partners can launch with Nexo today.
+This page is the fastest way to see what teams can launch with Nexo today.
 
 Think of these demos as reusable growth accelerators:
 - proven integration patterns you can clone

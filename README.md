@@ -1,10 +1,8 @@
-# Luzia Nexo API
+# Luzia Nexo Agent Runtime API
 
-Reference implementation for Nexo partner integrations.
+Reference implementation for Nexo Agent Runtime integrations.
 
-Nexo provides a managed Agent Runtime with consented user-profile context and reliable webhook delivery, so you can connect your APIs and agentic flows to Luzia with clarity and control.
-
-It's really that simple.
+Nexo provides a managed Agent Runtime with reliable webhook delivery, consented profile context, and trusted integration boundaries.
 
 Use this repository to:
 - build and test webhook handlers (Python or TypeScript)
