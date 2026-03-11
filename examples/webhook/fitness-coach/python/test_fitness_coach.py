@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import importlib
+import importlib.util
 import json
 import sys
 from pathlib import Path
@@ -31,12 +32,25 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 # ---------------------------------------------------------------------------
-# Path setup — ensure the app module is importable
+# Isolated module import — avoids collision when pytest runs multiple webhook
+# test files in the same process (each has its own app.py).
 # ---------------------------------------------------------------------------
+_APP_DIR = Path(__file__).resolve().parent
+_MODULE_NAME = "fitness_coach_app"
 
-_APP_DIR = Path(__file__).parent
-if str(_APP_DIR) not in sys.path:
-    sys.path.insert(0, str(_APP_DIR))
+
+def _load_fitness_app():
+    """Load (or reload) the fitness-coach app.py with full isolation."""
+    spec = importlib.util.spec_from_file_location(_MODULE_NAME, _APP_DIR / "app.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Initial load for unit tests that don't need env-var reload
+_fitness_mod = _load_fitness_app()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -109,9 +123,8 @@ def open_app(monkeypatch):
     """FastAPI app with WEBHOOK_SECRET unset (open / dev mode)."""
     monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
     monkeypatch.setenv("STREAMING_ENABLED", "false")
-    import app as fitness_app
-    importlib.reload(fitness_app)
-    return fitness_app.app
+    mod = _load_fitness_app()
+    return mod.app
 
 
 @pytest.fixture()
@@ -119,9 +132,8 @@ def secret_app(monkeypatch):
     """FastAPI app with WEBHOOK_SECRET=testsecret set."""
     monkeypatch.setenv("WEBHOOK_SECRET", TEST_SECRET)
     monkeypatch.setenv("STREAMING_ENABLED", "false")
-    import app as fitness_app
-    importlib.reload(fitness_app)
-    return fitness_app.app
+    mod = _load_fitness_app()
+    return mod.app
 
 
 # ---------------------------------------------------------------------------
@@ -130,27 +142,23 @@ def secret_app(monkeypatch):
 
 
 def test_detect_intent_workout_plan():
-    import app as fitness_app
-    assert fitness_app.detect_intent("Design a 4-week workout plan") == "workout_plan"
-    assert fitness_app.detect_intent("I need a beginner strength routine") == "workout_plan"
+    assert _fitness_mod.detect_intent("Design a 4-week workout plan") == "workout_plan"
+    assert _fitness_mod.detect_intent("I need a beginner strength routine") == "workout_plan"
 
 
 def test_detect_intent_progress_check():
-    import app as fitness_app
-    assert fitness_app.detect_intent("How am I doing this month?") == "progress_check"
-    assert fitness_app.detect_intent("check my progress and results") == "progress_check"
+    assert _fitness_mod.detect_intent("How am I doing this month?") == "progress_check"
+    assert _fitness_mod.detect_intent("check my progress and results") == "progress_check"
 
 
 def test_detect_intent_nutrition_guidance():
-    import app as fitness_app
-    assert fitness_app.detect_intent("What should I eat before workout?") == "nutrition_guidance"
-    assert fitness_app.detect_intent("protein and nutrition advice") == "nutrition_guidance"
+    assert _fitness_mod.detect_intent("What should I eat before workout?") == "nutrition_guidance"
+    assert _fitness_mod.detect_intent("protein and nutrition advice") == "nutrition_guidance"
 
 
 def test_detect_intent_fallback_defaults_to_workout_plan():
-    import app as fitness_app
-    assert fitness_app.detect_intent("hello there") == "workout_plan"
-    assert fitness_app.detect_intent("good morning") == "workout_plan"
+    assert _fitness_mod.detect_intent("hello there") == "workout_plan"
+    assert _fitness_mod.detect_intent("good morning") == "workout_plan"
 
 
 # ---------------------------------------------------------------------------

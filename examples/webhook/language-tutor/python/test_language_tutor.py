@@ -21,11 +21,35 @@ from __future__ import annotations
 import hashlib
 import hmac
 import importlib
+import importlib.util
 import json
+import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+
+# ---------------------------------------------------------------------------
+# Isolated module import — avoids collision when pytest runs multiple webhook
+# test files in the same process (each has its own app.py).
+# ---------------------------------------------------------------------------
+_APP_DIR = Path(__file__).resolve().parent
+_MODULE_NAME = "language_tutor_app"
+
+
+def _load_tutor_app():
+    """Load (or reload) the language-tutor app.py with full isolation."""
+    spec = importlib.util.spec_from_file_location(_MODULE_NAME, _APP_DIR / "app.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Initial load for unit tests that don't need env-var reload
+_tutor_mod = _load_tutor_app()
 
 
 # ---------------------------------------------------------------------------
@@ -68,9 +92,7 @@ def app_module(monkeypatch):
     """Load app module with WEBHOOK_SECRET unset (open mode) and LLM mocked."""
     monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
     monkeypatch.setenv("STREAMING_ENABLED", "false")
-    import app as module
-    importlib.reload(module)
-    return module
+    return _load_tutor_app()
 
 
 @pytest.fixture
@@ -84,9 +106,8 @@ def secret_app(monkeypatch):
     """FastAPI app with WEBHOOK_SECRET=testsecret, streaming disabled."""
     monkeypatch.setenv("WEBHOOK_SECRET", "testsecret")
     monkeypatch.setenv("STREAMING_ENABLED", "false")
-    import app as module
-    importlib.reload(module)
-    return module.app
+    mod = _load_tutor_app()
+    return mod.app
 
 
 # ---------------------------------------------------------------------------
@@ -187,7 +208,7 @@ def test_detect_language_defaults_to_spanish(app_module):
 @pytest.mark.asyncio
 async def test_phrase_help_italian(open_app):
     """phrase_help for Italian returns Italian card with correct phrase."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Teach me to order food in Italian"))
     assert r.status_code == 200
@@ -205,7 +226,7 @@ async def test_phrase_help_italian(open_app):
 @pytest.mark.asyncio
 async def test_phrase_help_spanish(open_app):
     """phrase_help for Spanish returns Spanish card with correct phrase."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("How do I say something in Spanish?"))
     assert r.status_code == 200
@@ -219,7 +240,7 @@ async def test_phrase_help_spanish(open_app):
 @pytest.mark.asyncio
 async def test_phrase_help_portuguese(open_app):
     """phrase_help for Portuguese returns Portuguese card with correct phrase."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Phrase support text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Teach me a phrase in Portuguese please"))
     assert r.status_code == 200
@@ -233,7 +254,7 @@ async def test_phrase_help_portuguese(open_app):
 @pytest.mark.asyncio
 async def test_phrase_help_card_has_required_fields(open_app):
     """phrase_help card has title, subtitle, badges, fields, and metadata."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("How do I say goodbye in Spanish?"))
     card = _card(r.json())
@@ -248,7 +269,7 @@ async def test_phrase_help_card_has_required_fields(open_app):
 @pytest.mark.asyncio
 async def test_phrase_help_actions(open_app):
     """phrase_help response includes practice and more_variants actions."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("How do I say goodbye in Spanish?"))
     data = r.json()
@@ -265,7 +286,7 @@ async def test_phrase_help_actions(open_app):
 @pytest.mark.asyncio
 async def test_quiz_card_structure(open_app):
     """quiz intent returns a quiz card with 3 fields and correct structure."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Give me a Spanish conversation quiz"))
     assert r.status_code == 200
@@ -286,7 +307,7 @@ async def test_quiz_card_structure(open_app):
 @pytest.mark.asyncio
 async def test_quiz_actions(open_app):
     """quiz response includes start_quiz and show_answers actions."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Test me on Italian"))
     data = r.json()
@@ -298,7 +319,7 @@ async def test_quiz_actions(open_app):
 @pytest.mark.asyncio
 async def test_quiz_italian_language(open_app):
     """quiz for Italian uses Italian label."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Quiz text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Italian conversation quiz please"))
     card = _card(r.json())
@@ -314,7 +335,7 @@ async def test_quiz_italian_language(open_app):
 @pytest.mark.asyncio
 async def test_lesson_plan_card_structure(open_app):
     """lesson_plan intent returns a 4-week plan card."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Build a beginner lesson plan for Spanish"))
     assert r.status_code == 200
@@ -337,7 +358,7 @@ async def test_lesson_plan_card_structure(open_app):
 @pytest.mark.asyncio
 async def test_lesson_plan_actions(open_app):
     """lesson_plan response includes begin_week1 and adapt_level actions."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Create a weekly Italian study plan"))
     data = r.json()
@@ -349,7 +370,7 @@ async def test_lesson_plan_actions(open_app):
 @pytest.mark.asyncio
 async def test_lesson_plan_portuguese(open_app):
     """lesson_plan for Portuguese uses Portuguese label."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Lesson plan text"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Give me a beginner Portuguese curriculum"))
     card = _card(r.json())
@@ -365,7 +386,7 @@ async def test_lesson_plan_portuguese(open_app):
 @pytest.mark.asyncio
 async def test_display_name_prepended_to_reply(open_app):
     """When profile.display_name is set, reply starts with 'Hey <name>'."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Here is your phrase."):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Here is your phrase."):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post(
                 "/",
@@ -383,7 +404,7 @@ async def test_display_name_prepended_to_reply(open_app):
 @pytest.mark.asyncio
 async def test_no_greeting_without_display_name(open_app):
     """When no profile is set, reply does not crash and returns content_parts."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Here is your phrase."):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Here is your phrase."):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("How do I say hello in Spanish?"))
     assert r.status_code == 200
@@ -441,7 +462,7 @@ async def test_valid_signature_accepted(secret_app):
     body = json.dumps(_payload("Teach me a phrase in Italian"))
     ts = "1700000000"
     sig = _sign("testsecret", ts, body)
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=secret_app), base_url="http://test") as client:
             r = await client.post(
                 "/",
@@ -505,7 +526,7 @@ async def test_missing_timestamp_returns_401(secret_app):
 @pytest.mark.asyncio
 async def test_no_secret_configured_accepts_unsigned_request(open_app):
     """When WEBHOOK_SECRET is not set, unsigned requests are accepted."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Teach me Italian phrases"))
     assert r.status_code == 200
@@ -519,7 +540,7 @@ async def test_no_secret_configured_accepts_unsigned_request(open_app):
 @pytest.mark.asyncio
 async def test_response_schema_version(open_app):
     """All responses include the correct schema_version field."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Quiz me on Spanish"))
     assert r.json()["schema_version"] == "2026-03-01"
@@ -528,7 +549,7 @@ async def test_response_schema_version(open_app):
 @pytest.mark.asyncio
 async def test_response_status_completed(open_app):
     """Successful responses have status='completed'."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("lesson plan for Spanish beginners"))
     assert r.json()["status"] == "completed"
@@ -537,7 +558,7 @@ async def test_response_status_completed(open_app):
 @pytest.mark.asyncio
 async def test_cards_always_present_in_response(open_app):
     """Every successful response includes exactly one card."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Teach me Spanish"))
     data = r.json()
@@ -548,7 +569,7 @@ async def test_cards_always_present_in_response(open_app):
 @pytest.mark.asyncio
 async def test_actions_always_present_in_response(open_app):
     """Every successful response includes at least one action."""
-    with patch("app.call_llm", new_callable=AsyncMock, return_value="Ok"):
+    with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Italian quiz"))
     data = r.json()

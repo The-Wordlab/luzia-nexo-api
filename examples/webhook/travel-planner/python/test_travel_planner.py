@@ -20,15 +20,36 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import importlib
+import importlib.util
 import json
+import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 
-import app as travel_app
+# ---------------------------------------------------------------------------
+# Isolated module import — avoids collision when pytest runs multiple webhook
+# test files in the same process (each has its own app.py).
+# ---------------------------------------------------------------------------
+_APP_DIR = Path(__file__).resolve().parent
+_MODULE_NAME = "travel_planner_app"
+
+
+def _load_travel_app():
+    """Load (or reload) the travel-planner app.py with full isolation."""
+    spec = importlib.util.spec_from_file_location(_MODULE_NAME, _APP_DIR / "app.py")
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[_MODULE_NAME] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+travel_app = _load_travel_app()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -113,7 +134,7 @@ def test_destination_extraction():
     assert travel_app._extract_destination("No city mentioned") == "Barcelona"
 
 
-@patch("app.call_llm")
+@patch("travel_planner_app.call_llm")
 def test_itinerary_response(mock_call_llm):
     mock_call_llm.return_value = "Trip draft ready"
     c = TestClient(travel_app.app, raise_server_exceptions=False)
@@ -122,7 +143,7 @@ def test_itinerary_response(mock_call_llm):
     assert r.json()["cards"][0]["type"] == "itinerary"
 
 
-@patch("app.call_llm")
+@patch("travel_planner_app.call_llm")
 def test_flight_response(mock_call_llm):
     mock_call_llm.return_value = "Compared options"
     c = TestClient(travel_app.app, raise_server_exceptions=False)
@@ -131,7 +152,7 @@ def test_flight_response(mock_call_llm):
     assert r.json()["cards"][0]["type"] == "flight_compare"
 
 
-@patch("app.call_llm")
+@patch("travel_planner_app.call_llm")
 def test_booking_handoff_response(mock_call_llm):
     mock_call_llm.return_value = "Handoff prepared"
     c = TestClient(travel_app.app, raise_server_exceptions=False)
@@ -147,14 +168,14 @@ def test_empty_message_400():
     assert c.post("/", json=_payload("")).status_code == 400
 
 
-@patch("app.WEBHOOK_SECRET", "secret")
+@patch("travel_planner_app.WEBHOOK_SECRET", "secret")
 def test_signature_gate_on():
     c = TestClient(travel_app.app, raise_server_exceptions=False)
     body = json.dumps(_payload("plan"))
     assert c.post("/", content=body, headers={"content-type": "application/json"}).status_code == 401
 
 
-@patch("app.WEBHOOK_SECRET", "secret")
+@patch("travel_planner_app.WEBHOOK_SECRET", "secret")
 def test_signature_valid():
     c = TestClient(travel_app.app, raise_server_exceptions=False)
     body = json.dumps(_payload("plan"))
@@ -176,7 +197,7 @@ def test_signature_valid():
 @pytest.mark.asyncio
 async def test_async_itinerary_intent_happy_path():
     """Itinerary intent: Barcelona in message triggers itinerary card."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Here is your itinerary.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Here is your itinerary.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -200,7 +221,7 @@ async def test_async_itinerary_intent_happy_path():
 @pytest.mark.asyncio
 async def test_async_itinerary_destination_extraction():
     """Destination 'Barcelona' is extracted from message and reflected in card title."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Barcelona itinerary ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Barcelona itinerary ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -215,7 +236,7 @@ async def test_async_itinerary_destination_extraction():
 @pytest.mark.asyncio
 async def test_async_itinerary_day_fields_present():
     """Itinerary card fields include Day 1, Day 2, Day 3, and Budget."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -232,7 +253,7 @@ async def test_async_itinerary_day_fields_present():
 @pytest.mark.asyncio
 async def test_async_itinerary_actions():
     """Itinerary response includes adjust_plan and show_budget actions."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -247,7 +268,7 @@ async def test_async_itinerary_actions():
 @pytest.mark.asyncio
 async def test_async_flight_compare_intent_happy_path():
     """Flight compare intent: card has type flight_compare with option fields."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Here are your flight options.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Here are your flight options.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -279,7 +300,7 @@ async def test_async_flight_compare_intent_happy_path():
 @pytest.mark.asyncio
 async def test_async_flight_compare_actions():
     """Flight compare response includes pick_option and set_price_watch actions."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Options ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Options ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -296,7 +317,7 @@ async def test_async_flight_compare_actions():
 @pytest.mark.asyncio
 async def test_async_booking_handoff_intent_happy_path():
     """Booking handoff: capability_state is requires_connector and badge present."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Booking handoff ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Booking handoff ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -319,7 +340,7 @@ async def test_async_booking_handoff_intent_happy_path():
 @pytest.mark.asyncio
 async def test_async_booking_handoff_actions():
     """Booking handoff response includes approve_handoff and change_constraints actions."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Ready.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Ready.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -336,7 +357,7 @@ async def test_async_booking_handoff_actions():
 @pytest.mark.asyncio
 async def test_async_fallback_intent_returns_itinerary():
     """Messages with no recognized keywords fall back to itinerary intent."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Default response.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Default response.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -354,7 +375,7 @@ async def test_async_fallback_intent_returns_itinerary():
 @pytest.mark.asyncio
 async def test_async_fallback_uses_default_destination_barcelona():
     """Fallback with no known city defaults destination to Barcelona."""
-    with patch("app.call_llm", new=AsyncMock(return_value="Default response.")):
+    with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Default response.")):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -397,11 +418,11 @@ async def test_async_valid_hmac_signature_accepted():
     body_bytes = body_str.encode("utf-8")
     sig = _sign(_SECRET, _TIMESTAMP, body_str)
 
-    with patch("app.WEBHOOK_SECRET", _SECRET):
+    with patch("travel_planner_app.WEBHOOK_SECRET", _SECRET):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
-            with patch("app.call_llm", new=AsyncMock(return_value="Signed response.")):
+            with patch("travel_planner_app.call_llm", new=AsyncMock(return_value="Signed response.")):
                 response = await client.post(
                     "/",
                     content=body_bytes,
@@ -422,7 +443,7 @@ async def test_async_invalid_hmac_signature_rejected():
     body_str = json.dumps(_payload("Plan a trip"))
     body_bytes = body_str.encode("utf-8")
 
-    with patch("app.WEBHOOK_SECRET", _SECRET):
+    with patch("travel_planner_app.WEBHOOK_SECRET", _SECRET):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -445,7 +466,7 @@ async def test_async_missing_signature_header_rejected():
     body_str = json.dumps(_payload("Plan a trip"))
     body_bytes = body_str.encode("utf-8")
 
-    with patch("app.WEBHOOK_SECRET", _SECRET):
+    with patch("travel_planner_app.WEBHOOK_SECRET", _SECRET):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -465,7 +486,7 @@ async def test_async_missing_timestamp_header_rejected():
     body_bytes = body_str.encode("utf-8")
     sig = _sign(_SECRET, _TIMESTAMP, body_str)
 
-    with patch("app.WEBHOOK_SECRET", _SECRET):
+    with patch("travel_planner_app.WEBHOOK_SECRET", _SECRET):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
         ) as client:
@@ -481,8 +502,8 @@ async def test_async_missing_timestamp_header_rejected():
 @pytest.mark.asyncio
 async def test_async_no_signature_required_when_secret_unset():
     """When WEBHOOK_SECRET is empty/unset, unsigned requests are accepted."""
-    with patch("app.WEBHOOK_SECRET", ""), patch(
-        "app.call_llm", new=AsyncMock(return_value="Open response.")
+    with patch("travel_planner_app.WEBHOOK_SECRET", ""), patch(
+        "travel_planner_app.call_llm", new=AsyncMock(return_value="Open response.")
     ):
         async with AsyncClient(
             transport=ASGITransport(app=travel_app.app), base_url="http://test"
