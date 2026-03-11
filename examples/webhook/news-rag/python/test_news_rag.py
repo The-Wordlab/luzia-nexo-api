@@ -437,6 +437,33 @@ async def test_webhook_includes_read_actions(app):
 
 
 @pytest.mark.asyncio
+async def test_webhook_streaming_returns_sse(app):
+    """SSE is returned when Accept includes text/event-stream."""
+    import server
+
+    with (
+        patch.object(server, "retrieve", new=AsyncMock(return_value=_SAMPLE_HITS)),
+        patch.object(
+            server, "ask_llm", new=AsyncMock(return_value="Streaming answer text")
+        ),
+        patch.object(server, "crawl_and_index_feeds", new=AsyncMock(return_value={})),
+    ):
+        async with AsyncClient(
+            transport=ASGITransport(app=app), base_url="http://test"
+        ) as client:
+            response = await client.post(
+                "/",
+                json={"message": {"content": "latest headlines"}},
+                headers={"Accept": "text/event-stream"},
+            )
+
+    assert response.status_code == 200
+    assert "text/event-stream" in response.headers.get("content-type", "")
+    assert "event: delta" in response.text
+    assert "event: done" in response.text
+
+
+@pytest.mark.asyncio
 async def test_webhook_empty_message_returns_prompt(app):
     """Empty message content returns a friendly prompt to ask a question."""
     import server

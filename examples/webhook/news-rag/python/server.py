@@ -58,7 +58,7 @@ import feedparser
 import litellm
 from bs4 import BeautifulSoup
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 try:
     import psycopg
@@ -718,7 +718,7 @@ async def _startup() -> None:
 
 
 @app.post("/")
-async def receive_webhook(request: Request) -> JSONResponse:
+async def receive_webhook(request: Request):
     """Main webhook endpoint.
 
     Receives the standard Nexo webhook payload, retrieves relevant news
@@ -745,26 +745,32 @@ async def receive_webhook(request: Request) -> JSONResponse:
     message: dict[str, Any] = data.get("message") or {}
     user_text: str = message.get("content", "").strip()
 
+    wants_stream = "text/event-stream" in request.headers.get("accept", "").lower()
+
     if not user_text:
-        return JSONResponse(
-            {
-                "schema_version": "2026-03-01",
-                "status": "completed",
-                "content_parts": [
-                    {
-                        "type": "text",
-                        "text": "Please ask me a question about the latest news.",
-                    }
-                ],
-                "cards": [],
-                "actions": [],
-            }
-        )
+        envelope = {
+            "schema_version": "2026-03-01",
+            "status": "completed",
+            "content_parts": [
+                {
+                    "type": "text",
+                    "text": "Please ask me a question about the latest news.",
+                }
+            ],
+            "cards": [],
+            "actions": [],
+        }
+        if wants_stream:
+            return _stream_envelope_response(envelope)
+        return JSONResponse(envelope)
 
     hits = await retrieve(user_text)
 
     if not hits:
-        return JSONResponse(_empty_index_response())
+        envelope = _empty_index_response()
+        if wants_stream:
+            return _stream_envelope_response(envelope)
+        return JSONResponse(envelope)
 
     messages = build_rag_prompt(hits, user_text)
     try:
@@ -776,14 +782,39 @@ async def receive_webhook(request: Request) -> JSONResponse:
             "Please try again."
         )
 
-    return JSONResponse(
-        {
-            "schema_version": "2026-03-01",
-            "status": "completed",
-            "content_parts": [{"type": "text", "text": answer}],
-            "cards": build_source_cards(hits),
-            "actions": build_read_actions(hits),
-        }
+    envelope = {
+        "schema_version": "2026-03-01",
+        "status": "completed",
+        "content_parts": [{"type": "text", "text": answer}],
+        "cards": build_source_cards(hits),
+        "actions": build_read_actions(hits),
+    }
+    if wants_stream:
+        return _stream_envelope_response(envelope)
+    return JSONResponse(envelope)
+
+
+def _stream_envelope_response(envelope: dict[str, Any]) -> StreamingResponse:
+    """Return a canonical SSE response with delta + done events."""
+    text = " ".join(
+        p.get("text", "")
+        for p in (envelope.get("content_parts") or [])
+        if isinstance(p, dict) and p.get("type") == "text"
+    ).strip()
+
+    async def stream():
+        if text:
+            yield f'event: delta\ndata: {json.dumps({"text": text})}\n\n'
+        yield f"event: done\ndata: {json.dumps(envelope)}\n\n"
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 
