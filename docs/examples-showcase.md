@@ -3,10 +3,15 @@
 Real-world partner integrations built on Nexo. Each example is a full webhook server you can clone, run locally, and deploy to Cloud Run.
 
 All four use the same pattern:
-- Ingest domain data (RSS, APIs) into ChromaDB
+- Ingest domain data (RSS, APIs) into a vector store
 - Accept Nexo webhook requests
 - Retrieve relevant chunks, call an LLM, return rich responses
 - Return `cards` and `actions` alongside the text response
+
+Runtime policy:
+- Production (Cloud Run): Gemini on Vertex via ADC
+- Development override: OpenAI by setting `OPENAI_API_KEY`, `LLM_MODEL`, and `EMBEDDING_MODEL`
+- Durable vector storage on Cloud Run: `pgvector` on Cloud SQL
 
 ---
 
@@ -20,7 +25,7 @@ A news assistant that answers questions about current events using live RSS feed
 flowchart LR
     A[RSS feeds<br/>BBC Reuters AP] --> B[feedparser crawl<br/>every 30 min]
     B --> C[Chunk + embed]
-    C --> D[(ChromaDB<br/>news_articles)]
+    C --> D[(Vector Store<br/>news_articles)]
     U[User query] --> E[Retrieve top-K chunks]
     D --> E
     E --> F[litellm completion]
@@ -98,7 +103,9 @@ curl -X POST "https://nexo-news-rag-v3me5awkta-ew.a.run.app/" \
 ```bash
 cd examples/webhook/news-rag/python
 pip install -r requirements.txt
-OPENAI_API_KEY=sk-... uvicorn server:app --port 8080
+GOOGLE_CLOUD_PROJECT=<your-project-id> \
+GOOGLE_CLOUD_LOCATION=<your-region> \
+uvicorn server:app --port 8080
 ```
 
 The server crawls feeds on startup and re-indexes every 30 minutes.
@@ -134,7 +141,7 @@ flowchart LR
     L --> O[Nexo response<br/>text + cards + actions]
 ```
 
-Three ChromaDB collections, each tuned for different query types:
+Three vector collections, each tuned for different query types:
 - `articles` — RSS news, previews, analysis
 - `match_results` — Structured match data (teams, scores, scorers, venue)
 - `standings` — League table snapshots
@@ -248,7 +255,8 @@ curl -X POST "https://nexo-sports-rag-v3me5awkta-ew.a.run.app/" \
 ```bash
 cd examples/webhook/sports-rag/python
 pip install -r requirements.txt
-OPENAI_API_KEY=sk-... \
+GOOGLE_CLOUD_PROJECT=<your-project-id> \
+GOOGLE_CLOUD_LOCATION=<your-region> \
 FOOTBALL_DATA_API_KEY=<key> \  # optional - free tier at football-data.org
 uvicorn server:app --port 8080
 ```
@@ -329,7 +337,9 @@ curl -X POST "https://nexo-travel-rag-v3me5awkta-ew.a.run.app/" \
 ```bash
 cd examples/webhook/travel-rag/python
 pip install -r requirements.txt
-OPENAI_API_KEY=sk-... uvicorn server:app --port 8080
+GOOGLE_CLOUD_PROJECT=<your-project-id> \
+GOOGLE_CLOUD_LOCATION=<your-region> \
+uvicorn server:app --port 8080
 ```
 
 Source: [examples/webhook/travel-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-rag/python)
@@ -360,7 +370,9 @@ curl -X POST "https://nexo-football-live-v3me5awkta-ew.a.run.app/" \
 ```bash
 cd examples/webhook/football-live/python
 pip install -r requirements.txt
-OPENAI_API_KEY=sk-... FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
+GOOGLE_CLOUD_PROJECT=<your-project-id> \
+GOOGLE_CLOUD_LOCATION=<your-region> \
+FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
 ```
 
 Source: [examples/webhook/football-live/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python)
@@ -425,19 +437,27 @@ To run individual services:
 ```bash
 # News RAG on :8081
 cd examples/webhook/news-rag/python
-OPENAI_API_KEY=sk-... uvicorn server:app --port 8081
+GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvicorn server:app --port 8081
 
 # Sports RAG on :8082
 cd examples/webhook/sports-rag/python
-OPENAI_API_KEY=sk-... uvicorn server:app --port 8082
+GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvicorn server:app --port 8082
 
 # Travel RAG on :8083
 cd examples/webhook/travel-rag/python
-OPENAI_API_KEY=sk-... uvicorn server:app --port 8083
+GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvicorn server:app --port 8083
 
 # Football Live RAG on :8003
 cd examples/webhook/football-live/python
-OPENAI_API_KEY=sk-... FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
+GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
+```
+
+OpenAI development override example:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export LLM_MODEL=openai/gpt-4o-mini
+export EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 ## Deploying to Cloud Run

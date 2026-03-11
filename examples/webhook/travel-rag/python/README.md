@@ -7,11 +7,14 @@ A retrieval-augmented generation (RAG) travel assistant webhook for Nexo. Indexe
 ```bash
 pip install -r requirements.txt
 
-# Using local Ollama (no API key needed):
-LLM_MODEL=ollama/llama3.2 uvicorn server:app --port 8092
+# Production-aligned defaults (Gemini via ADC):
+GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> \
+LLM_MODEL=vertex_ai/gemini-2.0-flash-001 EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
+uvicorn server:app --port 8092
 
-# Using OpenAI:
-OPENAI_API_KEY=sk-... LLM_MODEL=gpt-4o uvicorn server:app --port 8092
+# Development override (OpenAI):
+OPENAI_API_KEY=sk-... LLM_MODEL=openai/gpt-4o-mini EMBEDDING_MODEL=text-embedding-3-small \
+uvicorn server:app --port 8092
 ```
 
 On startup the server seeds 12 destination profiles (Paris, Tokyo, Barcelona, NYC, Bali, Rome, London, Sydney, Marrakech, Reykjavik, Cape Town, Kyoto) and crawls travel RSS feeds.
@@ -45,7 +48,12 @@ curl -X POST http://localhost:8092/ \
 
 ```bash
 docker build -t nexo-travel-rag .
-docker run -p 8092:8080 -e LLM_MODEL=ollama/llama3.2 nexo-travel-rag
+docker run -p 8092:8080 \
+  -e GOOGLE_CLOUD_PROJECT=<your-project-id> \
+  -e GOOGLE_CLOUD_LOCATION=<your-region> \
+  -e LLM_MODEL=vertex_ai/gemini-2.0-flash-001 \
+  -e EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
+  nexo-travel-rag
 ```
 
 Or use the shared Docker Compose from `examples/`:
@@ -58,8 +66,8 @@ cd examples && docker compose up travel-rag
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `LLM_MODEL` | `ollama/llama3.2` | litellm model string |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string |
+| `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | Embedding model |
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret (skip if empty) |
 | `TRAVEL_FEEDS` | _(built-in)_ | Comma-separated RSS URLs |
 | `REFRESH_INTERVAL_MINUTES` | `60` | Background re-crawl interval |

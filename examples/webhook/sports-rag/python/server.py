@@ -26,8 +26,8 @@ Endpoints:
 
 Environment variables:
   WEBHOOK_SECRET              HMAC secret for verifying Nexo requests
-  LLM_MODEL                   litellm model string (default: ollama/llama3.2)
-  EMBEDDING_MODEL             Embedding model (default: text-embedding-3-small)
+  LLM_MODEL                   litellm model string (default: vertex_ai/gemini-2.0-flash-001)
+  EMBEDDING_MODEL             Embedding model (default: vertex_ai/text-embedding-004)
   SPORT_FEEDS                 Comma-separated RSS feed URLs
   FOOTBALL_DATA_API_KEY       football-data.org API key (optional)
   FOOTBALL_DATA_COMPETITION   Comma-separated competition IDs (default: PL)
@@ -79,8 +79,28 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ---------------------------------------------------------------------------
 
+def _configure_vertex_env_defaults() -> None:
+    """Map common GCP env vars into LiteLLM Vertex vars when unset."""
+    project = (
+        os.environ.get("VERTEXAI_PROJECT")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("GCP_PROJECT_ID")
+    )
+    location = (
+        os.environ.get("VERTEXAI_LOCATION")
+        or os.environ.get("GOOGLE_CLOUD_LOCATION")
+        or os.environ.get("GCP_REGION")
+    )
+    if project:
+        os.environ.setdefault("VERTEXAI_PROJECT", project)
+    if location:
+        os.environ.setdefault("VERTEXAI_LOCATION", location)
+
+
+_configure_vertex_env_defaults()
+
 WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
-LLM_MODEL: str = os.environ.get("LLM_MODEL", "ollama/llama3.2")
+LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "15"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 LIVE_POLL_INTERVAL_SECONDS: int = int(os.environ.get("LIVE_POLL_INTERVAL_SECONDS", "60"))

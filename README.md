@@ -11,6 +11,12 @@ Use this repository to:
 - send proactive Partner API requests
 - reference optional deployment examples (Docker, Cloud Run)
 
+Model/runtime policy for partner RAG examples:
+- Production on Cloud Run: Gemini on Vertex via ADC (no Gemini API key)
+- Development override: OpenAI by setting `OPENAI_API_KEY`, `LLM_MODEL`, and `EMBEDDING_MODEL`
+- Durable vectors in Cloud Run: pgvector on Cloud SQL
+- Automated indexing: Cloud Scheduler jobs call each service ingest endpoint
+
 ## Links
 
 - API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)

@@ -807,6 +807,26 @@ class TestHealthEndpoint:
         assert "backend" in data["vector_store"]
         assert "durable" in data["vector_store"]
 
+    def test_vector_store_metadata_pgvector_is_durable(self, monkeypatch):
+        server, _, _ = _get_modules()
+        monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "pgvector")
+        monkeypatch.setattr(server, "VECTOR_STORE_DURABLE_OVERRIDE", "")
+        data = server._vector_store_metadata()
+        assert data["backend"] == "pgvector"
+        assert data["durable"] is True
+
+    def test_pgvector_backend_requires_dsn(self, monkeypatch):
+        _, ingest, _ = _get_modules()
+        monkeypatch.setattr(ingest, "VECTOR_STORE_BACKEND", "pgvector")
+        monkeypatch.setattr(ingest, "PGVECTOR_DSN", "")
+        monkeypatch.setattr(ingest, "_pg_conn", None)
+        monkeypatch.setattr(ingest, "_chroma_client", None)
+        ingest._pg_collections.clear()
+
+        collection = ingest.get_collection(ingest.COLLECTION_MATCHES)
+        with pytest.raises(RuntimeError, match="(PGVECTOR_DSN is required|psycopg is required)"):
+            collection.count()
+
 
 # ---------------------------------------------------------------------------
 # Admin Endpoint Tests

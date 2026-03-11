@@ -44,7 +44,29 @@ logger = logging.getLogger(__name__)
 
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
-LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4o-mini")
+
+
+def _configure_vertex_env_defaults() -> None:
+    """Map common GCP env vars into LiteLLM Vertex vars when unset."""
+    project = (
+        os.environ.get("VERTEXAI_PROJECT")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("GCP_PROJECT_ID")
+    )
+    location = (
+        os.environ.get("VERTEXAI_LOCATION")
+        or os.environ.get("GOOGLE_CLOUD_LOCATION")
+        or os.environ.get("GCP_REGION")
+    )
+    if project:
+        os.environ.setdefault("VERTEXAI_PROJECT", project)
+    if location:
+        os.environ.setdefault("VERTEXAI_LOCATION", location)
+
+
+_configure_vertex_env_defaults()
+
+LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 REFRESH_INTERVAL = int(os.environ.get("REFRESH_INTERVAL", "300"))  # 5 min default
 TOP_K = int(os.environ.get("TOP_K", "5"))

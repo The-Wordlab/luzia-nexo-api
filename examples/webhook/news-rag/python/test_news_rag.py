@@ -684,3 +684,27 @@ async def test_health_endpoint_returns_ok(app):
     assert "vector_store" in data
     assert "backend" in data["vector_store"]
     assert "durable" in data["vector_store"]
+
+
+def test_vector_store_metadata_pgvector_is_durable(monkeypatch):
+    import importlib
+    import server
+
+    importlib.reload(server)
+    monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "pgvector")
+    monkeypatch.setattr(server, "VECTOR_STORE_DURABLE_OVERRIDE", "")
+    data = server._vector_store_metadata()
+    assert data["backend"] == "pgvector"
+    assert data["durable"] is True
+
+
+def test_pgvector_backend_requires_dsn(monkeypatch):
+    import server
+
+    monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "pgvector")
+    monkeypatch.setattr(server, "PGVECTOR_DSN", "")
+    monkeypatch.setattr(server, "_pg_conn", None)
+    monkeypatch.setattr(server, "_collection", None)
+
+    with pytest.raises(RuntimeError, match="(PGVECTOR_DSN is required|psycopg is required)"):
+        server.get_collection().count()

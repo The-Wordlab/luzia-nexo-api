@@ -29,9 +29,11 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Minimum config (no signature check, local Ollama LLM, local sentence embeddings)
-export LLM_MODEL=ollama/llama3.2
-export EMBEDDING_MODEL=ollama/nomic-embed-text   # or omit to use text-embedding-3-small
+# Production-aligned config (Gemini via ADC)
+export GOOGLE_CLOUD_PROJECT=<your-project-id>
+export GOOGLE_CLOUD_LOCATION=<your-region>
+export LLM_MODEL=vertex_ai/gemini-2.0-flash-001
+export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 
 # Start the server
 uvicorn server:app --reload --port 8002
@@ -45,8 +47,8 @@ unreachable, because the match seed data is hardcoded.
 | Variable | Default | Description |
 |---|---|---|
 | `WEBHOOK_SECRET` | *(empty)* | HMAC secret for Nexo request verification. Leave empty to skip during dev. |
-| `LLM_MODEL` | `ollama/llama3.2` | litellm model string. Any litellm-supported model works. |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model. Requires `OPENAI_API_KEY` if using the default. |
+| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string. Production default uses ADC. |
+| `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | Embedding model. Production default uses ADC. |
 | `SPORT_FEEDS` | BBC Sport, ESPN FC, Sky Sports | Comma-separated RSS feed URLs to crawl. |
 | `FOOTBALL_DATA_API_KEY` | *(empty)* | [football-data.org](https://www.football-data.org/) API key. Leave empty to use seed data. |
 | `FOOTBALL_DATA_COMPETITION` | `PL` | Comma-separated competition codes, e.g. `PL,BL1,PD,SA,FL1`. |
@@ -237,7 +239,8 @@ gcloud builds submit \
 
 # Create required secrets first
 echo -n "your-webhook-secret" | gcloud secrets create WEBHOOK_SECRET --data-file=-
-echo -n "sk-..." | gcloud secrets create OPENAI_API_KEY --data-file=-
+# Optional only for OpenAI override:
+# echo -n "sk-..." | gcloud secrets create OPENAI_API_KEY --data-file=-
 echo -n "your-fd-key" | gcloud secrets create FOOTBALL_DATA_API_KEY --data-file=-
 ```
 

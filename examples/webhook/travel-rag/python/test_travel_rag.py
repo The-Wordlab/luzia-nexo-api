@@ -667,6 +667,23 @@ class TestHealthEndpoint:
         assert "backend" in data["vector_store"]
         assert "durable" in data["vector_store"]
 
+    def test_vector_store_metadata_pgvector_is_durable(self, monkeypatch) -> None:
+        monkeypatch.setattr(_server_module, "VECTOR_STORE_BACKEND", "pgvector")
+        monkeypatch.setattr(_server_module, "VECTOR_STORE_DURABLE_OVERRIDE", "")
+        data = _server_module._vector_store_metadata()
+        assert data["backend"] == "pgvector"
+        assert data["durable"] is True
+
+    def test_pgvector_backend_requires_dsn(self, monkeypatch) -> None:
+        monkeypatch.setattr(_ingest_module, "VECTOR_STORE_BACKEND", "pgvector")
+        monkeypatch.setattr(_ingest_module, "PGVECTOR_DSN", "")
+        monkeypatch.setattr(_ingest_module, "_pg_conn", None)
+        _ingest_module.reset_client()
+
+        collection = _ingest_module.get_collection(_ingest_module.COLLECTION_DESTINATIONS)
+        with pytest.raises(RuntimeError, match="(PGVECTOR_DSN is required|psycopg is required)"):
+            collection.count()
+
 
 # ---------------------------------------------------------------------------
 # Unit: seed data completeness

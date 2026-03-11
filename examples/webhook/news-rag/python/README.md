@@ -40,12 +40,16 @@ pip install -r requirements.txt
 # HMAC validation — set to match the secret configured in your Nexo app
 export WEBHOOK_SECRET=your_secret_here   # omit to skip validation locally
 
-# Embeddings — OpenAI is the default
-export OPENAI_API_KEY=sk-...
+# ADC-first defaults (production-aligned)
+export GOOGLE_CLOUD_PROJECT=<your-project-id>
+export GOOGLE_CLOUD_LOCATION=<your-region>
+export LLM_MODEL=vertex_ai/gemini-2.0-flash-001
+export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 
-# LLM — local Ollama is the default (free, no API key required)
-export LLM_MODEL=ollama/llama3.2         # default
-# or: export LLM_MODEL=gpt-4o-mini      # requires OPENAI_API_KEY
+# Development override (OpenAI)
+# export OPENAI_API_KEY=sk-...
+# export LLM_MODEL=openai/gpt-4o-mini
+# export EMBEDDING_MODEL=text-embedding-3-small
 
 # Optional overrides
 export NEWS_FEEDS="http://feeds.bbci.co.uk/news/rss.xml,https://techcrunch.com/feed/"
@@ -84,16 +88,17 @@ http://<your-host>:8080/
 
 | Use case | `LLM_MODEL` | Notes |
 |---|---|---|
-| Local (default) | `ollama/llama3.2` | Requires [Ollama](https://ollama.com) running |
+| Production default | `vertex_ai/gemini-2.0-flash-001` | Uses ADC (`gcloud auth application-default login`) |
 | OpenAI | `gpt-4o-mini` | Requires `OPENAI_API_KEY` |
-| Vertex AI (Gemini) | `vertex_ai/gemini-1.5-flash` | Requires GCP auth |
+| Local Ollama | `ollama/llama3.2` | Requires [Ollama](https://ollama.com) running |
 | Any litellm provider | see [litellm docs](https://docs.litellm.ai/docs/providers) | Provider-agnostic |
 
 ## Embedding options
 
 | Use case | `EMBEDDING_MODEL` | Notes |
 |---|---|---|
-| OpenAI (default) | `text-embedding-3-small` | Requires `OPENAI_API_KEY` |
+| Production default | `vertex_ai/text-embedding-004` | Uses ADC (`gcloud auth application-default login`) |
+| OpenAI | `text-embedding-3-small` | Requires `OPENAI_API_KEY` |
 | Vertex AI | `vertex_ai/text-embedding-004` | Requires GCP auth |
 | Ollama local | `ollama/nomic-embed-text` | Requires Ollama + `ollama pull nomic-embed-text` |
 
@@ -167,8 +172,8 @@ no secret configuration.
 | Variable | Default | Description |
 |---|---|---|
 | `NEWS_FEEDS` | BBC, Reuters, AP News | Comma-separated RSS URLs |
-| `LLM_MODEL` | `ollama/llama3.2` | litellm model string for completions |
-| `EMBEDDING_MODEL` | `text-embedding-3-small` | litellm model string for embeddings |
+| `LLM_MODEL` | `vertex_ai/gemini-2.0-flash-001` | litellm model string for completions |
+| `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | litellm model string for embeddings |
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret; verification skipped if empty |
 | `REFRESH_INTERVAL_MINUTES` | `30` | How often the background loop re-crawls all feeds |
 | `CHROMA_PERSIST_DIR` | `./chroma_data` | Path for ChromaDB persistence |
@@ -194,10 +199,12 @@ required. External services are mocked.
 # Build
 docker build -t nexo-news-rag .
 
-# Run (with OpenAI embeddings + GPT-4o-mini)
+# Run (production-like via ADC + Vertex)
 docker run -p 8080:8080 \
-  -e OPENAI_API_KEY=sk-... \
-  -e LLM_MODEL=gpt-4o-mini \
+  -e GOOGLE_CLOUD_PROJECT=<your-project-id> \
+  -e GOOGLE_CLOUD_LOCATION=<your-region> \
+  -e LLM_MODEL=vertex_ai/gemini-2.0-flash-001 \
+  -e EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
   -e WEBHOOK_SECRET=your_secret \
   -v $(pwd)/chroma_data:/data/chroma \
   nexo-news-rag
@@ -210,7 +217,8 @@ The included `cloudbuild.yaml` builds and deploys to Cloud Run. Before first dep
 1. Create Secret Manager secrets:
    ```bash
    echo -n "your_webhook_secret" | gcloud secrets create webhook-secret --data-file=-
-   echo -n "sk-..." | gcloud secrets create openai-api-key --data-file=-
+   # Optional only for OpenAI development override:
+   # echo -n "sk-..." | gcloud secrets create OPENAI_API_KEY --data-file=-
    ```
 
 2. Grant the Cloud Run service account access to both secrets.

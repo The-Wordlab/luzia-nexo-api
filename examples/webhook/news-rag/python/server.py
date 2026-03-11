@@ -28,13 +28,15 @@ Webhook response envelope (canonical Nexo format):
 
 Environment variables:
     NEWS_FEEDS               Comma-separated RSS URLs (defaults below)
-    LLM_MODEL                litellm model string. Default: ollama/llama3.2
-    EMBEDDING_MODEL          litellm embedding model. Default: text-embedding-3-small
+    LLM_MODEL                litellm model string. Default: vertex_ai/gemini-2.0-flash-001
+    EMBEDDING_MODEL          litellm embedding model. Default: vertex_ai/text-embedding-004
     WEBHOOK_SECRET           HMAC-SHA256 signing secret; skipped if empty
     REFRESH_INTERVAL_MINUTES How often the background loop re-crawls. Default: 30
     CHROMA_PERSIST_DIR       Where ChromaDB stores its files. Default: ./chroma_data
     OLLAMA_API_BASE          Ollama server URL. Default: http://localhost:11434
-    OPENAI_API_KEY           Required when using an OpenAI embedding or LLM model
+    OPENAI_API_KEY           Optional override for development when using OpenAI models
+    VERTEXAI_PROJECT         Optional explicit project for Vertex AI via LiteLLM
+    VERTEXAI_LOCATION        Optional explicit location for Vertex AI via LiteLLM
     TOP_K                    Number of chunks to retrieve per query. Default: 5
 """
 
@@ -44,8 +46,10 @@ import asyncio
 import datetime
 import hashlib
 import hmac
+import json
 import logging
 import os
+import re
 import textwrap
 from typing import Any
 
@@ -55,6 +59,11 @@ import litellm
 from bs4 import BeautifulSoup
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+try:
+    import psycopg
+except ImportError:  # pragma: no cover - optional for local chroma mode
+    psycopg = None  # type: ignore[assignment]
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -69,8 +78,28 @@ DEFAULT_FEEDS: list[str] = [
     "https://apnews.com/rss",
 ]
 
-LLM_MODEL: str = os.environ.get("LLM_MODEL", "ollama/llama3.2")
-EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+def _configure_vertex_env_defaults() -> None:
+    """Map common GCP env vars into LiteLLM Vertex vars when unset."""
+    project = (
+        os.environ.get("VERTEXAI_PROJECT")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        or os.environ.get("GCP_PROJECT_ID")
+    )
+    location = (
+        os.environ.get("VERTEXAI_LOCATION")
+        or os.environ.get("GOOGLE_CLOUD_LOCATION")
+        or os.environ.get("GCP_REGION")
+    )
+    if project:
+        os.environ.setdefault("VERTEXAI_PROJECT", project)
+    if location:
+        os.environ.setdefault("VERTEXAI_LOCATION", location)
+
+
+_configure_vertex_env_defaults()
+
+LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.0-flash-001")
+EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "30"))
 CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
@@ -93,11 +122,15 @@ CHUNK_OVERLAP_CHARS: int = 200
 COLLECTION_NAME: str = "news_articles"
 
 # ---------------------------------------------------------------------------
-# ChromaDB state
+# Vector store state (Chroma or pgvector)
 # ---------------------------------------------------------------------------
 
+PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
+PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_news")
+
 _chroma_client: chromadb.PersistentClient | None = None
-_collection: chromadb.Collection | None = None
+_pg_conn: psycopg.Connection | None = None
+_collection: Any | None = None
 _index_stats: dict[str, Any] = {
     "num_chunks": 0,
     "last_refresh": None,
@@ -129,15 +162,149 @@ def _vector_store_metadata() -> dict[str, Any]:
     }
 
 
-def get_collection() -> chromadb.Collection:
-    """Return (or lazily create) the shared ChromaDB collection."""
+def _sanitize_identifier(value: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_]", "_", value).lower()
+
+
+def _vector_literal(values: list[float]) -> str:
+    return "[" + ",".join(f"{float(v):.8f}" for v in values) + "]"
+
+
+def _pg_connection() -> psycopg.Connection:
+    global _pg_conn
+    if psycopg is None:
+        raise RuntimeError("psycopg is required when VECTOR_STORE_BACKEND=pgvector")
+    if _pg_conn is None:
+        if not PGVECTOR_DSN:
+            raise RuntimeError("PGVECTOR_DSN is required when VECTOR_STORE_BACKEND=pgvector")
+        _pg_conn = psycopg.connect(PGVECTOR_DSN, autocommit=True)
+    return _pg_conn
+
+
+class _PgVectorCollection:
+    def __init__(self, name: str) -> None:
+        self.schema = _sanitize_identifier(PGVECTOR_SCHEMA)
+        self.table = _sanitize_identifier(name)
+        self._dim: int | None = None
+
+    def _table_ref(self) -> str:
+        return f'"{self.schema}"."{self.table}"'
+
+    def _exists(self, conn: psycopg.Connection) -> bool:
+        with conn.cursor() as cur:
+            cur.execute("SELECT to_regclass(%s)", (f"{self.schema}.{self.table}",))
+            return cur.fetchone()[0] is not None
+
+    def _ensure_table(self, dim: int) -> None:
+        conn = _pg_connection()
+        with conn.cursor() as cur:
+            cur.execute(f'CREATE SCHEMA IF NOT EXISTS "{self.schema}"')
+            cur.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self._table_ref()} (
+                    id TEXT PRIMARY KEY,
+                    document TEXT NOT NULL,
+                    embedding VECTOR({dim}) NOT NULL,
+                    metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+                )
+                """
+            )
+        self._dim = dim
+
+    def count(self) -> int:
+        conn = _pg_connection()
+        if not self._exists(conn):
+            return 0
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT count(*) FROM {self._table_ref()}")
+            return int(cur.fetchone()[0])
+
+    def upsert(
+        self,
+        ids: list[str],
+        embeddings: list[list[float]],
+        documents: list[str],
+        metadatas: list[dict[str, Any]],
+    ) -> None:
+        if not embeddings:
+            return
+        dim = len(embeddings[0])
+        if self._dim is None or self._dim != dim:
+            self._ensure_table(dim)
+        conn = _pg_connection()
+        rows = [
+            (ids[i], documents[i], _vector_literal(embeddings[i]), json.dumps(metadatas[i] or {}))
+            for i in range(len(ids))
+        ]
+        with conn.cursor() as cur:
+            cur.executemany(
+                f"""
+                INSERT INTO {self._table_ref()} (id, document, embedding, metadata)
+                VALUES (%s, %s, %s::vector, %s::jsonb)
+                ON CONFLICT (id) DO UPDATE SET
+                    document = EXCLUDED.document,
+                    embedding = EXCLUDED.embedding,
+                    metadata = EXCLUDED.metadata,
+                    updated_at = now()
+                """,
+                rows,
+            )
+
+    def query(
+        self,
+        *,
+        query_embeddings: list[list[float]],
+        n_results: int,
+        include: list[str] | None = None,
+    ) -> dict[str, list[list[Any]]]:
+        include = include or ["documents", "metadatas", "distances"]
+        if not query_embeddings:
+            return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+        conn = _pg_connection()
+        if not self._exists(conn):
+            return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+        qvec = _vector_literal(query_embeddings[0])
+        with conn.cursor() as cur:
+            cur.execute(
+                f"""
+                SELECT id, document, metadata, (embedding <=> %s::vector) AS distance
+                FROM {self._table_ref()}
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+                """,
+                (qvec, qvec, n_results),
+            )
+            rows = cur.fetchall()
+        ids = [r[0] for r in rows]
+        docs = [r[1] for r in rows]
+        metas = [r[2] for r in rows]
+        dists = [float(r[3]) for r in rows]
+        result: dict[str, list[list[Any]]] = {"ids": [ids]}
+        if "documents" in include:
+            result["documents"] = [docs]
+        if "metadatas" in include:
+            result["metadatas"] = [metas]
+        if "distances" in include:
+            result["distances"] = [dists]
+        return result
+
+
+def get_collection() -> Any:
+    """Return (or lazily create) the shared vector collection."""
     global _chroma_client, _collection
-    if _collection is None:
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-        _collection = _chroma_client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            metadata={"hnsw:space": "cosine"},
-        )
+    if _collection is not None:
+        return _collection
+
+    if VECTOR_STORE_BACKEND == "pgvector":
+        _collection = _PgVectorCollection(COLLECTION_NAME)
+        return _collection
+
+    _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+    _collection = _chroma_client.get_or_create_collection(
+        name=COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine"},
+    )
     return _collection
 
 

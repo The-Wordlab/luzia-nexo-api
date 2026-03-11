@@ -11,7 +11,7 @@
 #
 # Required Secret Manager secrets:
 #   WEBHOOK_SECRET         Nexo HMAC signing secret
-#   OPENAI_API_KEY         OpenAI API key (for LLM calls)
+#   NEXO_PGVECTOR_DSN      Cloud SQL DSN for pgvector storage
 #   FOOTBALL_DATA_API_KEY  football-data.org API key
 
 substitutions:
@@ -53,6 +53,7 @@ steps:
       - "--region=${_REGION}"
       - "--platform=managed"
       - "--allow-unauthenticated"
+      - "--add-cloudsql-instances=${_PROJECT_ID}:${_REGION}:nexo-platform-pg"
       - "--port=8003"
       - "--memory=1Gi"
       - "--cpu=1"
@@ -60,8 +61,8 @@ steps:
       - "--max-instances=10"
       - "--concurrency=80"
       - "--timeout=60"
-      - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest"
-      - "--set-env-vars=LLM_MODEL=openai/gpt-4o-mini,STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5,CHROMA_PERSIST_DIR=/data/chroma,VECTOR_STORE_BACKEND=chroma,VECTOR_STORE_DURABLE=false"
+      - "--set-secrets=WEBHOOK_SECRET=WEBHOOK_SECRET:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest,PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest"
+      - "--set-env-vars=LLM_MODEL=vertex_ai/gemini-2.0-flash-001,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${_PROJECT_ID},VERTEXAI_LOCATION=${_REGION},STREAMING_ENABLED=true,REFRESH_INTERVAL=300,TOP_K=5,VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football"
     waitFor:
       - "push"
 

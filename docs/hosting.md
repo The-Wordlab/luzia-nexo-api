@@ -65,11 +65,11 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 | Secret | Used by | Source |
 |---|---|---|
 | `WEBHOOK_SECRET` | All webhook services | Shared HMAC signing secret with Nexo |
-| `OPENAI_API_KEY` | All RAG services | [platform.openai.com](https://platform.openai.com/api-keys) |
 | `FOOTBALL_DATA_API_KEY` | sports-rag, football-live | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
 | `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
 | `EXAMPLES_SHARED_API_SECRET` | hosted python/typescript services | Shared auth secret used by hosted reference endpoints |
+| `NEXO_PGVECTOR_DSN` | RAG services | Cloud SQL DSN for pgvector storage |
 
 ```bash
 # Create each secret
@@ -77,7 +77,7 @@ echo -n "your-value" | gcloud secrets create SECRET_NAME --data-file=-
 
 # Grant Cloud Run access
 PROJECT_NUM=$(gcloud projects describe $GCP_PROJECT_ID --format='value(projectNumber)')
-for SECRET in WEBHOOK_SECRET OPENAI_API_KEY FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE EXAMPLES_SHARED_API_SECRET; do
+for SECRET in WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE EXAMPLES_SHARED_API_SECRET NEXO_PGVECTOR_DSN; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" --quiet
@@ -162,29 +162,109 @@ Individual targets: `news`, `sports`, `travel`, `football`.
 
 Each example service has a `cloudbuild.yaml` that handles the full build-push-deploy pipeline on Cloud Run.
 
-### Vector storage on Cloud Run (important)
+### Automated indexing (worker behavior via Cloud Scheduler)
 
-Current RAG demos default to `VECTOR_STORE_BACKEND=chroma`.
-That works for demos, but on Cloud Run the local Chroma path is instance-local disk.
+RAG services expose ingest endpoints and can be indexed automatically by scheduled HTTP jobs.
+This is the production indexing mechanism for Cloud Run deployments in this repository.
 
-- Good for demo/prototyping.
-- Not sufficient for durable production vector state.
+Create/update all schedules:
 
-Each RAG `/health` endpoint now returns:
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/setup-rag-scheduler.sh all
+```
+
+Default schedules:
+- `news`: every 30 minutes -> `POST /ingest`
+- `sports`: every 5 minutes -> `POST /ingest/live`
+- `travel`: hourly -> `POST /ingest`
+- `football`: every 5 minutes -> `POST /ingest/live`
+
+If services are private, provide OIDC settings:
+
+```bash
+SCHEDULER_OIDC_SA=<service-account-email> \
+SCHEDULER_OIDC_AUDIENCE=<service-url-or-custom-audience> \
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
+./scripts/setup-rag-scheduler.sh all
+```
+
+### Model provider policy (partner APIs)
+
+For RAG partner APIs:
+- Production default: Gemini on Vertex via ADC (`LLM_MODEL=vertex_ai/...`, `EMBEDDING_MODEL=vertex_ai/...`)
+- Development override: OpenAI by explicitly setting `LLM_MODEL`, `EMBEDDING_MODEL`, and `OPENAI_API_KEY`
+
+Cloud Run production path uses service-account ADC, not a Gemini API key.
+
+Local ADC setup:
+
+```bash
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=<your-project-id>
+export GOOGLE_CLOUD_LOCATION=<your-region>
+```
+
+Local OpenAI override example:
+
+```bash
+export OPENAI_API_KEY=sk-...
+export LLM_MODEL=openai/gpt-4o-mini
+export EMBEDDING_MODEL=text-embedding-3-small
+```
+
+### Vector storage on Cloud Run (current production setup)
+
+RAG services on Cloud Run are configured for durable `pgvector` on Cloud SQL Postgres.
+
+Current pattern:
+1. One Cloud SQL Postgres database: `nexo_platform`
+2. One logical schema per RAG service: `rag_news`, `rag_sports`, `rag_travel`, `rag_football`
+3. One DSN secret (`NEXO_PGVECTOR_DSN`) mounted into each service as `PGVECTOR_DSN`
+4. Service-specific schema selected with `PGVECTOR_SCHEMA`
+
+Cloud Run deploy env for each RAG service now includes:
+- `VECTOR_STORE_BACKEND=pgvector`
+- `VECTOR_STORE_DURABLE=true`
+- `PGVECTOR_SCHEMA=<service schema>`
+- Cloud SQL connector attachment via `--add-cloudsql-instances`
+
+Each RAG `/health` endpoint returns:
 - `vector_store.backend`
 - `vector_store.durable`
 - `vector_store.is_cloud_run`
-- `vector_store.warning` (when running non-durable Chroma on Cloud Run)
+- `vector_store.warning`
 
-Recommended production posture:
-1. Use a managed vector backend (for example Vertex AI Vector Search or pgvector on AlloyDB/Cloud SQL).
-2. Set `VECTOR_STORE_BACKEND` to that backend.
-3. Set `VECTOR_STORE_DURABLE=true`.
-4. Run ingest as a scheduled job and keep serving instances stateless.
+Expected production values:
+- `backend = "pgvector"`
+- `durable = true`
+- `warning = null`
 
-If you intentionally run Chroma in demo mode on Cloud Run, keep:
+Local development remains supported with Chroma:
 - `VECTOR_STORE_BACKEND=chroma`
 - `VECTOR_STORE_DURABLE=false`
+- `CHROMA_PERSIST_DIR=./chroma_data`
+
+### Cloud SQL setup for pgvector
+
+The following DB bootstrap is required once per environment:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE SCHEMA IF NOT EXISTS rag_news;
+CREATE SCHEMA IF NOT EXISTS rag_sports;
+CREATE SCHEMA IF NOT EXISTS rag_travel;
+CREATE SCHEMA IF NOT EXISTS rag_football;
+```
+
+Each service user should be scoped to its own schema wherever possible.
+
+### Required secrets for pgvector RAG deploys
+
+Add this secret in addition to existing webhook/API secrets:
+
+| Secret Manager key | Description |
+|---|---|
+| `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services when `VECTOR_STORE_BACKEND=pgvector` |
 
 ### Current deployment (luzia-nexo-api-examples project)
 
@@ -214,9 +294,11 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | Secret Manager key | Description |
 |---|---|
 | `WEBHOOK_SECRET` | HMAC-SHA256 signing secret shared with Nexo |
-| `OPENAI_API_KEY` | OpenAI API key for LLM and embedding calls |
+| `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services with `VECTOR_STORE_BACKEND=pgvector` |
 | `FOOTBALL_DATA_API_KEY` | football-data.org API key for live match/standings data |
 | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw gateway bearer token for openclaw-bridge |
 | `EXAMPLES_SHARED_API_SECRET` | Shared auth secret for hosted python/typescript examples |
+
+`OPENAI_API_KEY` is optional and only needed when you explicitly run OpenAI models in development or custom deployments.
 
 This deploys sample services only. Your production hosting model is your choice.
