@@ -11,8 +11,24 @@ Launch faster with:
 - Rich cards and actions
 - Streaming responses
 - Proactive push events
+- Out-of-the-box coding examples designed for AI coding agents, so teams can generate, adapt, test, and deploy integrations quickly
 
 From first webhook to production-grade vertical experiences, this platform is designed to help partners go from idea to live integration quickly and safely.
+
+## What You Can Build
+
+Use these deployable examples as starter blueprints:
+
+| Outcome | Example | Live demo |
+|---|---|---|
+| Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-367427598362.europe-west1.run.app/> |
+| Menu-to-checkout ordering flow | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
+| Trip planning with budget and replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
+| News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
+| Live sports + event detection | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
+| OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
+
+For the full catalog, see [Demo Catalog](demos.md).
 
 ## Start Here
 
