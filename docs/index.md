@@ -1,4 +1,4 @@
-# Luzia Nexo Partner Integration APIs
+# Luzia Nexo Agent Runtime API
 
 Connect your agent or API to Luzia characters through the Nexo Agent Runtime API.
 
