@@ -2,13 +2,19 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PYTEST_BIN="${ROOT_DIR}/.venv/bin/pytest"
+
+if [[ ! -x "$PYTEST_BIN" ]]; then
+  echo "ERROR: ${PYTEST_BIN} not found. Run 'make setup-dev' first."
+  exit 1
+fi
 
 run_pytest() {
   local dir="$1"
   echo "==> pytest in ${dir}"
   (
     cd "${ROOT_DIR}/${dir}"
-    pytest -q
+    "$PYTEST_BIN" -q
   )
 }
 

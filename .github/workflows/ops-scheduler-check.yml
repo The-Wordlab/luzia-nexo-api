@@ -1,0 +1,34 @@
+name: Ops Scheduler Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Scheduler mode to verify"
+        required: false
+        default: "endpoint"
+        type: choice
+        options:
+          - endpoint
+          - worker
+  schedule:
+    - cron: "15 * * * *"
+
+jobs:
+  scheduler-check:
+    if: ${{ secrets.GCP_SA_KEY != '' }}
+    runs-on: ubuntu-latest
+    env:
+      GCP_PROJECT_ID: luzia-nexo-api-examples
+      GCP_REGION: europe-west1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Verify scheduler configuration
+        run: |
+          MODE='${{ github.event.inputs.mode }}'
+          if [ -z "$MODE" ]; then MODE='endpoint'; fi
+          ./scripts/check-rag-scheduler.sh "$MODE"

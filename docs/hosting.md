@@ -9,13 +9,20 @@ If you want a fast starting point, clone this repository, run the examples, and 
 ```bash
 git clone git@github.com:The-Wordlab/luzia-nexo-api.git
 cd luzia-nexo-api
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip pytest
+make setup-dev
 make test-examples
 ```
 
 The `examples/` folder contains webhook and Partner API examples you can adapt directly.
+
+Useful shortcuts:
+
+```bash
+make deploy-rag-examples
+make setup-rag-scheduler
+make check-rag-scheduler
+make setup-rag-production
+```
 
 ## Docker (recommended example)
 
@@ -212,6 +219,32 @@ export LLM_MODEL=openai/gpt-4o-mini
 export EMBEDDING_MODEL=text-embedding-3-small
 ```
 
+### Optional: dedicated worker jobs (private topology path)
+
+If you do not want Scheduler calling service endpoints directly, deploy dedicated Cloud Run Jobs workers:
+
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/deploy-rag-workers.sh all
+```
+
+Then schedule those jobs through Cloud Scheduler -> Run Jobs API:
+
+```bash
+SCHEDULER_RUNNER_SA=<service-account-email> \
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
+./scripts/setup-rag-worker-scheduler.sh all
+```
+
+Validate scheduler drift:
+
+```bash
+# Endpoint mode
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh endpoint
+
+# Worker mode
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh worker
+```
+
 ### Vector storage on Cloud Run (current production setup)
 
 RAG services on Cloud Run are configured for durable `pgvector` on Cloud SQL Postgres.
@@ -227,6 +260,10 @@ Cloud Run deploy env for each RAG service now includes:
 - `VECTOR_STORE_DURABLE=true`
 - `PGVECTOR_SCHEMA=<service schema>`
 - Cloud SQL connector attachment via `--add-cloudsql-instances`
+
+Security posture:
+- Prefer Cloud SQL connector-only access for workloads.
+- Keep `authorizedNetworks` empty in steady state.
 
 Each RAG `/health` endpoint returns:
 - `vector_store.backend`

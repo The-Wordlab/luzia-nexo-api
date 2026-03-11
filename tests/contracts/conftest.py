@@ -21,6 +21,10 @@ from httpx import ASGITransport, AsyncClient
 # Make the contract importable by tests in this package
 CONTRACT_DIR = Path(__file__).parent
 ROOT_DIR = CONTRACT_DIR.parent.parent
+if str(CONTRACT_DIR) not in sys.path:
+    sys.path.insert(0, str(CONTRACT_DIR))
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from nexo_webhook_contract import (
     CANONICAL_REQUEST,

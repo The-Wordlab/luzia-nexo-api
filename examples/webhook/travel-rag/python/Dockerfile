@@ -13,7 +13,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
-COPY server.py ingest.py ./
+COPY server.py ingest.py worker.py ./
 
 # ChromaDB persistence directory (mount a volume or use CHROMA_PERSIST_DIR)
 RUN mkdir -p /data/chroma

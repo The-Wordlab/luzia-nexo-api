@@ -1,7 +1,7 @@
 # Work In Progress
 
 **Last Updated:** 2026-03-11
-**Status:** Production-hardening pass complete (ADC + pgvector + scheduler indexing).
+**Status:** Production-hardening pass complete (ADC + pgvector + scheduler indexing + worker jobs + setup UX).
 
 ## Current state
 
@@ -13,13 +13,19 @@
 6. **Hosting docs updated** - Cloud Build is the single deployment pattern.
 7. **RAG production defaults switched** - Gemini via Vertex ADC by default, OpenAI override for development.
 8. **Durable vectors live** - Cloud SQL Postgres + pgvector in Cloud Run RAG services.
-9. **Automated indexing added** - Cloud Scheduler job script for all four RAG services.
+9. **Automated indexing added** - Cloud Scheduler endpoint-mode jobs for all four RAG services.
+10. **Worker indexing mode added** - Cloud Run Jobs + Scheduler wiring for all four RAG services.
+11. **Dev setup simplified** - `make setup-dev` installs Python/docs dependencies for a fresh checkout.
 
 ## Verification
 
 Executed successfully:
-- `make test-all` (with local `.venv/bin` in PATH)
+- `make setup-dev`
+- `make test-all`
 - `make docs-build`
+- `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-scheduler`
+- `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-worker-scheduler`
+- `gcloud run jobs execute nexo-rag-{news,sports,travel,football}-worker --wait` (all successful)
 
 ## Next step
 
@@ -27,9 +33,14 @@ Operational checklist:
 1. `make gcp-bootstrap` (enable APIs, create Artifact Registry)
 2. Create secrets in Secret Manager (`WEBHOOK_SECRET`, `NEXO_PGVECTOR_DSN`, `FOOTBALL_DATA_API_KEY`, optional `OPENAI_API_KEY`)
 3. Deploy RAG services: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/deploy-rag-examples.sh all`
-4. Configure scheduler indexing: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/setup-rag-scheduler.sh all`
-5. Verify health endpoints show `vector_store.backend=pgvector` and `durable=true`
-6. Run smoke test: `./scripts/integration-smoke.sh --webhook-url <service-url>`
+4. Choose indexing mode:
+   - Endpoint mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/setup-rag-scheduler.sh all`
+   - Worker mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> SCHEDULER_RUNNER_SA=<sa> ./scripts/setup-rag-worker-scheduler.sh all`
+5. Verify scheduler drift:
+   - Endpoint mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/check-rag-scheduler.sh endpoint`
+   - Worker mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/check-rag-scheduler.sh worker`
+6. Verify health endpoints show `vector_store.backend=pgvector` and `durable=true`
+7. Run smoke test: `./scripts/integration-smoke.sh --webhook-url <service-url>`
 
 ## Quick links
 
@@ -41,6 +52,7 @@ Operational checklist:
 
 ## Backlog (next hardening)
 
-1. Add optional Cloud Run Jobs worker image path for ingest (in addition to HTTP scheduler mode) for fully private service topologies.
-2. Add CI check to validate scheduler jobs exist and point to current deployed RAG URLs.
-3. Remove temporary Cloud SQL authorized network entries after all operations are connector-only.
+1. Add worker-job execution observability (structured logs + simple success/failure dashboard query snippets).
+2. Add one-command bootstrap for Scheduler runner service account IAM grants (`run.jobs.run`, `iam.serviceAccountTokenCreator` where required).
+3. Keep Cloud SQL access connector-only and periodically verify no temporary authorized networks reappear.
+4. Add a dedicated requirements lock strategy for examples to reduce version churn across mixed requirements files.

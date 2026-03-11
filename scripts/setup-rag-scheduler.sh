@@ -9,7 +9,7 @@
 #   GCP_PROJECT_ID
 #
 # Optional env:
-#   GCP_REGION                 Cloud Run region and Scheduler location (default: us-central1)
+#   GCP_REGION                 Cloud Run region and Scheduler location (default: europe-west1)
 #   JOB_PREFIX                 Scheduler job prefix (default: nexo-rag)
 #   NEWS_SERVICE_URL           Override service URL
 #   SPORTS_SERVICE_URL         Override service URL
@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-REGION="${GCP_REGION:-us-central1}"
+REGION="${GCP_REGION:-europe-west1}"
 JOB_PREFIX="${JOB_PREFIX:-nexo-rag}"
 ALL_TARGETS="news sports travel football"
 

@@ -11,7 +11,7 @@
 #   GCP_PROJECT_ID   GCP project ID
 #
 # Optional environment variables:
-#   GCP_REGION       Cloud Run region (default: us-central1)
+#   GCP_REGION       Cloud Run region (default: europe-west1)
 #   AR_REPO          Artifact Registry repo name (default: nexo-examples)
 
 set -euo pipefail
@@ -22,7 +22,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-REGION="${GCP_REGION:-us-central1}"
+REGION="${GCP_REGION:-europe-west1}"
 AR_REPO="${AR_REPO:-nexo-examples}"
 DRY_RUN=false
 
@@ -53,7 +53,7 @@ usage() {
   echo "Usage: $0 <all|news|sports|travel|football> [--dry-run]"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
-  echo "Optional env: GCP_REGION (default: us-central1), AR_REPO (default: nexo-examples)"
+  echo "Optional env: GCP_REGION (default: europe-west1), AR_REPO (default: nexo-examples)"
   exit 1
 }
 

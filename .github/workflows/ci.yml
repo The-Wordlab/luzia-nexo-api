@@ -19,6 +19,9 @@ jobs:
           pip install -r examples/webhook/minimal/python/requirements.txt
           pip install -r examples/webhook/structured/python/requirements.txt
           pip install -r examples/webhook/advanced/python/requirements.txt
+          pip install -r examples/webhook/news-rag/python/requirements.txt
+          pip install -r examples/webhook/sports-rag/python/requirements.txt
+          pip install -r examples/webhook/travel-rag/python/requirements.txt
           pip install -r examples/webhook/football-live/python/requirements.txt
           pip install -r examples/webhook/routines/python/requirements.txt
           pip install -r examples/webhook/food-ordering/python/requirements.txt
@@ -40,6 +43,18 @@ jobs:
         run: |
           cd examples/webhook/advanced/python
           pytest -q
+      - name: Run news RAG webhook tests
+        run: |
+          cd examples/webhook/news-rag/python
+          pytest -q
+      - name: Run sports RAG webhook tests
+        run: |
+          cd examples/webhook/sports-rag/python
+          pytest -q
+      - name: Run travel RAG webhook tests
+        run: |
+          cd examples/webhook/travel-rag/python
+          pytest -q
       - name: Run football live webhook tests
         run: |
           cd examples/webhook/football-live/python
@@ -59,6 +74,10 @@ jobs:
       - name: Run hosted Python examples tests
         run: |
           cd examples/hosted/python
+          pytest -q
+      - name: Run webhook contract tests
+        run: |
+          cd tests/contracts
           pytest -q
 
   node-tests:

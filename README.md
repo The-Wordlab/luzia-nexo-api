@@ -115,26 +115,27 @@ Demo app definitions are in `scripts/demo-apps.json`. Environment profiles are i
 - [`examples/`](examples/) - local webhook and partner API examples
 - [`examples/hosted/`](examples/hosted/) - Cloud Run deployable example services (including demo receiver)
 - [`sdk/javascript/`](sdk/javascript/) - TypeScript SDK (`@nexo/partner-sdk`) for webhook verification and proactive messaging
+- [`tests/README.md`](tests/README.md) - test layout and recommended confidence gates
 - [`docs/`](docs/) - documentation source for the published docs site
 
 ## Local toolchain setup
 
-Use a project virtualenv for Python commands:
+Set up the local toolchain once:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -U pip pytest
+make setup-dev
 ```
 
 ## Maintainer commands
 
 ```bash
-source .venv/bin/activate
 make check-toolchain
 make test-all
 make docs-build
 make deploy-all-examples   # deploy all server-side examples to Cloud Run
+make setup-rag-production  # deploy RAG + scheduler endpoint indexing
+# or:
+# SCHEDULER_RUNNER_SA=<sa-email> make setup-rag-production-workers
 ```
 
 ## Support

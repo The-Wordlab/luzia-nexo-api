@@ -2,8 +2,13 @@ SHELL := /bin/bash
 
 GCP_PROJECT_ID ?= luzia-nexo-api-examples
 GCP_REGION ?= europe-west1
+VENV_BIN ?= $(CURDIR)/.venv/bin
+PYTEST ?= $(VENV_BIN)/pytest
 
-.PHONY: check-toolchain check-mermaid test-demo-receiver test-examples test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-all-examples verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: setup-dev check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler check-rag-scheduler check-rag-worker-scheduler setup-rag-production setup-rag-production-workers verify-examples seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+
+setup-dev:
+	./scripts/setup-dev.sh
 
 check-toolchain:
 	./scripts/check-toolchain.sh
@@ -12,10 +17,18 @@ check-mermaid:
 	python3 scripts/check_mermaid.py
 
 test-demo-receiver:
-	cd examples/hosted/demo-receiver && pytest -q
+	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
+	cd examples/hosted/demo-receiver && $(PYTEST) -q
 
 test-examples:
 	./scripts/test-examples.sh
+
+test-rag-examples:
+	./scripts/test-rag-examples.sh
+
+test-contracts:
+	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
+	cd tests/contracts && $(PYTEST) -q
 
 test-hosted-examples:
 	./scripts/test-hosted-examples.sh
@@ -23,7 +36,7 @@ test-hosted-examples:
 test-sdk:
 	cd sdk/javascript && source ~/.zshrc && pnpm install --no-frozen-lockfile && pnpm test
 
-test-all: test-demo-receiver test-examples test-hosted-examples test-sdk
+test-all: test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk
 
 gcp-bootstrap:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh
@@ -45,8 +58,28 @@ deploy-examples: deploy-examples-py deploy-examples-ts
 deploy-rag-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-rag-examples.sh all
 
+deploy-rag-workers:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-rag-workers.sh all
+
 deploy-all-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-all-examples.sh all
+
+setup-rag-scheduler:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/setup-rag-scheduler.sh all
+
+setup-rag-worker-scheduler:
+	@if [ -z "$$SCHEDULER_RUNNER_SA" ]; then echo "ERROR: SCHEDULER_RUNNER_SA is required"; exit 1; fi
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SCHEDULER_RUNNER_SA=$$SCHEDULER_RUNNER_SA ./scripts/setup-rag-worker-scheduler.sh all
+
+check-rag-scheduler:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh endpoint
+
+check-rag-worker-scheduler:
+	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh worker
+
+setup-rag-production: deploy-rag-examples setup-rag-scheduler check-rag-scheduler
+
+setup-rag-production-workers: deploy-rag-examples deploy-rag-workers setup-rag-worker-scheduler check-rag-worker-scheduler
 
 verify-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/verify-hosted-examples.sh
@@ -63,9 +96,9 @@ seed-demo-dry-run: ## Preview demo seed without making changes
 docs-build:
 	$(MAKE) check-toolchain
 	$(MAKE) check-mermaid
-	@if [ ! -d .venv ]; then python3 -m venv .venv; fi
-	. .venv/bin/activate && pip install -r docs/requirements-docs.txt && mkdocs build --strict
+	@if [ ! -x "$(VENV_BIN)/mkdocs" ]; then echo "ERROR: $(VENV_BIN)/mkdocs not found. Run 'make setup-dev' first."; exit 1; fi
+	$(VENV_BIN)/mkdocs build --strict
 
 docs-serve:
-	@if [ ! -d .venv ]; then python3 -m venv .venv; fi
-	. .venv/bin/activate && pip install -r docs/requirements-docs.txt && mkdocs serve
+	@if [ ! -x "$(VENV_BIN)/mkdocs" ]; then echo "ERROR: $(VENV_BIN)/mkdocs not found. Run 'make setup-dev' first."; exit 1; fi
+	$(VENV_BIN)/mkdocs serve

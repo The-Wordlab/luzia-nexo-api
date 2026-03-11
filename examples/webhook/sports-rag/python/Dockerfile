@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY examples/shared/base_event_detector.py examples/shared/base_event_store.py examples/shared/base_state_tracker.py ./
 
 # Copy application source
-COPY examples/webhook/sports-rag/python/ingest.py examples/webhook/sports-rag/python/server.py ./
+COPY examples/webhook/sports-rag/python/ingest.py examples/webhook/sports-rag/python/server.py examples/webhook/sports-rag/python/worker.py ./
 COPY examples/webhook/sports-rag/python/event_detector.py examples/webhook/sports-rag/python/event_store.py examples/webhook/sports-rag/python/match_state.py ./
 
 # ChromaDB persistence directory (mounted as a volume in production)
