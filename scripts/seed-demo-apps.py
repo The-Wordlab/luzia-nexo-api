@@ -43,6 +43,8 @@ except ImportError:
 SCRIPT_DIR = Path(__file__).parent
 DEMO_APPS_FILE = SCRIPT_DIR / "demo-apps.json"
 CONFIG_FILE = SCRIPT_DIR / "seed-config.json"
+DEFAULT_DEMO_WEBHOOK_SECRET = "nexo-example-secret"
+DEFAULT_OPENCLAW_WEBHOOK_SECRET = "nexo-openclaw-secret"
 
 # ANSI colors
 GREEN = "\033[0;32m"
@@ -132,6 +134,14 @@ def resolve_webhook_url(app_def: dict) -> str | None:
     return app_def.get("webhook_url")
 
 
+def resolve_webhook_secret(app_def: dict) -> str | None:
+    """Resolve webhook signing secret for webhook-mode demo apps."""
+    integration_mode = app_def.get("config_json", {}).get("integration_mode", "simulator")
+    if integration_mode != "webhook":
+        return None
+    return os.environ.get("DEMO_EXAMPLES_WEBHOOK_SECRET", DEFAULT_DEMO_WEBHOOK_SECRET)
+
+
 # ---------------------------------------------------------------------------
 # API client
 # ---------------------------------------------------------------------------
@@ -204,7 +214,15 @@ class NexoApiClient:
             return data
         return data.get("items", data.get("results", []))
 
-    def create_app(self, org_id: str, name: str, description: str, config_json: dict, webhook_url: str | None = None) -> dict:
+    def create_app(
+        self,
+        org_id: str,
+        name: str,
+        description: str,
+        config_json: dict,
+        webhook_url: str | None = None,
+        webhook_secret: str | None = None,
+    ) -> dict:
         """Create a new app."""
         payload: dict = {
             "org_id": org_id,
@@ -214,6 +232,8 @@ class NexoApiClient:
         }
         if webhook_url:
             payload["webhook_url"] = webhook_url
+        if webhook_secret:
+            payload["webhook_secret"] = webhook_secret
         resp = self.client.post("/api/apps", json=payload, headers=self._headers())
         resp.raise_for_status()
         return resp.json()
@@ -325,12 +345,15 @@ def seed_demo_apps(
                 continue
 
             webhook_url = resolve_webhook_url(app_def)
+            webhook_secret = resolve_webhook_secret(app_def)
 
             if dry_run:
                 action = "create" if find_app_by_name(existing_apps, app_name) is None else "update"
                 log(f"  [DRY RUN] Would {action} app '{app_name}' (mode={integration_mode})")
                 if webhook_url:
                     log(f"    webhook_url: {webhook_url}")
+                if webhook_secret:
+                    log("    webhook_secret: [set]")
                 rules = app_def.get("card_trigger_rules", [])
                 if rules:
                     log(f"    card_trigger_rules: {len(rules)}")
@@ -346,6 +369,7 @@ def seed_demo_apps(
                     description=app_def.get("description", ""),
                     config_json=app_def.get("config_json", {}),
                     webhook_url=webhook_url,
+                    webhook_secret=webhook_secret,
                 )
                 ok(f"  Created: {app_name}")
             else:
@@ -356,6 +380,8 @@ def seed_demo_apps(
                 }
                 if webhook_url is not None:
                     update_fields["webhook_url"] = webhook_url
+                if webhook_secret:
+                    update_fields["webhook_secret"] = webhook_secret
                 app = client.update_app(existing["id"], **update_fields)
                 ok(f"  Updated: {app_name}")
 
@@ -386,6 +412,10 @@ def seed_demo_apps(
         if open_claw and os.environ.get("DEMO_OPENCLAW_ENABLED", "").lower() in ("true", "1", "yes"):
             oc_name = os.environ.get(open_claw["name_env"], open_claw["name_default"])
             oc_webhook_url = os.environ.get(open_claw["webhook_url_env"], open_claw["webhook_url_default"])
+            oc_webhook_secret = os.environ.get(
+                open_claw.get("webhook_secret_env", "DEMO_OPENCLAW_WEBHOOK_SECRET"),
+                DEFAULT_OPENCLAW_WEBHOOK_SECRET,
+            )
 
             if dry_run:
                 log(f"  [DRY RUN] Would seed Open CLAW app '{oc_name}'")
@@ -398,6 +428,7 @@ def seed_demo_apps(
                         description=open_claw.get("description", ""),
                         config_json=open_claw.get("config_json", {}),
                         webhook_url=oc_webhook_url,
+                        webhook_secret=oc_webhook_secret,
                     )
                     ok(f"  Created: {oc_name}")
                 else:
@@ -406,6 +437,7 @@ def seed_demo_apps(
                         description=open_claw.get("description", ""),
                         config_json=open_claw.get("config_json", {}),
                         webhook_url=oc_webhook_url,
+                        webhook_secret=oc_webhook_secret,
                     )
                     ok(f"  Updated: {oc_name}")
                 seeded.append(oc_name)
