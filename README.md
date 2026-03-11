@@ -15,7 +15,7 @@ Model/runtime policy for partner RAG examples:
 - Production on Cloud Run: Gemini on Vertex via ADC (no Gemini API key)
 - Development override: OpenAI by setting `OPENAI_API_KEY`, `LLM_MODEL`, and `EMBEDDING_MODEL`
 - Durable vectors in Cloud Run: pgvector on Cloud SQL
-- Automated indexing: Cloud Scheduler jobs call each service ingest endpoint
+- Automated indexing: Cloud Scheduler endpoint jobs or Cloud Run worker jobs
 
 ## Links
 
@@ -109,7 +109,7 @@ Demo app definitions are in `scripts/demo-apps.json`. Environment profiles are i
 
 ## Repository map
 
-- [`scripts/demo-apps.json`](scripts/demo-apps.json) - demo app definitions (9 apps, org, character, card trigger rules)
+- [`scripts/demo-apps.json`](scripts/demo-apps.json) - demo app definitions (14 apps, org, character, card trigger rules)
 - [`scripts/seed-demo-apps.py`](scripts/seed-demo-apps.py) - HTTP-based demo seeder
 - [`scripts/seed-config.json`](scripts/seed-config.json) - environment profiles (local, production)
 - [`examples/`](examples/) - local webhook and partner API examples
@@ -140,4 +140,4 @@ make setup-rag-production  # deploy RAG + scheduler endpoint indexing
 
 ## Support
 
-- [mmm@luzia.com](mailto:mmm@luzia.com)
+- [nexo.luzia.com/partners](https://nexo.luzia.com/partners)

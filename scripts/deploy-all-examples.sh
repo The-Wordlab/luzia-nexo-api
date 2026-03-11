@@ -24,6 +24,9 @@
 #   sports
 #   travel
 #   football
+#   routines
+#   food-ordering
+#   travel-planning
 
 set -euo pipefail
 
@@ -45,7 +48,7 @@ usage() {
   echo "  all | hosted | rag"
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
   echo "  hosted-py | hosted-ts | demo-receiver"
-  echo "  news | sports | travel | football"
+  echo "  news | sports | travel | football | routines | food-ordering | travel-planning"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: europe-west1)"
@@ -124,6 +127,27 @@ deploy_openclaw_bridge() {
     "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest,OPENCLAW_GATEWAY_TOKEN=OPENCLAW_GATEWAY_TOKEN:latest,OPENCLAW_ORIGIN_HEADER_VALUE=OPENCLAW_ORIGIN_HEADER_VALUE:latest --set-env-vars OPENCLAW_BASE_URL=${OPENCLAW_BASE_URL},OPENCLAW_AGENT_ID=${OPENCLAW_AGENT_ID}"
 }
 
+deploy_routines() {
+  deploy_source_service \
+    "nexo-routines" \
+    "${REPO_ROOT}/examples/webhook/routines/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
+deploy_food_ordering() {
+  deploy_source_service \
+    "nexo-food-ordering" \
+    "${REPO_ROOT}/examples/webhook/food-ordering/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
+deploy_travel_planning() {
+  deploy_source_service \
+    "nexo-travel-planning" \
+    "${REPO_ROOT}/examples/webhook/travel-planning/python" \
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+}
+
 deploy_hosted_py() {
   local cmd="cd \"${REPO_ROOT}\" && GCP_PROJECT_ID=\"${PROJECT_ID}\" GCP_REGION=\"${REGION}\" SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh"
   run_cmd "${cmd}"
@@ -156,6 +180,9 @@ run_target() {
       deploy_advanced_py
       deploy_minimal_ts
       deploy_openclaw_bridge
+      deploy_routines
+      deploy_food_ordering
+      deploy_travel_planning
       deploy_rag_target all
       ;;
     hosted)
@@ -171,6 +198,9 @@ run_target() {
     advanced-py) deploy_advanced_py ;;
     minimal-ts) deploy_minimal_ts ;;
     openclaw-bridge) deploy_openclaw_bridge ;;
+    routines) deploy_routines ;;
+    food-ordering) deploy_food_ordering ;;
+    travel-planning) deploy_travel_planning ;;
     hosted-py) deploy_hosted_py ;;
     hosted-ts) deploy_hosted_ts ;;
     demo-receiver) deploy_demo_receiver ;;

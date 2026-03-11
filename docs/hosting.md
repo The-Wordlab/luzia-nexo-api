@@ -53,7 +53,18 @@ All GCP deployments use Cloud Build. There is no Terraform in this repository.
 ### Prerequisites
 
 1. **Authenticate**: `gcloud auth login && gcloud auth application-default login`
-2. **Set project**: `gcloud config set project luzia-nexo-api-examples` (or your project)
+2. **Set project**: `gcloud config set project <your-project-id>`
+
+### Private server access notes (recommended)
+
+If your team maintains SSH-based operational access, keep those notes in a local-only file:
+
+```bash
+mkdir -p docs/private
+cp templates/ssh-access.local.template.md docs/private/ssh-access.local.md
+```
+
+`docs/private/*.local.md` is git-ignored so sensitive host details stay local.
 
 ### Bootstrap a new GCP project
 
@@ -116,22 +127,16 @@ OPENCLAW_BASE_URL=https://your-openclaw-gateway \
 ./scripts/deploy-all-examples.sh all
 ```
 
-This deploys hosted services, core webhook examples, OpenClaw bridge, and all RAG services.
-
-For the current Nexo server exposure via Caddy, use:
-
-```bash
-OPENCLAW_BASE_URL=https://nexo-1.luzia.com/openclaw
-```
+This deploys hosted services, core webhook examples, flagship orchestration webhooks, OpenClaw bridge, and all RAG services.
 
 ### OpenClaw connectivity smoke test (recommended before bridge deploy)
 
 Run this from a trusted workstation to verify auth + payload shape:
 
 ```bash
-BASE='https://nexo-1.luzia.com/openclaw/v1/responses'
-KEY=$(ssh root@46.225.88.64 "grep '^NEXO_BRIDGE_ORIGIN_KEY=' /root/openclaw/.env | cut -d= -f2-")
-TOK=$(ssh root@46.225.88.64 "grep '^OPENCLAW_GATEWAY_TOKEN=' /root/openclaw/.env | cut -d= -f2-")
+BASE='https://<your-openclaw-gateway>/v1/responses'
+KEY='<your-openclaw-origin-key>'
+TOK='<your-openclaw-gateway-token>'
 
 curl -sS -X POST "$BASE" \
   -H 'Content-Type: application/json' \
@@ -303,7 +308,7 @@ Add this secret in addition to existing webhook/API secrets:
 |---|---|
 | `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services when `VECTOR_STORE_BACKEND=pgvector` |
 
-### Current deployment (luzia-nexo-api-examples project)
+### Example deployment inventory
 
 Regenerate this table when needed:
 
@@ -321,12 +326,15 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | nexo-webhook-advanced-py | europe-west1 | `https://nexo-webhook-advanced-py-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-webhook-minimal-ts | europe-west1 | `https://nexo-webhook-minimal-ts-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-openclaw-bridge | europe-west1 | `https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app` | `/` |
+| nexo-routines | europe-west1 | `https://nexo-routines-367427598362.europe-west1.run.app` | `/` |
+| nexo-food-ordering | europe-west1 | `https://nexo-food-ordering-367427598362.europe-west1.run.app` | `/` |
+| nexo-travel-planning | europe-west1 | `https://nexo-travel-planning-367427598362.europe-west1.run.app` | `/` |
 | nexo-news-rag | europe-west1 | `https://nexo-news-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-football-live | europe-west1 | `https://nexo-football-live-v3me5awkta-ew.a.run.app` | `/health` |
 
-### Secrets inventory (luzia-nexo-api-examples project)
+### Secrets inventory (example)
 
 | Secret Manager key | Description |
 |---|---|

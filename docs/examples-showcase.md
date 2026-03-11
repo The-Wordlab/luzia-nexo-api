@@ -15,6 +15,23 @@ Runtime policy:
 
 ---
 
+## Flagship Vertical Webhooks (Non-RAG)
+
+These examples focus on end-to-end orchestration flows rather than retrieval pipelines:
+
+| Example | What it demonstrates | Live URL |
+|---|---|---|
+| Routines | Morning briefing, schedule checks, follow-up reminders | <https://nexo-routines-367427598362.europe-west1.run.app/> |
+| Food Ordering | Menu search, order composition, checkout handoff | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
+| Travel Planning | Itinerary generation, budget framing, disruption replanning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
+
+Source:
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python>
+
+---
+
 ## News Feed RAG
 
 A news assistant that answers questions about current events using live RSS feeds from BBC, Reuters, and AP. Answers include source attribution cards with links to the original articles.

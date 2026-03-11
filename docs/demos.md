@@ -33,6 +33,9 @@ Both are deployable and production-oriented.
 | Sports Feed RAG | Webhook | Scores, standings, news routing + event detection | [nexo-sports-rag](https://nexo-sports-rag-v3me5awkta-ew.a.run.app/) | [sports-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) |
 | Travel RAG | Webhook | Destination and itinerary retrieval | [nexo-travel-rag](https://nexo-travel-rag-v3me5awkta-ew.a.run.app/) | [travel-rag/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-rag/python) |
 | Football Live RAG | Webhook | Live matches, standings, top scorers | [nexo-football-live](https://nexo-football-live-v3me5awkta-ew.a.run.app/) | [football-live/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python) |
+| Daily Routines | Webhook | Morning briefings, schedule actions, follow-up nudges | [nexo-routines](https://nexo-routines-367427598362.europe-west1.run.app/) | [routines/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) |
+| Food Ordering | Webhook | Menu search, order composition, checkout orchestration | [nexo-food-ordering](https://nexo-food-ordering-367427598362.europe-west1.run.app/) | [food-ordering/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) |
+| Travel Planning | Webhook | Itinerary + budget + disruption replanning flow | [nexo-travel-planning](https://nexo-travel-planning-367427598362.europe-west1.run.app/) | [travel-planning/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) |
 | OpenClaw Bridge | Webhook | Nexo webhook to OpenClaw `/v1/responses` adapter | [nexo-openclaw-bridge](https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/) | [openclaw-bridge/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) |
 | Hosted Python API | Reference API | Minimal authenticated reference API | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
 | Hosted TypeScript API | Reference API | Minimal authenticated reference API | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
@@ -50,6 +53,9 @@ Both are deployable and production-oriented.
 | `webhook/sports-rag` | Python | Multi-source sports retrieval + intent routing |
 | `webhook/travel-rag` | Python | Destination knowledge + travel advice |
 | `webhook/football-live` | Python | Live football domain with structured cards |
+| `webhook/routines` | Python | Morning briefings, schedule actions, and follow-up nudges |
+| `webhook/food-ordering` | Python | Menu search, order composition, and checkout flow |
+| `webhook/travel-planning` | Python | Multi-step itinerary, budget, and disruption replanning |
 
 ## Partner API proactive scripts (CLI, not service deployments)
 

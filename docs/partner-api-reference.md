@@ -293,4 +293,4 @@ See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk
 ## Support
 
 - Luzia Nexo: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-- Support: [mmm@luzia.com](mailto:mmm@luzia.com)
+- Support: use the partner portal support flow at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)

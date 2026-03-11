@@ -53,6 +53,7 @@ sequenceDiagram
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
 | Operational hardening | Signature checks, retries, idempotency | `webhook/advanced` |
 | Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
+| Vertical orchestration demos | End-to-end partner flows across routines, food, and travel planning | `routines`, `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
 | Proactive delivery | Partner-pushed events into subscriber threads | `partner-api/proactive` |
 
@@ -65,6 +66,9 @@ sequenceDiagram
 | nexo-travel-rag | <https://nexo-travel-rag-v3me5awkta-ew.a.run.app/> |
 | nexo-football-live | <https://nexo-football-live-v3me5awkta-ew.a.run.app/> |
 | nexo-openclaw-bridge | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
+| nexo-routines | <https://nexo-routines-367427598362.europe-west1.run.app/> |
+| nexo-food-ordering | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
+| nexo-travel-planning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |
