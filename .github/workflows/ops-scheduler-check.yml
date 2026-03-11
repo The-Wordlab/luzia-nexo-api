@@ -16,18 +16,25 @@ on:
 
 jobs:
   scheduler-check:
-    if: ${{ secrets.GCP_SA_KEY != '' }}
     runs-on: ubuntu-latest
     env:
       GCP_PROJECT_ID: luzia-nexo-api-examples
       GCP_REGION: europe-west1
+      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - name: Skip when GCP credentials are not configured
+        if: ${{ env.GCP_SA_KEY == '' }}
+        run: |
+          echo "GCP_SA_KEY is not configured; skipping scheduler check."
       - uses: google-github-actions/auth@v2
+        if: ${{ env.GCP_SA_KEY != '' }}
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          credentials_json: ${{ env.GCP_SA_KEY }}
       - uses: google-github-actions/setup-gcloud@v2
+        if: ${{ env.GCP_SA_KEY != '' }}
       - name: Verify scheduler configuration
+        if: ${{ env.GCP_SA_KEY != '' }}
         run: |
           MODE='${{ github.event.inputs.mode }}'
           if [ -z "$MODE" ]; then MODE='endpoint'; fi
