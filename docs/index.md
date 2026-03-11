@@ -1,8 +1,8 @@
 # Luzia Nexo Partner Integration APIs
 
-Build outcome-driven partner assistants on top of a managed Agent Runtime.
+Connect your agent or API to Luzia characters through the Nexo Agent Runtime API.
 
-Nexo gives you consented profile context, reliable webhook delivery, and runtime orchestration so your team can focus on high-value domain logic and user outcomes.
+The Nexo Agent Runtime provides webhook delivery, consented profile context, and orchestration so you can implement domain logic and ship integrations.
 
 Launch faster with:
 
@@ -11,9 +11,9 @@ Launch faster with:
 - Rich cards and actions
 - Streaming responses
 - Proactive push events
-- Out-of-the-box coding examples designed for AI coding agents, so teams can generate, adapt, test, and deploy integrations quickly
+- Starter coding examples that AI coding agents can adapt, test, and deploy
 
-From first webhook to production-grade vertical experiences, this platform is designed to help partners go from idea to live integration quickly and safely.
+Use the examples in this repository as deployment-ready integration templates.
 
 ## What You Can Build
 
