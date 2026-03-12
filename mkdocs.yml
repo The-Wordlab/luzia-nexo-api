@@ -46,8 +46,6 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
-  - A2A Profile: a2a-profile.md
-  - A2A Conformance: a2a-conformance.md
   - GCP Deploy Playbook: gcp-deploy-playbook.md
   - Hosting (Optional): hosting.md
   - Demo Catalog: demos.md

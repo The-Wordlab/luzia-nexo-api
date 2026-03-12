@@ -85,8 +85,6 @@ Note: app secret setup is required for live Nexo delivery. You can still run and
 
 See [API Reference](docs/partner-api-reference.md) for payload, signature, and response contract details.
 
-For unified A2A-aligned rollout semantics across all examples, see [A2A Profile](docs/a2a-profile.md) and [A2A Conformance Matrix](docs/a2a-conformance.md).
-
 Read the full integration guide: [API Documentation](https://the-wordlab.github.io/luzia-nexo-api/)
 
 ## Profile context (current and next)

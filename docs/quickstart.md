@@ -146,8 +146,6 @@ See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for 
 ## Next
 
 - Full contract and examples: [API Reference](partner-api-reference.md)
-- Unified A2A alignment profile for all examples: [A2A Profile](a2a-profile.md)
-- Rollout status and checklist: [A2A Conformance Matrix](a2a-conformance.md)
 - TypeScript SDK: [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript)
 - Direct examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - OpenClaw Bridge example: [examples/webhook/openclaw-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge)

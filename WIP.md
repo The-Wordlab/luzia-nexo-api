@@ -60,3 +60,8 @@ Operational checklist:
 3. Keep Cloud SQL access connector-only and periodically verify no temporary authorized networks reappear.
 4. Add a dedicated requirements lock strategy for examples to reduce version churn across mixed requirements files.
 5. Add a docs lint/check that fails CI if public docs reintroduce non-canonical dashboard paths.
+6. Add an internal-only A2A conformance gate that validates all webhook examples for: `agent.json`, sync lifecycle, stream lifecycle, artifact-only completion, and structured failures.
+7. Add explicit cancellation coverage (`task.canceled`) to streaming examples and contract tests.
+8. Publish schema-level examples for `cards` and `actions` mapped to A2A-style artifacts so partner implementations stay consistent.
+9. Add compatibility tests for mixed webhook payloads (classic Nexo envelope + A2A optional fields) to prevent regressions.
+10. Define an internal rollout checklist for advancing A2A features without exposing implementation status in public docs.
