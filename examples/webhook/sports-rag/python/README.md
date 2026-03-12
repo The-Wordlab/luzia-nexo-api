@@ -1,7 +1,7 @@
 # Sports-Feed RAG Partner Webhook
 
 A football/soccer retrieval-augmented generation (RAG) partner webhook for Nexo.
-It indexes live RSS feeds and structured match results into ChromaDB, then answers
+It indexes live RSS feeds and structured match results into pgvector, then answers
 user questions about scores, standings, and news using an LLM with retrieved context.
 
 This is the full-featured variant of the sports-rag example. It splits ingestion into
@@ -10,7 +10,7 @@ for a production partner integration, including SSE streaming and Cloud Run depl
 
 ## What it demonstrates
 
-- Three ChromaDB collections: `articles` (RSS news), `match_results` (structured scores), `standings` (league tables)
+- Three vector collections: `articles` (RSS news), `match_results` (structured scores), `standings` (league tables)
 - Intent detection: routes queries to the right collection (scores vs standings vs news)
 - Structured cards in the Nexo response envelope: `match_result`, `standings_table`, `news_article`
 - Actions: "View match details" deep links and "See full standings" links
@@ -53,10 +53,12 @@ unreachable, because the match seed data is hardcoded.
 | `FOOTBALL_DATA_API_KEY` | *(empty)* | [football-data.org](https://www.football-data.org/) API key. Leave empty to use seed data. |
 | `FOOTBALL_DATA_COMPETITION` | `PL` | Comma-separated competition codes, e.g. `PL,BL1,PD,SA,FL1`. |
 | `REFRESH_INTERVAL_MINUTES` | `15` | Background refresh cadence (minutes). |
-| `CHROMA_PERSIST_DIR` | `./chroma_data` | Where ChromaDB stores its index on disk. |
+| `CHROMA_PERSIST_DIR` | `./chroma_data` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma`. |
 | `STREAMING_ENABLED` | `false` | Set to `true` to enable SSE streaming on `POST /`. |
-| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
-| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_SCHEMA` | `rag_sports` | Schema for sports vectors and metadata |
 
 ## Using OpenAI
 
@@ -77,6 +79,10 @@ export EMBEDDING_MODEL=ollama/nomic-embed-text
 ```
 
 ## Endpoints
+
+### `GET /.well-known/agent.json`
+
+Publishes A2A-style capability metadata for discovery and contract introspection.
 
 ### `POST /`
 
@@ -139,6 +145,7 @@ curl -X POST http://localhost:8002/ \
 SSE events emitted:
 - `data: {"type": "delta", "text": "Arsenal..."}` — streamed tokens
 - `data: {"type": "done", "schema_version": "2026-03-01", "status": "completed", "cards": [...], "actions": [...]}` — final event with structured data
+- plus A2A task events: `task.started`, `task.delta`, `task.artifact`, and `done`
 
 ### `POST /ingest`
 

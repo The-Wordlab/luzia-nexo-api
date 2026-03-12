@@ -168,6 +168,26 @@ def _build_cards(context: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _prompt_suggestions_for_intent(intent: str) -> list[str]:
+    if intent == "help":
+        return [
+            "Show me your features",
+            "Connect my account",
+            "Talk to support",
+        ]
+    if intent == "product":
+        return [
+            "Show your plans",
+            "Compare Starter vs Pro",
+            "How do I upgrade?",
+        ]
+    return [
+        "What can you help me with?",
+        "Show me available plans",
+        "How do I get started?",
+    ]
+
+
 # ---------------------------------------------------------------------------
 # Webhook endpoint
 # ---------------------------------------------------------------------------
@@ -195,6 +215,11 @@ async def receive_webhook(request: Request) -> JSONResponse:
         "schema_version": "2026-03-01",
         "status": "success",
         "content_parts": [{"type": "text", "text": reply}],
+        "metadata": {
+            "prompt_suggestions": _prompt_suggestions_for_intent(
+                context.get("intent", "")
+            )
+        },
     }
     if cards:
         response["cards"] = cards

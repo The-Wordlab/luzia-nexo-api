@@ -61,6 +61,7 @@ pytest -v
 ## API endpoints
 
 - `GET /` - Service discovery
+- `GET /.well-known/agent.json` - A2A-style capability discovery card
 - `GET /health` - Health check
 - `POST /` - Main Nexo webhook endpoint (JSON or SSE)
 - `POST /ingest` - Reserved for future menu/order data ingestion
@@ -71,7 +72,10 @@ pytest -v
 {
   "schema_version": "2026-03-01",
   "status": "completed",
+  "task": {"id": "task_food_menu_browse", "status": "completed"},
+  "capability": {"name": "food.ordering", "version": "1"},
   "content_parts": [{"type": "text", "text": "..."}],
+  "artifacts": [],
   "cards": [
     {
       "type": "menu",

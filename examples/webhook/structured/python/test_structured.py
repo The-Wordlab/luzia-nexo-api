@@ -211,6 +211,11 @@ async def test_cards_suggestion_included_for_help_context(open_app):
     cj = data["cards"][0]
     assert cj.get("type") == "suggestion"
     assert "text" in cj
+    assert data.get("metadata", {}).get("prompt_suggestions") == [
+        "Show me your features",
+        "Connect my account",
+        "Talk to support",
+    ]
 
 
 async def test_cards_absent_when_no_special_context(open_app):
@@ -229,6 +234,11 @@ async def test_cards_absent_when_no_special_context(open_app):
     data = response.json()
     _assert_rich_success(data)
     assert "cards" not in data
+    assert data.get("metadata", {}).get("prompt_suggestions") == [
+        "What can you help me with?",
+        "Show me available plans",
+        "How do I get started?",
+    ]
 
 
 async def test_cards_product_card_for_product_intent(open_app):

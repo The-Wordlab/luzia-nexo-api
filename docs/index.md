@@ -1,4 +1,4 @@
-# Luzia Nexo Agent Runtime API
+# Luzia Nexo API
 
 Connect your agent or API to Luzia characters through the Nexo Agent Runtime API.
 
@@ -13,7 +13,12 @@ Launch fast with:
 - Proactive push events
 - Starter coding examples that AI coding agents can adapt, test, and deploy
 
-Use the examples in this repository as deployment-ready integration templates.
+This repository provides deployment-ready integration templates.
+
+!!! tip "Nexo dashboard"
+    Manage apps, webhook secrets, and live tests in the partner dashboard.
+
+    [Open Nexo Dashboard](https://nexo.luzia.com){ .md-button .md-button--primary }
 
 ## 5-minute path
 
@@ -25,6 +30,26 @@ If you only need the shortest path to a real integration:
 4. Send a test message from the dashboard.
 
 Start here: [Quickstart](quickstart.md)
+
+### Optional UX accelerator: contextual prompt chips
+
+To improve first-message UX, your webhook can optionally return
+`metadata.prompt_suggestions`. Nexo renders these as clickable chips in chat.
+
+```json
+{
+  "schema_version": "2026-03-01",
+  "status": "completed",
+  "content_parts": [{ "type": "text", "text": "I can help with that." }],
+  "metadata": {
+    "prompt_suggestions": [
+      "Show me options",
+      "Track status",
+      "What do you recommend?"
+    ]
+  }
+}
+```
 
 ### Required vs optional
 

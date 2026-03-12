@@ -62,7 +62,7 @@ def _configure_vertex_env_defaults() -> None:
 _configure_vertex_env_defaults()
 
 EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
-VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_travel")
 

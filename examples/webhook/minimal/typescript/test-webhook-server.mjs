@@ -23,6 +23,13 @@ test("processWebhook returns rich response for valid payload", () => {
     schema_version: "2026-03-01",
     status: "success",
     content_parts: [{ type: "text", text: "Echo: hi" }],
+    metadata: {
+      prompt_suggestions: [
+        "Help me plan dinner",
+        "Track my order status",
+        "Show options under $20",
+      ],
+    },
   });
 });
 
@@ -48,6 +55,13 @@ test("processWebhook uses optional profile context defensively", () => {
         text: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
       },
     ],
+    metadata: {
+      prompt_suggestions: [
+        "Help me plan dinner",
+        "Track my order status",
+        "Show options under $20",
+      ],
+    },
   });
 });
 

@@ -99,6 +99,14 @@ class TestRoot:
         data = client.post("/ingest", json={}).json()
         assert data["status"] == "ok"
 
+    def test_agent_card_endpoint(self):
+        client = _make_client()
+        resp = client.get("/.well-known/agent.json")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "nexo-routines"
+        assert data["capabilities"]["items"][0]["name"] == "routines.daily"
+
 
 # ---------------------------------------------------------------------------
 # Intent detection
@@ -273,7 +281,11 @@ class TestWebhookMorningBriefing:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="briefing text"):
             resp = client.post("/", json=_webhook_payload("morning"))
-        assert resp.json()["schema_version"] == "2026-03-01"
+        data = resp.json()
+        assert data["schema_version"] == "2026-03-01"
+        assert data["task"]["status"] == "completed"
+        assert data["capability"]["name"] == "routines.daily"
+        assert isinstance(data["artifacts"], list)
 
     def test_status_completed(self, monkeypatch):
         client = _make_client()
@@ -520,6 +532,8 @@ class TestSSEStreaming:
             )
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers.get("content-type", "")
+        assert "event: task.started" in resp.text
+        assert "event: task.delta" in resp.text
 
     def test_sse_done_event_has_cards(self, monkeypatch):
         client = _make_client()
@@ -548,6 +562,8 @@ class TestSSEStreaming:
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
+        assert done["capability"]["name"] == "routines.daily"
+        assert isinstance(done["artifacts"], list)
         assert isinstance(done.get("metadata", {}).get("prompt_suggestions", []), list)
 
     def test_json_fallback_when_no_accept(self, monkeypatch):

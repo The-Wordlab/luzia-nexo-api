@@ -4,14 +4,29 @@
 #   8080  minimal    — echo server, basic signature verification
 #   8081  structured — locale-aware greetings + card hints
 #   8082  advanced   — connector actions, idempotency, failure/retry
-#   8090  news-rag   — RSS-backed RAG with ChromaDB
-#   8091  sports-rag — Sports RSS + match data RAG with ChromaDB
-#   8092  travel-rag — Travel destination + blog RAG with ChromaDB
+#   8090  news-rag   — RSS-backed RAG (pgvector)
+#   8091  sports-rag — Sports RSS + match data RAG (pgvector)
+#   8092  travel-rag — Travel destination + blog RAG (pgvector)
 #   8093  football-live — Live football scores/standings/scorers RAG
 #
 # Copy .env.example to .env and fill in API keys before starting.
 
 services:
+  pgvector:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: nexo_rag
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "55432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nexo_rag"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   minimal:
     build:
       context: ./webhook/minimal/python
@@ -80,10 +95,13 @@ services:
       REFRESH_INTERVAL_MINUTES: "${REFRESH_INTERVAL_MINUTES:-30}"
       TOP_K: "${TOP_K:-5}"
       CHROMA_PERSIST_DIR: "/data/chroma"
-      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
-      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
-    volumes:
-      - news-rag-chroma:/data/chroma
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-pgvector}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-true}"
+      PGVECTOR_DSN: "${PGVECTOR_DSN:-postgresql://postgres:postgres@pgvector:5432/nexo_rag}"
+      PGVECTOR_SCHEMA: "${PGVECTOR_SCHEMA_NEWS:-rag_news}"
+    depends_on:
+      pgvector:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 30s
@@ -110,10 +128,13 @@ services:
       FOOTBALL_DATA_COMPETITION: "${FOOTBALL_DATA_COMPETITION:-PL}"
       REFRESH_INTERVAL_MINUTES: "${REFRESH_INTERVAL_MINUTES:-15}"
       CHROMA_PERSIST_DIR: "/data/chroma"
-      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
-      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
-    volumes:
-      - sports-rag-chroma:/data/chroma
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-pgvector}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-true}"
+      PGVECTOR_DSN: "${PGVECTOR_DSN:-postgresql://postgres:postgres@pgvector:5432/nexo_rag}"
+      PGVECTOR_SCHEMA: "${PGVECTOR_SCHEMA_SPORTS:-rag_sports}"
+    depends_on:
+      pgvector:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 30s
@@ -140,10 +161,13 @@ services:
       TOP_K: "${TOP_K:-4}"
       CHROMA_PERSIST_DIR: "/data/chroma"
       STREAMING_ENABLED: "${STREAMING_ENABLED:-false}"
-      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
-      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
-    volumes:
-      - travel-rag-chroma:/data/chroma
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-pgvector}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-true}"
+      PGVECTOR_DSN: "${PGVECTOR_DSN:-postgresql://postgres:postgres@pgvector:5432/nexo_rag}"
+      PGVECTOR_SCHEMA: "${PGVECTOR_SCHEMA_TRAVEL:-rag_travel}"
+    depends_on:
+      pgvector:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
       interval: 30s
@@ -166,10 +190,13 @@ services:
       REFRESH_INTERVAL: "${REFRESH_INTERVAL:-300}"
       TOP_K: "${TOP_K:-5}"
       CHROMA_PERSIST_DIR: "/data/chroma"
-      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-chroma}"
-      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-false}"
-    volumes:
-      - football-live-chroma:/data/chroma
+      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-pgvector}"
+      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-true}"
+      PGVECTOR_DSN: "${PGVECTOR_DSN:-postgresql://postgres:postgres@pgvector:5432/nexo_rag}"
+      PGVECTOR_SCHEMA: "${PGVECTOR_SCHEMA_FOOTBALL:-rag_football}"
+    depends_on:
+      pgvector:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
       interval: 30s
@@ -177,9 +204,3 @@ services:
       start_period: 60s
       retries: 3
     restart: unless-stopped
-
-volumes:
-  news-rag-chroma:
-  sports-rag-chroma:
-  travel-rag-chroma:
-  football-live-chroma:

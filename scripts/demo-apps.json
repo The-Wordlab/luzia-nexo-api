@@ -42,7 +42,12 @@
         ],
         "demo_icon": "utensils-crossed",
         "demo_color": "#EF4444",
-        "demo_order": 1
+        "demo_order": 1,
+        "prompt_suggestions": [
+          "I'm hungry - show me what's nearby for delivery",
+          "Order 2 margherita pizzas and a tiramisu to my address",
+          "I'm gluten-free, what can I order under $20?"
+        ]
       },
       "webhook_url": null,
       "card_trigger_rules": [
@@ -75,7 +80,12 @@
         ],
         "demo_icon": "shield-check",
         "demo_color": "#8B5CF6",
-        "demo_order": 2
+        "demo_order": 2,
+        "prompt_suggestions": [
+          "What personal data do you have about me?",
+          "I want to delete all my data",
+          "Show me my consent preferences"
+        ]
       },
       "webhook_url": null,
       "card_trigger_rules": [
@@ -102,7 +112,12 @@
         "disclaimer": false,
         "demo_icon": "dumbbell",
         "demo_color": "#10B981",
-        "demo_order": 3
+        "demo_order": 3,
+        "prompt_suggestions": [
+          "Design a 4-week beginner workout plan",
+          "I just ran 5km in 28 minutes - how am I doing?",
+          "What should I eat before a morning workout?"
+        ]
       },
       "webhook_url_env": "DEMO_FITNESS_COACH_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-fitness-coach-367427598362.europe-west1.run.app",
@@ -129,7 +144,12 @@
         "disclaimer": false,
         "demo_icon": "plane",
         "demo_color": "#3B82F6",
-        "demo_order": 4
+        "demo_order": 4,
+        "prompt_suggestions": [
+          "Plan a romantic weekend in Barcelona for under $500",
+          "I have 3 days in Tokyo - what's the must-see itinerary?",
+          "Compare flights to Lisbon next month"
+        ]
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNER_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planner-367427598362.europe-west1.run.app",
@@ -156,7 +176,12 @@
         "disclaimer": false,
         "demo_icon": "book-open",
         "demo_color": "#F59E0B",
-        "demo_order": 5
+        "demo_order": 5,
+        "prompt_suggestions": [
+          "Teach me how to order food in Italian",
+          "Give me a quick Spanish conversation quiz",
+          "How do I introduce myself in Portuguese?"
+        ]
       },
       "webhook_url_env": "DEMO_LANGUAGE_TUTOR_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-language-tutor-367427598362.europe-west1.run.app",
@@ -186,7 +211,12 @@
         "disclaimer": false,
         "demo_icon": "newspaper",
         "demo_color": "#6366F1",
-        "demo_order": 6
+        "demo_order": 6,
+        "prompt_suggestions": [
+          "What are the top headlines today?",
+          "Summarize the latest AI and tech news",
+          "Give me a concise Europe politics update"
+        ]
       },
       "webhook_url_env": "DEMO_NEWS_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8090",
@@ -205,7 +235,12 @@
         "disclaimer": false,
         "demo_icon": "trophy",
         "demo_color": "#F97316",
-        "demo_order": 7
+        "demo_order": 7,
+        "prompt_suggestions": [
+          "Premier League standings",
+          "Who scored in today's matches?",
+          "What are tonight's key fixtures?"
+        ]
       },
       "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8091",
@@ -224,7 +259,12 @@
         "disclaimer": false,
         "demo_icon": "map-pin",
         "demo_color": "#14B8A6",
-        "demo_order": 8
+        "demo_order": 8,
+        "prompt_suggestions": [
+          "Best time to visit Paris?",
+          "Top activities in Bali",
+          "Give me a 3-day Lisbon itinerary"
+        ]
       },
       "webhook_url_env": "DEMO_TRAVEL_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8092",
@@ -276,7 +316,12 @@
         },
         "demo_icon": "link",
         "demo_color": "#EC4899",
-        "demo_order": 10
+        "demo_order": 10,
+        "prompt_suggestions": [
+          "Find a sushi restaurant for 2 tonight at 8pm",
+          "Book the best-rated Italian place nearby",
+          "Find family-friendly lunch options within 20 minutes"
+        ]
       },
       "webhook_url": null,
       "card_trigger_rules": []
@@ -294,7 +339,12 @@
         "disclaimer": false,
         "demo_icon": "goal",
         "demo_color": "#2563EB",
-        "demo_order": 9
+        "demo_order": 9,
+        "prompt_suggestions": [
+          "Live scores right now",
+          "La Liga top scorers this season",
+          "Show me this week's Premier League fixtures"
+        ]
       },
       "webhook_url_env": "DEMO_FOOTBALL_LIVE_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8093",
@@ -313,7 +363,12 @@
         "disclaimer": false,
         "demo_icon": "calendar-check",
         "demo_color": "#7C3AED",
-        "demo_order": 12
+        "demo_order": 12,
+        "prompt_suggestions": [
+          "Give me my morning briefing",
+          "What meetings do I have today?",
+          "Summarize my pending tasks"
+        ]
       },
       "webhook_url_env": "DEMO_ROUTINES_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-routines-v3me5awkta-ew.a.run.app",
@@ -332,7 +387,12 @@
         "disclaimer": false,
         "demo_icon": "utensils",
         "demo_color": "#F97316",
-        "demo_order": 13
+        "demo_order": 13,
+        "prompt_suggestions": [
+          "I'm hungry - show me what's nearby for delivery",
+          "Order a margherita pizza to my place",
+          "Where's my delivery right now?"
+        ]
       },
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-food-ordering-v3me5awkta-ew.a.run.app",
@@ -351,7 +411,12 @@
         "disclaimer": false,
         "demo_icon": "map",
         "demo_color": "#0EA5E9",
-        "demo_order": 14
+        "demo_order": 14,
+        "prompt_suggestions": [
+          "Plan a budget trip to Japan for 10 days",
+          "My flight got cancelled - help me rebook",
+          "What's my trip budget looking like?"
+        ]
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",
@@ -374,7 +439,12 @@
         "mode": "webhook",
         "template": "open_claw"
       },
-      "disclaimer": false
+      "disclaimer": false,
+      "prompt_suggestions": [
+        "Help me plan my week",
+        "Draft an email to my team about the project update",
+        "Give me 3 practical options for improving productivity"
+      ]
     },
     "webhook_url_env": "DEMO_OPENCLAW_WEBHOOK_URL",
     "webhook_url_default": "http://localhost:8082/webhook",

@@ -1,4 +1,4 @@
-site_name: Luzia Nexo Agent Runtime API
+site_name: Luzia Nexo API
 site_description: Agent Runtime integration docs and deployable examples
 site_url: https://the-wordlab.github.io/luzia-nexo-api/
 repo_url: https://github.com/The-Wordlab/luzia-nexo-api
@@ -7,6 +7,8 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  logo: assets/nexo-octopus-icon.png
+  favicon: assets/nexo-octopus-icon.png
   features:
     - navigation.sections
     - navigation.tracking
@@ -16,11 +18,11 @@ theme:
     - search.highlight
   palette:
     - scheme: default
-      primary: blue
-      accent: cyan
+      primary: indigo
+      accent: indigo
     - scheme: slate
-      primary: blue
-      accent: cyan
+      primary: indigo
+      accent: indigo
 
 markdown_extensions:
   - admonition
@@ -44,6 +46,9 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
+  - A2A Profile: a2a-profile.md
+  - A2A Conformance: a2a-conformance.md
+  - GCP Deploy Playbook: gcp-deploy-playbook.md
   - Hosting (Optional): hosting.md
   - Demo Catalog: demos.md
   - Examples Showcase: examples-showcase.md

@@ -100,7 +100,7 @@ Return HTTP `200`:
 }
 ```
 
-`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards). `metadata.prompt_suggestions` is optional and can provide contextual next-prompt chips.
+`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards). `metadata.prompt_suggestions` is optional and can provide contextual next-prompt chips (up to 5 strings).
 
 #### SSE streaming
 
@@ -295,5 +295,5 @@ See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk
 
 ## Support
 
-- Luzia Nexo: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
-- Support: use the partner portal support flow at [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- Luzia Nexo: [nexo.luzia.com](https://nexo.luzia.com)
+- Support: use the partner portal support flow at [nexo.luzia.com](https://nexo.luzia.com)

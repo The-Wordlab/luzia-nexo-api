@@ -41,6 +41,8 @@ def _make_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(ingest, "_chroma_client", None)
     monkeypatch.setattr(server, "WEBHOOK_SECRET", "")
     monkeypatch.setattr(server, "FOOTBALL_DATA_API_KEY", "")
+    monkeypatch.setattr(ingest, "VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "chroma")
     # Use in-memory chroma for tests
     import chromadb
 
@@ -549,7 +551,11 @@ class TestWebhookScores:
         with patch.object(server, "search_matches", return_value=[_sample_match_result()]):
             with patch.object(server, "call_llm", return_value="ok"):
                 resp = client.post("/", json={"message": {"content": "score"}})
-        assert resp.json()["schema_version"] == "2026-03-01"
+        data = resp.json()
+        assert data["schema_version"] == "2026-03-01"
+        assert data["task"]["status"] == "completed"
+        assert data["capability"]["name"] == "football.live"
+        assert isinstance(data["artifacts"], list)
 
     def test_scores_live_badge(self, monkeypatch):
         client = _make_client(monkeypatch)
@@ -710,6 +716,9 @@ class TestSSEStreaming:
                 )
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers.get("content-type", "")
+        assert "event: task.started" in resp.text
+        assert "event: task.delta" in resp.text
+        assert "event: done" in resp.text
 
     def test_sse_done_event(self, monkeypatch):
         client = _make_client(monkeypatch)
@@ -738,6 +747,8 @@ class TestSSEStreaming:
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
+        assert done["capability"]["name"] == "football.live"
+        assert isinstance(done["artifacts"], list)
 
     def test_json_fallback_when_no_accept(self, monkeypatch):
         client = _make_client(monkeypatch)
@@ -848,6 +859,16 @@ class TestAdminEndpoints:
         monkeypatch.setattr(server, "FOOTBALL_DATA_API_KEY", "")
         resp = client.post("/admin/refresh")
         assert resp.status_code == 400
+
+
+class TestAgentCard:
+    def test_agent_card_has_capability(self, monkeypatch):
+        client = _make_client(monkeypatch)
+        resp = client.get("/.well-known/agent.json")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "nexo-football-live"
+        assert data["capabilities"]["items"][0]["name"] == "football.live"
 
 
 # ---------------------------------------------------------------------------

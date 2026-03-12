@@ -30,6 +30,13 @@ def test_webhook_echo() -> None:
         "schema_version": "2026-03-01",
         "status": "success",
         "content_parts": [{"type": "text", "text": "Echo: hi"}],
+        "metadata": {
+            "prompt_suggestions": [
+                "Help me plan dinner",
+                "Track my order status",
+                "Show options under $20",
+            ]
+        },
     }
 
 
@@ -56,6 +63,13 @@ def test_webhook_profile_context() -> None:
                 "text": "Mia, you said: recommend dinner (locale=en, dietary=vegan)",
             }
         ],
+        "metadata": {
+            "prompt_suggestions": [
+                "Help me plan dinner",
+                "Track my order status",
+                "Show options under $20",
+            ]
+        },
     }
 
 
@@ -76,6 +90,13 @@ def test_webhook_with_valid_signature(monkeypatch) -> None:
         "schema_version": "2026-03-01",
         "status": "success",
         "content_parts": [{"type": "text", "text": "Echo: hi"}],
+        "metadata": {
+            "prompt_suggestions": [
+                "Help me plan dinner",
+                "Track my order status",
+                "Show options under $20",
+            ]
+        },
     }
 
 

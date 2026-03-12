@@ -1,6 +1,6 @@
 # Travel RAG Partner Webhook
 
-A retrieval-augmented generation (RAG) travel assistant webhook for Nexo. Indexes 12 destination profiles and travel blog RSS feeds into ChromaDB, then answers user questions with rich destination cards.
+A retrieval-augmented generation (RAG) travel assistant webhook for Nexo. Indexes 12 destination profiles and travel blog RSS feeds into pgvector, then answers user questions with rich destination cards.
 
 ## Quick Start
 
@@ -24,6 +24,7 @@ On startup the server seeds 12 destination profiles (Paris, Tokyo, Barcelona, NY
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/` | Main Nexo webhook - RAG answer + destination cards |
+| GET | `/.well-known/agent.json` | A2A-style capability discovery card |
 | POST | `/ingest` | Trigger destination seed + RSS feed re-crawl |
 | GET | `/health` | Liveness probe with index stats |
 
@@ -42,6 +43,7 @@ curl -X POST http://localhost:8092/ \
 - **Rich cards**: destination cards with highlights, budget, best time, and tag badges
 - **Itinerary cards**: auto-generates day-by-day plans from destination highlights
 - **SSE streaming**: optional streaming mode via `STREAMING_ENABLED=true`
+- **A2A task events**: streams include `task.started`, `task.delta`, `task.artifact`, and `done`
 - **Personalisation**: greets users by name when profile.display_name is provided
 
 ## Docker
@@ -71,8 +73,10 @@ cd examples && docker compose up travel-rag
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret (skip if empty) |
 | `TRAVEL_FEEDS` | _(built-in)_ | Comma-separated RSS URLs |
 | `REFRESH_INTERVAL_MINUTES` | `60` | Background re-crawl interval |
-| `CHROMA_PERSIST_DIR` | `./chroma_data` | ChromaDB persistence path |
+| `CHROMA_PERSIST_DIR` | `./chroma_data` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma` |
 | `STREAMING_ENABLED` | `false` | Enable SSE streaming |
 | `TOP_K` | `4` | Chunks to retrieve per query |
-| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
-| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_SCHEMA` | `rag_travel` | Schema for travel vectors and metadata |

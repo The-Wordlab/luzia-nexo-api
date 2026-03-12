@@ -64,6 +64,8 @@ def _make_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(_server_module, "seed_matches", _noop_seed_matches)
     monkeypatch.setattr(_server_module, "seed_standings", _noop_seed_standings)
     monkeypatch.setattr(_ingest_module, "crawl_feeds", _noop_crawl_feeds)
+    monkeypatch.setattr(_ingest_module, "VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setattr(_server_module, "VECTOR_STORE_BACKEND", "chroma")
 
     return TestClient(app)
 
@@ -217,6 +219,9 @@ class TestWebhookScores:
         assert data["schema_version"] == "2026-03-01"
         assert data["status"] == "completed"
         assert data["content_parts"][0]["text"] == "Arsenal beat Chelsea 3-1."
+        assert data["task"]["status"] == "completed"
+        assert data["capability"]["name"] == "sports.rag"
+        assert isinstance(data["artifacts"], list)
 
     def test_scores_cards_are_match_result_type(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -486,6 +491,9 @@ class TestSSEStreaming:
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers["content-type"]
         assert "Arsenal" in resp.text
+        assert "event: task.started" in resp.text
+        assert "event: task.delta" in resp.text
+        assert "event: done" in resp.text
 
     def test_sse_done_event_has_cards_and_actions(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -516,6 +524,8 @@ class TestSSEStreaming:
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
         assert done["status"] == "completed"
+        assert done["capability"]["name"] == "sports.rag"
+        assert isinstance(done["artifacts"], list)
 
     def test_json_response_when_no_accept_header(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -616,6 +626,16 @@ class TestHealthEndpoint:
         collection = _ingest_module.get_collection(_ingest_module.COLLECTION_ARTICLES)
         with pytest.raises(RuntimeError, match="(PGVECTOR_DSN is required|psycopg is required)"):
             collection.count()
+
+
+class TestAgentCard:
+    def test_agent_card_has_capability(self, monkeypatch) -> None:
+        client = _make_client(monkeypatch)
+        resp = client.get("/.well-known/agent.json")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "nexo-sports-rag"
+        assert data["capabilities"]["items"][0]["name"] == "sports.rag"
 
 
 # ---------------------------------------------------------------------------

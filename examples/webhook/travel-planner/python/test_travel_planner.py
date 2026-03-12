@@ -116,6 +116,13 @@ def test_root_returns_capabilities():
     assert "booking_handoff" in intent_names
 
 
+def test_agent_card_endpoint():
+    c = TestClient(travel_app.app, raise_server_exceptions=False)
+    resp = c.get("/.well-known/agent.json")
+    assert resp.status_code == 200
+    assert resp.json()["capabilities"]["items"][0]["name"] == "travel.planner"
+
+
 def test_intent_mapping():
     assert travel_app.detect_intent("Plan a romantic weekend in Barcelona") == "itinerary"
     assert travel_app.detect_intent("Compare flights to Lisbon") == "flight_compare"
@@ -207,6 +214,9 @@ async def test_async_itinerary_intent_happy_path():
     data = response.json()
     assert data["schema_version"] == SCHEMA_VERSION
     assert data["status"] == "completed"
+    assert data["task"]["status"] == "completed"
+    assert data["capability"]["name"] == "travel.planner"
+    assert isinstance(data["artifacts"], list)
     assert isinstance(data.get("content_parts"), list)
     assert len(data["content_parts"]) > 0
 

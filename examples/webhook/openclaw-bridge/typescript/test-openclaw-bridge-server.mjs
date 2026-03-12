@@ -79,6 +79,34 @@ test("processWebhook forwards configured OpenClaw origin header", async () => {
   assert.equal(calls[0].init.headers["X-Nexo-Bridge-Key"], "origin-secret");
 });
 
+test("processWebhook normalizes OpenClaw base URL when /v1/responses is already included", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ output_text: "ok" }),
+      text: async () => "",
+    };
+  };
+
+  const payload = JSON.stringify({
+    thread: { id: "thread-1" },
+    message: { content: "hello" },
+  });
+
+  const result = await processWebhook(payload, {}, {
+    openclawToken: "gateway-token",
+    openclawBaseUrl: "https://nexo-1.luzia.com/openclaw/v1/responses",
+    fetchImpl,
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://nexo-1.luzia.com/openclaw/v1/responses");
+});
+
 test("processWebhook extracts text from chat-completions style fallback", async () => {
   const fetchImpl = async () => ({
     ok: true,
@@ -319,4 +347,31 @@ test("streamWebhook forwards configured OpenClaw origin header", async () => {
   assert.equal(result.streamed, true);
   assert.equal(calls.length, 1);
   assert.equal(calls[0].init.headers["X-Nexo-Bridge-Key"], "origin-secret");
+});
+
+test("streamWebhook normalizes OpenClaw base URL when /v1/responses is already included", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return createMockSseResponse(
+      'event: response.output_text.delta\ndata: {"delta":"Hi"}\n\ndata: [DONE]\n\n',
+    );
+  };
+
+  const res = createMockRes();
+  const result = await streamWebhook(
+    JSON.stringify({ message: { content: "hi" }, thread: { id: "t-4" } }),
+    {},
+    res,
+    {
+      openclawToken: "gateway-token",
+      openclawBaseUrl: "https://nexo-1.luzia.com/openclaw/v1/responses",
+      fetchImpl,
+    },
+  );
+
+  assert.equal(result.status, 200);
+  assert.equal(result.streamed, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://nexo-1.luzia.com/openclaw/v1/responses");
 });

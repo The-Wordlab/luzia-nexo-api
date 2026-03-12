@@ -57,6 +57,8 @@ def _make_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(_ingest_module, "seed_destinations", _noop_seed_destinations)
     monkeypatch.setattr(_server_module, "seed_destinations", _noop_seed_destinations)
     monkeypatch.setattr(_ingest_module, "crawl_feeds", _noop_crawl_feeds)
+    monkeypatch.setattr(_ingest_module, "VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setattr(_server_module, "VECTOR_STORE_BACKEND", "chroma")
 
     return TestClient(app)
 
@@ -238,6 +240,9 @@ class TestWebhookContract:
              patch.object(_server_module, "call_llm", return_value="Paris is wonderful."):
             data = client.post("/", json={"message": {"content": "tell me about Paris"}}).json()
         assert data["schema_version"] == "2026-03-01"
+        assert data["task"]["status"] == "completed"
+        assert data["capability"]["name"] == "travel.rag"
+        assert isinstance(data["artifacts"], list)
 
     def test_response_has_status_completed(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -543,6 +548,9 @@ class TestSSEStreaming:
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers["content-type"]
         assert "Paris" in resp.text
+        assert "event: task.started" in resp.text
+        assert "event: task.delta" in resp.text
+        assert "event: done" in resp.text
 
     def test_sse_done_event_has_cards_and_actions(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -574,6 +582,8 @@ class TestSSEStreaming:
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
         assert done["status"] == "completed"
+        assert done["capability"]["name"] == "travel.rag"
+        assert isinstance(done["artifacts"], list)
 
     def test_json_response_when_no_accept_header(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
@@ -683,6 +693,16 @@ class TestHealthEndpoint:
         collection = _ingest_module.get_collection(_ingest_module.COLLECTION_DESTINATIONS)
         with pytest.raises(RuntimeError, match="(PGVECTOR_DSN is required|psycopg is required)"):
             collection.count()
+
+
+class TestAgentCard:
+    def test_agent_card_has_capability(self, monkeypatch) -> None:
+        client = _make_client(monkeypatch)
+        resp = client.get("/.well-known/agent.json")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["name"] == "nexo-travel-rag"
+        assert data["capabilities"]["items"][0]["name"] == "travel.rag"
 
 
 # ---------------------------------------------------------------------------

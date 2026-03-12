@@ -41,6 +41,25 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "travel.planner"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-travel-planner",
+    "description": "Travel planner webhook example for itinerary, flights, and booking handoff.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Guide users through itinerary generation, flight comparison, and booking handoff preparation.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["itinerary", "flight_compare", "booking_handoff"]},
+            }
+        ]
+    },
+}
 
 
 def _verify_signature(secret: str, raw_body: bytes, timestamp: str, signature: str) -> bool:
@@ -104,6 +123,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["itinerary"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_travel_planner_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 def _get_display_name(data: dict[str, Any]) -> str:
@@ -207,6 +252,11 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
 app = FastAPI(title="Travel Planner Webhook")
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root():
     return {
@@ -214,6 +264,7 @@ async def root():
         "description": "Travel planner webhook - itinerary, flight comparison, booking handoff.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
         ],
         "capabilities": [
@@ -248,6 +299,7 @@ async def webhook(request: Request):
 
     if intent == "itinerary":
         card = build_itinerary_card(destination, days)
+        artifacts = [{"type": "application/json", "name": "itinerary", "data": {"destination": destination, "days": days}}]
         actions = [
             {"id": "adjust_plan", "type": "primary", "label": "Adjust Plan", "action": "adjust_plan"},
             {"id": "show_budget", "type": "secondary", "label": "Show Budget Split", "action": "show_budget"},
@@ -255,6 +307,7 @@ async def webhook(request: Request):
         context = f"Destination: {destination}. Duration: {days} days."
     elif intent == "flight_compare":
         card = build_flights_card(destination)
+        artifacts = [{"type": "application/json", "name": "flight_options", "data": {"destination": destination}}]
         actions = [
             {"id": "pick_option", "type": "primary", "label": "Pick Option", "action": "pick_option"},
             {"id": "set_price_watch", "type": "secondary", "label": "Set Price Watch", "action": "set_price_watch"},
@@ -262,6 +315,7 @@ async def webhook(request: Request):
         context = f"Compare flight options to {destination}."
     else:
         card = build_booking_card(destination)
+        artifacts = [{"type": "application/json", "name": "booking_handoff", "data": {"destination": destination}}]
         actions = [
             {"id": "approve_handoff", "type": "primary", "label": "Approve Booking Handoff", "action": "approve_handoff"},
             {"id": "change_constraints", "type": "secondary", "label": "Change Constraints", "action": "change_constraints"},
@@ -272,23 +326,44 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" User name: {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
-    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
-            if display_name:
-                yield f"data: {json.dumps({'type': 'delta', 'text': f'Hey {display_name}! '})}\n\n"
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": f"task_travel_planner_{intent}", "status": "in_progress"}})
+                + "\n\n"
+            )
+            prefix = f"Hey {display_name}! " if display_name else ""
+            if prefix:
+                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
             async for event in stream_llm(system, llm_prompt):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
                 yield event
-            done = {
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+            done_payload = {
                 "type": "done",
-                "schema_version": SCHEMA_VERSION,
-                "status": "completed",
-                "cards": [card],
-                "actions": actions,
-                "metadata": {"prompt_suggestions": prompt_suggestions},
+                **_build_envelope(
+                    text=prefix.strip(),
+                    intent=intent,
+                    cards=[card],
+                    actions=actions,
+                    artifacts=artifacts,
+                ),
             }
-            yield f"data: {json.dumps(done)}\n\n"
+            yield f"data: {json.dumps(done_payload)}\n\n"
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
@@ -296,12 +371,11 @@ async def webhook(request: Request):
     if display_name:
         reply = f"Hey {display_name}! {reply}"
     return JSONResponse(
-        {
-            "schema_version": SCHEMA_VERSION,
-            "status": "completed",
-            "content_parts": [{"type": "text", "text": reply}],
-            "cards": [card],
-            "actions": actions,
-            "metadata": {"prompt_suggestions": prompt_suggestions},
-        }
+        _build_envelope(
+            text=reply,
+            intent=intent,
+            cards=[card],
+            actions=actions,
+            artifacts=artifacts,
+        )
     )

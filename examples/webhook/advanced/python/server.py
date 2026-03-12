@@ -48,7 +48,10 @@ POST /
                "status": "success",
                "content_parts": [{"type": "text", "text": "<text>"}],
                "cards": [...],                        # optional
-               "metadata": {"retry_after": 30}      # only on failure
+               "metadata": {                          # optional
+                   "prompt_suggestions": [...],       # optional
+                   "retry_after": 30                  # only on failure
+               }
            }
 
 POST /actions/{action_type}
@@ -114,6 +117,26 @@ action_log: dict[str, dict[str, Any]] = {}
 
 _FAILURE_PROBABILITY = 0.4  # 40 % chance of transient failure by default
 _RETRY_AFTER_SECONDS = 30
+
+
+def _prompt_suggestions_for_intent(intent: str) -> list[str]:
+    if intent == "order_status":
+        return [
+            "Track order ORD-12345",
+            "Update delivery address",
+            "Cancel this order",
+        ]
+    if intent == "schedule_appointment":
+        return [
+            "Schedule an appointment for tomorrow at 10:00",
+            "Move my appointment to Friday afternoon",
+            "What slots are available this week?",
+        ]
+    return [
+        "Track my order status",
+        "Book an appointment",
+        "What can you help me with?",
+    ]
 
 
 def _simulate_failure(probability: float = _FAILURE_PROBABILITY) -> bool:
@@ -385,11 +408,12 @@ async def receive_webhook(request: Request) -> JSONResponse:
             "status": "success",
             "content_parts": [{"type": "text", "text": reply}],
             "cards": cards,
+            "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent(intent)},
         }
         if not action_result.get("success"):
-            response_body["metadata"] = {
-                "retry_after": action_result.get("retry_after", _RETRY_AFTER_SECONDS)
-            }
+            response_body["metadata"]["retry_after"] = action_result.get(
+                "retry_after", _RETRY_AFTER_SECONDS
+            )
         return JSONResponse(response_body)
 
     # Plain message - no connector action needed
@@ -400,5 +424,6 @@ async def receive_webhook(request: Request) -> JSONResponse:
             "schema_version": "2026-03-01",
             "status": "success",
             "content_parts": [{"type": "text", "text": reply_text}],
+            "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent("")},
         }
     )

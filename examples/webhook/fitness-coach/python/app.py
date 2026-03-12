@@ -50,6 +50,27 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "fitness.coach"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-fitness-coach",
+    "description": "Fitness coach webhook example for workout plans, progress checks, and nutrition guidance.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Provide practical fitness coaching using structured cards and optional token streaming.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {
+                    "intents": ["workout_plan", "progress_check", "nutrition_guidance"]
+                },
+            }
+        ]
+    },
+}
 
 
 def _verify_signature(secret: str, raw_body: bytes, timestamp: str, signature: str) -> bool:
@@ -116,6 +137,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["workout_plan"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_fitness_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 def _get_display_name(data: dict[str, Any]) -> str:
@@ -244,6 +291,11 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
 app = FastAPI(title="Fitness Coach Webhook")
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root():
     return {
@@ -251,6 +303,7 @@ async def root():
         "description": "Fitness coach webhook - workout plans, progress checks, nutrition guidance.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
         ],
         "capabilities": [
@@ -283,12 +336,14 @@ async def webhook(request: Request):
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
+    artifacts: list[dict[str, Any]] = []
     context_block = ""
 
     if intent == "workout_plan":
         level = _extract_level(query)
         cards.append(build_workout_plan_card(level))
         context_block = f"Goal: workout plan. Level: {level}."
+        artifacts = [{"type": "application/json", "name": "workout_plan", "data": {"level": level}}]
         actions = [
             {"id": "start_week", "type": "primary", "label": "Start This Week", "action": "start_week"},
             {"id": "adjust_level", "type": "secondary", "label": "Adjust Level", "action": "adjust_level"},
@@ -296,6 +351,7 @@ async def webhook(request: Request):
     elif intent == "progress_check":
         cards.append(build_progress_card())
         context_block = "Goal: progress review and next targets."
+        artifacts = [{"type": "application/json", "name": "progress_snapshot", "data": {"period_days": 14}}]
         actions = [
             {"id": "set_target", "type": "primary", "label": "Set Next Target", "action": "set_target"},
             {"id": "weekly_checkin", "type": "secondary", "label": "Weekly Check-in", "action": "weekly_checkin"},
@@ -303,6 +359,7 @@ async def webhook(request: Request):
     else:
         cards.append(build_nutrition_card())
         context_block = "Goal: fueling guidance around workouts."
+        artifacts = [{"type": "application/json", "name": "nutrition_guidance", "data": {"focus": "workout"}}]
         actions = [
             {"id": "build_meal_plan", "type": "primary", "label": "Build Meal Plan", "action": "build_meal_plan"},
             {"id": "swap_options", "type": "secondary", "label": "Swap Options", "action": "swap_options"},
@@ -312,23 +369,44 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" The user's name is {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
-    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
-            if display_name:
-                yield f"data: {json.dumps({'type': 'delta', 'text': f'Hey {display_name}! '})}\n\n"
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": f"task_fitness_{intent}", "status": "in_progress"}})
+                + "\n\n"
+            )
+            prefix = f"Hey {display_name}! " if display_name else ""
+            if prefix:
+                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
             async for event in stream_llm(system, llm_prompt):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
                 yield event
-            done = {
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+            done_payload = {
                 "type": "done",
-                "schema_version": SCHEMA_VERSION,
-                "status": "completed",
-                "cards": cards,
-                "actions": actions,
-                "metadata": {"prompt_suggestions": prompt_suggestions},
+                **_build_envelope(
+                    text=prefix.strip(),
+                    intent=intent,
+                    cards=cards,
+                    actions=actions,
+                    artifacts=artifacts,
+                ),
             }
-            yield f"data: {json.dumps(done)}\n\n"
+            yield f"data: {json.dumps(done_payload)}\n\n"
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
@@ -336,12 +414,11 @@ async def webhook(request: Request):
     if display_name:
         reply = f"Hey {display_name}! {reply}"
     return JSONResponse(
-        {
-            "schema_version": SCHEMA_VERSION,
-            "status": "completed",
-            "content_parts": [{"type": "text", "text": reply}],
-            "cards": cards,
-            "actions": actions,
-            "metadata": {"prompt_suggestions": prompt_suggestions},
-        }
+        _build_envelope(
+            text=reply,
+            intent=intent,
+            cards=cards,
+            actions=actions,
+            artifacts=artifacts,
+        )
     )

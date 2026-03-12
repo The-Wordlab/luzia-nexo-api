@@ -21,7 +21,7 @@ COPY examples/webhook/sports-rag/python/event_detector.py examples/webhook/sport
 # ChromaDB persistence directory (mounted as a volume in production)
 RUN mkdir -p /data/chroma
 ENV CHROMA_PERSIST_DIR=/data/chroma \
-    VECTOR_STORE_BACKEND=chroma \
+    VECTOR_STORE_BACKEND=pgvector \
     VECTOR_STORE_DURABLE=false
 
 # Expose the port Cloud Run will listen on

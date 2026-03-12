@@ -100,7 +100,7 @@ app.post("/webhook", (req, res) => {
 This step is only required when you want Nexo to call your webhook in live integration mode.
 For independent local testing, skip to step 4 and hit your local webhook directly with curl.
 
-1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+1. Go to [nexo.luzia.com](https://nexo.luzia.com)
 2. Create or open your app
 3. Set your webhook URL and `WEBHOOK_SECRET`
 4. Send a test message and verify logs on your backend
@@ -136,7 +136,7 @@ Expected response shape:
 
 Once your webhook is working and configured in the partner portal, submit your app for review:
 
-1. Go to your app in [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+1. Go to your app in [nexo.luzia.com](https://nexo.luzia.com)
 2. Click **Submit for review**
 3. The Nexo team will approve or reject with feedback
 4. Once approved, your app appears in the public catalog
@@ -146,6 +146,8 @@ See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for 
 ## Next
 
 - Full contract and examples: [API Reference](partner-api-reference.md)
+- Unified A2A alignment profile for all examples: [A2A Profile](a2a-profile.md)
+- Rollout status and checklist: [A2A Conformance Matrix](a2a-conformance.md)
 - TypeScript SDK: [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript)
 - Direct examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - OpenClaw Bridge example: [examples/webhook/openclaw-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge)
@@ -153,6 +155,7 @@ See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for 
   - Python: [examples/webhook/minimal/python/server.py](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/python/server.py)
   - TypeScript: [examples/webhook/minimal/typescript/webhook-server.mjs](https://github.com/The-Wordlab/luzia-nexo-api/blob/main/examples/webhook/minimal/typescript/webhook-server.mjs)
 - Optional hosting/deployment examples: [Hosting (Optional)](hosting.md)
+- Fast GCP deployment/test paths (single example, RAG-only, or full stack): [GCP Deploy Playbook](gcp-deploy-playbook.md)
 
 ## What to build next
 

@@ -5,7 +5,7 @@
 
 ## Problem
 
-Today's RAG examples are **pull-based**: a user asks a question, we search ChromaDB, call an LLM, and return a response. The data is there (RSS feeds refresh every 15 min, football-data.org has live scores) but nothing happens until someone asks.
+Today's RAG examples are **pull-based**: a user asks a question, we search the pgvector index, call an LLM, and return a response. The data is there (RSS feeds refresh every 15 min, football-data.org has live scores) but nothing happens until someone asks.
 
 This means:
 - A goal is scored and nobody finds out until they open the app and ask

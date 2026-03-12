@@ -4,7 +4,7 @@ A FastAPI webhook server that answers user questions from live RSS news feeds us
 Retrieval-Augmented Generation (RAG).
 
 On startup the server crawls configured RSS feeds, chunks and embeds articles into a
-local [ChromaDB](https://docs.trychroma.com/) vector store, and then serves a
+pgvector index on Postgres, and then serves a
 [Nexo](https://the-wordlab.github.io/luzia-nexo-api/) webhook endpoint. When a
 question arrives it embeds the question, retrieves the top-5 matching chunks, builds
 a grounded prompt, and calls an LLM via [litellm](https://docs.litellm.ai/) — enabling
@@ -13,7 +13,7 @@ zero-code switching between Ollama, OpenAI, or Vertex AI.
 ## What this demonstrates
 
 - RSS feed crawling with `feedparser`
-- Chunked article indexing in a local ChromaDB vector store (no external DB needed)
+- Chunked article indexing in pgvector (Postgres-backed vector store)
 - Query embedding and cosine-similarity retrieval (top-K chunks)
 - RAG prompt construction grounded in retrieved news context
 - Nexo webhook response envelope with `content_parts`, `cards`, and `actions`
@@ -54,7 +54,10 @@ export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 # Optional overrides
 export NEWS_FEEDS="http://feeds.bbci.co.uk/news/rss.xml,https://techcrunch.com/feed/"
 export REFRESH_INTERVAL_MINUTES=30
-export CHROMA_PERSIST_DIR=./chroma_data
+export VECTOR_STORE_BACKEND=pgvector
+export VECTOR_STORE_DURABLE=true
+export PGVECTOR_DSN=postgresql://postgres:postgres@localhost:55432/nexo_rag
+export PGVECTOR_SCHEMA=rag_news
 export TOP_K=5
 ```
 
@@ -107,6 +110,7 @@ http://<your-host>:8080/
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/` | Main Nexo webhook — receives a message, does RAG, returns answer |
+| `GET` | `/.well-known/agent.json` | A2A-style capability discovery card |
 | `POST` | `/ingest` | Trigger an immediate re-crawl of all feeds (runs in background) |
 | `GET` | `/health` | Liveness probe — returns index stats |
 
@@ -176,9 +180,10 @@ no secret configuration.
 | `EMBEDDING_MODEL` | `vertex_ai/text-embedding-004` | litellm model string for embeddings |
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret; verification skipped if empty |
 | `REFRESH_INTERVAL_MINUTES` | `30` | How often the background loop re-crawls all feeds |
-| `CHROMA_PERSIST_DIR` | `./chroma_data` | Path for ChromaDB persistence |
-| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
-| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_DURABLE` | `true` | Keep `true` for managed durable storage |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_SCHEMA` | `rag_news` | Schema for news vectors and metadata |
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Ollama server base URL |
 | `OPENAI_API_KEY` | _(empty)_ | Required for OpenAI embeddings or completions |
 | `TOP_K` | `5` | Number of chunks to retrieve per query |
@@ -206,7 +211,10 @@ docker run -p 8080:8080 \
   -e LLM_MODEL=vertex_ai/gemini-2.5-flash \
   -e EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
   -e WEBHOOK_SECRET=your_secret \
-  -v $(pwd)/chroma_data:/data/chroma \
+  -e VECTOR_STORE_BACKEND=pgvector \
+  -e VECTOR_STORE_DURABLE=true \
+  -e PGVECTOR_DSN=postgresql://postgres:postgres@host.docker.internal:55432/nexo_rag \
+  -e PGVECTOR_SCHEMA=rag_news \
   nexo-news-rag
 ```
 
@@ -231,8 +239,10 @@ The included `cloudbuild.yaml` builds and deploys to Cloud Run. Before first dep
      .
    ```
 
-For a persistent vector index on Cloud Run, mount a Cloud Filestore NFS volume or
-replace ChromaDB with a managed vector DB (e.g. AlloyDB with pgvector, Vertex AI
-Vector Search) and point `CHROMA_PERSIST_DIR` accordingly.
+For persistent vectors on Cloud Run, use managed Postgres with pgvector by setting:
+- `VECTOR_STORE_BACKEND=pgvector`
+- `VECTOR_STORE_DURABLE=true`
+- `PGVECTOR_DSN` from Secret Manager
+- `PGVECTOR_SCHEMA=rag_news`
 
 `GET /health` now includes a `vector_store` block showing backend and durability.

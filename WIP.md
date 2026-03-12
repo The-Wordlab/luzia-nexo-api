@@ -1,6 +1,6 @@
 # Work In Progress
 
-**Last Updated:** 2026-03-11
+**Last Updated:** 2026-03-12
 **Status:** Production-hardening pass complete (ADC + pgvector + scheduler indexing + worker jobs + setup UX).
 
 ## Current state
@@ -16,6 +16,8 @@
 9. **Automated indexing added** - Cloud Scheduler endpoint-mode jobs for all four RAG services.
 10. **Worker indexing mode added** - Cloud Run Jobs + Scheduler wiring for all four RAG services.
 11. **Dev setup simplified** - `make setup-dev` installs Python/docs dependencies for a fresh checkout.
+12. **Public dashboard URL docs aligned** - partner-facing docs now consistently point to `https://nexo.luzia.com` (no `/partners` path references).
+13. **A2A rollout started** - `news-rag`, `sports-rag`, `travel-rag`, and `football-live` now publish `/.well-known/agent.json` and include `task`/`capability`/`artifacts` in webhook envelopes.
 
 ## Verification
 
@@ -26,6 +28,7 @@ Executed successfully:
 - `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-scheduler`
 - `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-worker-scheduler`
 - `gcloud run jobs execute nexo-rag-{news,sports,travel,football}-worker --wait` (all successful)
+- `make test-rag-examples`
 
 ## Next step
 
@@ -56,3 +59,4 @@ Operational checklist:
 2. Add one-command bootstrap for Scheduler runner service account IAM grants (`run.jobs.run`, `iam.serviceAccountTokenCreator` where required).
 3. Keep Cloud SQL access connector-only and periodically verify no temporary authorized networks reappear.
 4. Add a dedicated requirements lock strategy for examples to reduce version churn across mixed requirements files.
+5. Add a docs lint/check that fails CI if public docs reintroduce non-canonical dashboard paths.

@@ -88,6 +88,9 @@ def _signed_headers(body: bytes, secret: str = TEST_SECRET, timestamp: str = TES
 def _assert_success(data: dict) -> None:
     assert data["schema_version"] == SCHEMA_VERSION
     assert data["status"] == "completed"
+    assert data.get("task", {}).get("status") == "completed"
+    assert data.get("capability", {}).get("name") == "fitness.coach"
+    assert isinstance(data.get("artifacts"), list)
     assert isinstance(data.get("content_parts"), list)
     assert len(data["content_parts"]) > 0
 
@@ -182,6 +185,15 @@ async def test_health_returns_ok(open_app):
         resp = await client.get("/health")
     assert resp.status_code == 200
     assert resp.json()["status"] == "ok"
+
+
+@pytest.mark.asyncio
+async def test_agent_card_endpoint(open_app):
+    async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
+        resp = await client.get("/.well-known/agent.json")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["capabilities"]["items"][0]["name"] == "fitness.coach"
 
 
 # ---------------------------------------------------------------------------

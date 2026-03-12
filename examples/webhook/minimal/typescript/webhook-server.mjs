@@ -50,6 +50,11 @@ export function processWebhook(raw, headers = {}, secret = "") {
   if (locale) hints.push(`locale=${locale}`);
   if (dietary) hints.push(`dietary=${dietary}`);
   if (hints.length > 0) text = `${text} (${hints.join(", ")})`;
+  const promptSuggestions = [
+    "Help me plan dinner",
+    "Track my order status",
+    "Show options under $20",
+  ];
 
   return {
     status: 200,
@@ -57,6 +62,7 @@ export function processWebhook(raw, headers = {}, secret = "") {
       schema_version: "2026-03-01",
       status: "success",
       content_parts: [{ type: "text", text }],
+      metadata: { prompt_suggestions: promptSuggestions },
     },
   };
 }

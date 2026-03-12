@@ -31,10 +31,14 @@ Do not conflate app auth with hosted example auth:
 
 If you are integrating a real partner app with Nexo Agent Runtime, use app credentials (`X-App-Id` + `X-App-Secret`) and webhook signing with `WEBHOOK_SECRET`, not `EXAMPLES_SHARED_API_SECRET`.
 
+Demo secret policy used across the two repositories:
+- Non-OpenClaw examples: one shared webhook secret (`nexo-example-secret`)
+- OpenClaw bridge only: dedicated webhook secret (`nexo-openclaw-secret`)
+
 ## Links
 
 - API Documentation: [the-wordlab.github.io/luzia-nexo-api](https://the-wordlab.github.io/luzia-nexo-api/)
-- Luzia Nexo: [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- Luzia Nexo Dashboard: [nexo.luzia.com](https://nexo.luzia.com)
 
 ## Webhook flow (integration architecture)
 
@@ -65,7 +69,7 @@ sequenceDiagram
 
 ## Quick start
 
-1. Get your app secret at [nexo.luzia.com/partners](https://nexo.luzia.com/partners).
+1. Get your app secret at [nexo.luzia.com](https://nexo.luzia.com).
 2. Implement your webhook endpoint.
 3. Activate your webhook in Nexo by configuring your webhook URL and app secret.
 
@@ -80,6 +84,8 @@ Note: app secret setup is required for live Nexo delivery. You can still run and
 ```
 
 See [API Reference](docs/partner-api-reference.md) for payload, signature, and response contract details.
+
+For unified A2A-aligned rollout semantics across all examples, see [A2A Profile](docs/a2a-profile.md) and [A2A Conformance Matrix](docs/a2a-conformance.md).
 
 Read the full integration guide: [API Documentation](https://the-wordlab.github.io/luzia-nexo-api/)
 
@@ -155,4 +161,4 @@ make check-rag-scheduler    # verify worker scheduler mode
 
 ## Support
 
-- [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
+- [nexo.luzia.com](https://nexo.luzia.com)

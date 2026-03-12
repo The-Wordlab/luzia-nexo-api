@@ -48,6 +48,9 @@ def _assert_envelope(data: dict) -> None:
     assert data["status"] == "completed"
     assert isinstance(data.get("content_parts"), list)
     assert len(data["content_parts"]) > 0
+    assert isinstance(data.get("task"), dict)
+    assert isinstance(data.get("capability"), dict)
+    assert isinstance(data.get("artifacts"), list)
 
 
 # ---------------------------------------------------------------------------
@@ -99,6 +102,8 @@ def app(monkeypatch, tmp_path):
     - feedparser mocked so no network is required
     """
     monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
+    monkeypatch.setenv("VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setenv("VECTOR_STORE_DURABLE", "false")
     monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma"))
     monkeypatch.setenv("LLM_MODEL", "ollama/llama3.2")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
@@ -120,6 +125,8 @@ def app(monkeypatch, tmp_path):
 def secret_app(monkeypatch, tmp_path):
     """Same as app but with WEBHOOK_SECRET=testsecret."""
     monkeypatch.setenv("WEBHOOK_SECRET", "testsecret")
+    monkeypatch.setenv("VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setenv("VECTOR_STORE_DURABLE", "false")
     monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma"))
     monkeypatch.setenv("LLM_MODEL", "ollama/llama3.2")
     monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
@@ -460,7 +467,23 @@ async def test_webhook_streaming_returns_sse(app):
     assert response.status_code == 200
     assert "text/event-stream" in response.headers.get("content-type", "")
     assert "event: delta" in response.text
+    assert "event: task.delta" in response.text
+    assert "event: task.artifact" in response.text
     assert "event: done" in response.text
+
+
+@pytest.mark.asyncio
+async def test_agent_card_endpoint_returns_capabilities(app):
+    """A2A-style agent card is published for capability discovery."""
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        response = await client.get("/.well-known/agent.json")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data.get("capabilities", {}).get("items"), list)
+    assert data["capabilities"]["items"][0]["name"] == "news.search"
 
 
 @pytest.mark.asyncio

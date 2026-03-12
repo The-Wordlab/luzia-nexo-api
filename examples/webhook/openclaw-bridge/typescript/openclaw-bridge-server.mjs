@@ -154,7 +154,9 @@ function buildOpenClawRequest({ input, openclawAgentId, stream }) {
 }
 
 function normalizeBaseUrl(baseUrl) {
-  return String(baseUrl || "http://127.0.0.1:18789").replace(/\/$/, "");
+  const normalized = String(baseUrl || "http://127.0.0.1:18789").replace(/\/$/, "");
+  // Accept either a gateway base URL or a full /v1/responses URL.
+  return normalized.replace(/\/v1\/responses$/i, "");
 }
 
 function buildOpenClawHeaders({ openclawToken, openclawAgentId, sessionKey }) {

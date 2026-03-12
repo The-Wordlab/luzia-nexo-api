@@ -33,6 +33,7 @@ class WebhookResponseOut(BaseModel):
     schema_version: str
     status: str
     content_parts: list[ContentPartOut]
+    metadata: dict | None = None
 
 
 def _extract_profile_context(
@@ -95,6 +96,14 @@ def _require_signature(request: Request, raw_body: bytes) -> None:
 app = FastAPI(title="nexo-examples minimal webhook")
 
 
+def _default_prompt_suggestions() -> list[str]:
+    return [
+        "Help me plan dinner",
+        "Track my order status",
+        "Show options under $20",
+    ]
+
+
 @app.get("/")
 async def root() -> dict:
     """Service discovery endpoint for local/manual testing."""
@@ -134,4 +143,5 @@ async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookR
                 ),
             )
         ],
+        metadata={"prompt_suggestions": _default_prompt_suggestions()},
     )

@@ -1,6 +1,6 @@
 # Football Live — Real-Time RAG Webhook
 
-A production-quality webhook example for the Nexo Partner Agent API. Fetches live scores, standings, and top scorers from **football-data.org** for 3 leagues, stores them in ChromaDB for vector search, and answers user questions via RAG + LLM.
+A production-quality webhook example for the Nexo Partner Agent API. Fetches live scores, standings, and top scorers from **football-data.org** for 3 leagues, stores them in pgvector for vector search, and answers user questions via RAG + LLM.
 
 ## Leagues
 
@@ -42,11 +42,14 @@ The webhook detects 4 intents from user messages:
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/` | Main webhook (scores, standings, scorers) |
+| GET | `/.well-known/agent.json` | A2A-style capability discovery card |
 | GET | `/health` | Health check with collection counts |
 | GET | `/admin/status` | Admin status (leagues, config) |
 | POST | `/admin/refresh` | Trigger full data refresh |
 | POST | `/ingest` | Full ingest (all leagues, all endpoints) |
 | POST | `/ingest/live` | Live-only ingest (matches in play) |
+
+Streaming responses include both legacy `delta`/`done` payloads and A2A task events (`task.started`, `task.delta`, `task.artifact`, `done`).
 
 ## Environment Variables
 
@@ -59,9 +62,11 @@ The webhook detects 4 intents from user messages:
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming |
 | `REFRESH_INTERVAL` | `300` | Background refresh interval (seconds) |
 | `TOP_K` | `5` | Number of search results per query |
-| `CHROMA_PERSIST_DIR` | `./chroma_football_live` | ChromaDB persistence path |
-| `VECTOR_STORE_BACKEND` | `chroma` | Vector backend label for health reporting (`chroma`, `vertex`, `pgvector`, ...) |
-| `VECTOR_STORE_DURABLE` | `false` | Set `true` when backing vectors with durable managed storage |
+| `CHROMA_PERSIST_DIR` | `./chroma_football_live` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma` |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_SCHEMA` | `rag_football` | Schema for football vectors and metadata |
 
 ## Architecture
 
@@ -72,7 +77,7 @@ User (Nexo) --> POST / --> detect_intent(message)
                  v              v              v
             "scores"      "standings"     "scorers"
                  |              |              |
-            ChromaDB        ChromaDB       ChromaDB
+            pgvector        pgvector       pgvector
                  |              |              |
                  └──────┬───────┘──────────────┘
                         v
@@ -81,7 +86,7 @@ User (Nexo) --> POST / --> detect_intent(message)
                  { content_parts, cards, actions }
 ```
 
-Background refresh: football-data.org API → ChromaDB every 5 minutes.
+Background refresh: football-data.org API → pgvector every 5 minutes.
 
 ## Docker
 

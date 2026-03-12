@@ -54,6 +54,25 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 
 SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "routines.daily"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-routines",
+    "description": "Daily routines webhook example for briefings, schedule, and follow-up actions.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Assist with morning planning, schedule management, and follow-ups.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["morning_briefing", "schedule_management", "follow_up"]},
+            }
+        ]
+    },
+}
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -141,6 +160,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
             "Snooze non-urgent items to tomorrow",
         ]
     return []
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_routines_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -318,6 +363,12 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
 app = FastAPI(title="Daily Routines Webhook")
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    """Publish capability metadata for A2A-style discovery."""
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root():
     """Service discovery endpoint."""
@@ -326,6 +377,7 @@ async def root():
         "description": "Daily Routines webhook — morning briefing, schedule management, follow-up reminders.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
             {"path": "/ingest", "method": "POST", "description": "Placeholder for future data ingestion"},
         ],
@@ -375,6 +427,7 @@ async def webhook(request: Request):
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
+    artifacts: list[dict[str, Any]] = []
     context_block = ""
 
     if intent == "morning_briefing":
@@ -393,6 +446,7 @@ async def webhook(request: Request):
             {"id": "show_schedule", "type": "primary", "label": "View Schedule", "action": "show_schedule"},
             {"id": "show_reminders", "type": "secondary", "label": "Set a Reminder", "action": "show_reminders"},
         ]
+        artifacts = [{"type": "application/json", "name": "morning_context", "data": {"weather": _SEED_WEATHER, "schedule": _SEED_SCHEDULE, "priorities": _SEED_PRIORITIES}}]
 
     elif intent == "schedule_management":
         cards.append(build_schedule_card(_SEED_SCHEDULE))
@@ -404,6 +458,7 @@ async def webhook(request: Request):
             {"id": "add_event", "type": "primary", "label": "Add Event", "action": "add_event"},
             {"id": "show_briefing", "type": "secondary", "label": "Morning Briefing", "action": "show_briefing"},
         ]
+        artifacts = [{"type": "application/json", "name": "schedule", "data": _SEED_SCHEDULE}]
 
     elif intent == "follow_up":
         cards.append(build_action_items_card(_SEED_ACTION_ITEMS))
@@ -417,6 +472,7 @@ async def webhook(request: Request):
             {"id": "snooze_reminder", "type": "secondary", "label": "Snooze 1h", "action": "snooze_reminder"},
             {"id": "remind_tomorrow", "type": "secondary", "label": "Remind Tomorrow", "action": "remind_tomorrow"},
         ]
+        artifacts = [{"type": "application/json", "name": "action_items", "data": _SEED_ACTION_ITEMS}]
 
     # Build LLM prompt
     if context_block:
@@ -438,22 +494,45 @@ async def webhook(request: Request):
         prompt_suggestions = prompt_suggestions_for_intent(intent)
 
         async def _event_stream() -> AsyncIterator[str]:
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": f"task_routines_{intent}", "status": "in_progress"}})
+                + "\n\n"
+            )
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
             async for event in stream_llm(system, llm_prompt):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
                 yield event
 
-            done_payload = json.dumps({
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+
+            done_payload = {
                 "type": "done",
-                "schema_version": SCHEMA_VERSION,
-                "status": "completed",
-                "cards": cards,
-                "actions": actions,
-                "metadata": {"prompt_suggestions": prompt_suggestions},
-            })
-            yield f"data: {done_payload}\n\n"
+                **_build_envelope(
+                    text=prefix.strip(),
+                    intent=intent,
+                    cards=cards,
+                    actions=actions,
+                    artifacts=artifacts,
+                    metadata={"prompt_suggestions": prompt_suggestions},
+                ),
+            }
+            yield f"data: {json.dumps(done_payload)}\n\n"
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
@@ -462,11 +541,12 @@ async def webhook(request: Request):
     if display_name:
         llm_reply = f"Hey {display_name}! {llm_reply}"
 
-    return JSONResponse({
-        "schema_version": SCHEMA_VERSION,
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent(intent)},
-    })
+    return JSONResponse(
+        _build_envelope(
+            text=llm_reply,
+            intent=intent,
+            cards=cards,
+            actions=actions,
+            artifacts=artifacts,
+        )
+    )

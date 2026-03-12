@@ -56,6 +56,7 @@ pytest -q
 ## Endpoints
 
 - `GET /` - Service discovery
+- `GET /.well-known/agent.json` - A2A-style capability discovery card
 - `GET /health` - Health check
 - `POST /` - Main webhook endpoint (JSON or SSE)
 - `POST /ingest` - Placeholder for future data ingestion
@@ -79,3 +80,4 @@ curl -X POST http://localhost:8096/ \
 - `disruption_alert` - Flight disruption alert with alternative options and approval actions
 
 All cards include `metadata.capability_state: "simulated"`.
+Streaming includes A2A task events: `task.started`, `task.delta`, `task.artifact`, and `done`.

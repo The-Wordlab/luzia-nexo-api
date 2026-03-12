@@ -101,13 +101,33 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "60"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 TOP_K: int = int(os.environ.get("TOP_K", "4"))
-VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "travel.rag"
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-travel-rag",
+    "description": "Travel RAG webhook example for destinations, itineraries, budget, and weather guidance.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Answer travel planning questions with destination cards and actionable links.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["destination", "itinerary", "budget", "weather"]},
+            }
+        ]
+    },
+}
 
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "chroma"
+    backend = VECTOR_STORE_BACKEND or "pgvector"
     if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
         durable = True
     elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
@@ -226,6 +246,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["destination"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_travel_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -538,14 +584,27 @@ def _build_destination_response(
     actions = build_destination_actions(destinations)
     if not actions and articles:
         actions = build_article_actions(articles)
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="destination",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "destinations",
+                "data": destinations[:4],
+            },
+            {
+                "type": "application/json",
+                "name": "articles",
+                "data": [
+                    {"title": a.get("title"), "url": a.get("url"), "source": a.get("source")}
+                    for a in articles[:5]
+                ],
+            },
+        ],
+    )
 
 
 def _build_itinerary_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
@@ -562,62 +621,68 @@ def _build_itinerary_response(query: str, destinations: list[dict[str, Any]]) ->
 
     actions = build_destination_actions(destinations)
 
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("itinerary")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="itinerary",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "destinations",
+                "data": destinations[:2],
+            }
+        ],
+    )
 
 
 def _build_budget_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
     llm_reply = call_llm(_budget_prompt(destinations), query)
     cards = [destination_to_card(d) for d in destinations[:2]]
     actions = build_destination_actions(destinations)
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("budget")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="budget",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "destinations",
+                "data": destinations[:2],
+            }
+        ],
+    )
 
 
 def _build_weather_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
     llm_reply = call_llm(_weather_prompt(destinations), query)
     cards = [destination_to_card(d) for d in destinations[:2]]
     actions = build_destination_actions(destinations)
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("weather")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="weather",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "destinations",
+                "data": destinations[:2],
+            }
+        ],
+    )
 
 
 def _no_results_response() -> dict[str, Any]:
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [
-            {
-                "type": "text",
-                "text": (
-                    "I don't have enough travel context to answer that right now. "
-                    "The index may still be loading — try again in a moment, or ask me about "
-                    "a specific destination like Paris, Tokyo, Barcelona, or Bali."
-                ),
-            }
-        ],
-        "cards": [],
-        "actions": [],
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
-    }
+    return _build_envelope(
+        text=(
+            "I don't have enough travel context to answer that right now. "
+            "The index may still be loading - try again in a moment, or ask me about "
+            "a specific destination like Paris, Tokyo, Barcelona, or Bali."
+        ),
+        intent="destination",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -686,6 +751,12 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 app = FastAPI(title="nexo-travel-rag-webhook", lifespan=lifespan)
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card() -> JSONResponse:
+    """Publish capability metadata for A2A-style discovery."""
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root() -> JSONResponse:
     """Service discovery endpoint for local/manual testing."""
@@ -699,7 +770,7 @@ async def root() -> JSONResponse:
                 {"path": "/health", "method": "GET", "description": "Collection counts and model config"},
             ],
             "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
-            "schema_version": "2026-03-01",
+            "schema_version": SCHEMA_VERSION,
         }
     )
 
@@ -743,23 +814,14 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
 
     if not query:
         return JSONResponse(
-            {
-                "schema_version": "2026-03-01",
-                "status": "completed",
-                "content_parts": [
-                    {
-                        "type": "text",
-                        "text": (
-                            "Ask me about travel! I can help you discover destinations, "
-                            "plan itineraries, compare budgets, and find the best time to visit "
-                            "cities around the world."
-                        ),
-                    }
-                ],
-                "cards": [],
-                "actions": [],
-                "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
-            }
+            _build_envelope(
+                text=(
+                    "Ask me about travel! I can help you discover destinations, "
+                    "plan itineraries, compare budgets, and find the best time to visit "
+                    "cities around the world."
+                ),
+                intent="destination",
+            )
         )
 
     intent = detect_intent(query)
@@ -818,26 +880,73 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 actions = build_destination_actions(destinations)
                 if not actions and articles:
                     actions = build_article_actions(articles)
-            prompt_suggestions = prompt_suggestions_for_intent(intent)
+            artifacts: list[dict[str, Any]] = []
+            if destinations:
+                artifacts.append(
+                    {
+                        "type": "application/json",
+                        "name": "destinations",
+                        "data": destinations[:4],
+                    }
+                )
+            if articles:
+                artifacts.append(
+                    {
+                        "type": "application/json",
+                        "name": "articles",
+                        "data": [
+                            {"title": a.get("title"), "url": a.get("url"), "source": a.get("source")}
+                            for a in articles[:5]
+                        ],
+                    }
+                )
+
+            envelope = _build_envelope(
+                text="",
+                intent=intent,
+                cards=cards,
+                actions=actions,
+                artifacts=artifacts,
+            )
+            task = envelope["task"]
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": task["id"], "status": "in_progress"}})
+                + "\n\n"
+            )
 
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
             async for event in stream_llm(system_prompt, query):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
+                    if payload.get("type") == "done":
+                        continue
                 yield event
 
-            done_payload = json.dumps(
-                {
-                    "type": "done",
-                    "schema_version": "2026-03-01",
-                    "status": "completed",
-                    "cards": cards,
-                    "actions": actions,
-                    "metadata": {"prompt_suggestions": prompt_suggestions},
-                }
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+
+            done_envelope = _build_envelope(
+                text=prefix.strip(),
+                intent=intent,
+                cards=cards,
+                actions=actions,
+                artifacts=artifacts,
             )
-            yield f"data: {done_payload}\n\n"
+            done_payload = {"type": "done", **done_envelope}
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 

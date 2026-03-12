@@ -99,6 +99,11 @@ curl -X POST http://localhost:8094/ \
 ## SSE streaming
 
 Include `Accept: text/event-stream` to receive a streaming response. The final `done` event carries `cards`, `actions`, and `schema_version`.
+Streaming also includes A2A task events: `task.started`, `task.delta`, `task.artifact`, and `done`.
+
+## Capability discovery
+
+`GET /.well-known/agent.json` publishes A2A-style capability metadata for this example.
 
 ## Environment variables
 

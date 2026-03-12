@@ -70,15 +70,34 @@ LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 REFRESH_INTERVAL = int(os.environ.get("REFRESH_INTERVAL", "300"))  # 5 min default
 TOP_K = int(os.environ.get("TOP_K", "5"))
-VECTOR_STORE_BACKEND = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_BACKEND = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 VECTOR_STORE_DURABLE_OVERRIDE = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
 
 SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "football.live"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-football-live",
+    "description": "Live football webhook example for scores, standings, and top scorers.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Answer football questions with live context cards and actions.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["scores", "standings", "scorers", "general"]},
+            }
+        ]
+    },
+}
 
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "chroma"
+    backend = VECTOR_STORE_BACKEND or "pgvector"
     if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
         durable = True
     elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
@@ -183,6 +202,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["general"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_football_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -493,6 +538,12 @@ async def lifespan(app_instance: FastAPI):
 app = FastAPI(title="Football Live Webhook", lifespan=lifespan)
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    """Publish capability metadata for A2A-style discovery."""
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root():
     """Service discovery endpoint for local/manual testing."""
@@ -536,6 +587,7 @@ async def webhook(request: Request):
     context_parts: list[str] = []
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
+    artifacts: list[dict[str, Any]] = []
 
     if intent == "standings":
         results = search_standings(query, n_results=TOP_K)
@@ -550,6 +602,7 @@ async def webhook(request: Request):
                     comp_results = [x for x in results if x.get("competition") == comp]
                     cards.append(build_standings_card(comp_results, comp))
             actions = [{"type": "primary", "label": "Full Table", "url": "https://www.google.com/search?q=" + query.replace(" ", "+")}]
+            artifacts = [{"type": "application/json", "name": "standings", "data": results[:10]}]
 
     elif intent == "scorers":
         results = search_scorers(query, n_results=TOP_K)
@@ -563,6 +616,7 @@ async def webhook(request: Request):
                     comp_results = [x for x in results if x.get("competition") == comp]
                     cards.append(build_scorers_card(comp_results, comp))
             actions = [{"type": "primary", "label": "Full Stats", "url": "https://www.google.com/search?q=" + query.replace(" ", "+")}]
+            artifacts = [{"type": "application/json", "name": "scorers", "data": results[:10]}]
 
     elif intent == "scores":
         results = search_matches(query, n_results=TOP_K)
@@ -570,6 +624,7 @@ async def webhook(request: Request):
             context_parts = [r["text"] for r in results]
             cards = [match_to_card(r) for r in results]
             actions = [{"type": "primary", "label": "All Scores", "url": "https://www.google.com/search?q=football+scores+today"}]
+            artifacts = [{"type": "application/json", "name": "matches", "data": results[:10]}]
 
     else:
         # General: search all collections
@@ -582,6 +637,11 @@ async def webhook(request: Request):
             + [r["text"] for r in scorer_results]
         )
         cards = [match_to_card(r) for r in match_results[:2]]
+        artifacts = [
+            {"type": "application/json", "name": "matches", "data": match_results[:5]},
+            {"type": "application/json", "name": "standings", "data": standing_results[:5]},
+            {"type": "application/json", "name": "scorers", "data": scorer_results[:5]},
+        ]
 
     # Build LLM prompt with context
     if context_parts:
@@ -602,22 +662,46 @@ async def webhook(request: Request):
 
     if wants_stream:
         async def _event_stream() -> AsyncIterator[str]:
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": f"task_football_{intent}", "status": "in_progress"}})
+                + "\n\n"
+            )
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
             async for event in stream_llm(system, llm_prompt):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
+                    if payload.get("type") == "done":
+                        continue
                 yield event
 
-            done_payload = json.dumps({
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+
+            done_payload = {
                 "type": "done",
-                "schema_version": SCHEMA_VERSION,
-                "status": "completed",
-                "cards": cards,
-                "actions": actions,
-                "metadata": {"prompt_suggestions": prompt_suggestions},
-            })
-            yield f"data: {done_payload}\n\n"
+                **_build_envelope(
+                    text=prefix.strip(),
+                    intent=intent,
+                    cards=cards,
+                    actions=actions,
+                    artifacts=artifacts,
+                    metadata={"prompt_suggestions": prompt_suggestions},
+                ),
+            }
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
@@ -626,14 +710,16 @@ async def webhook(request: Request):
     if display_name:
         llm_reply = f"Hey {display_name}! {llm_reply}"
 
-    return JSONResponse({
-        "schema_version": SCHEMA_VERSION,
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions},
-    })
+    return JSONResponse(
+        _build_envelope(
+            text=llm_reply,
+            intent=intent,
+            cards=cards,
+            actions=actions,
+            artifacts=artifacts,
+            metadata={"prompt_suggestions": prompt_suggestions},
+        )
+    )
 
 
 # ---------------------------------------------------------------------------

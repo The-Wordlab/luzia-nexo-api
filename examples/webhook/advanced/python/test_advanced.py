@@ -216,6 +216,11 @@ async def test_main_webhook_routes_to_order_status_action(open_app):
     _assert_rich_success(data)
     assert "cards" in data
     assert data["cards"][0].get("type") == "action_result"
+    assert data.get("metadata", {}).get("prompt_suggestions") == [
+        "Track order ORD-12345",
+        "Update delivery address",
+        "Cancel this order",
+    ]
 
 
 async def test_main_webhook_routes_to_schedule_appointment_action(open_app):
@@ -260,6 +265,11 @@ async def test_main_webhook_no_action_for_plain_message(open_app):
     _assert_rich_success(data)
     assert len(_response_text(data)) > 0
     assert "cards" not in data
+    assert data.get("metadata", {}).get("prompt_suggestions") == [
+        "Track my order status",
+        "Book an appointment",
+        "What can you help me with?",
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -293,6 +303,7 @@ async def test_retry_after_present_in_webhook_response_on_failure(open_app):
     _assert_rich_success(data)
     assert "metadata" in data
     assert isinstance(data["metadata"]["retry_after"], int)
+    assert isinstance(data["metadata"].get("prompt_suggestions"), list)
     assert data["cards"][0]["type"] == "retry_suggestion"
 
 

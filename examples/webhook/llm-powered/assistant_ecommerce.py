@@ -24,7 +24,6 @@ from base import (
     WebhookConfig,
     WebhookRequest,
     WebhookResponse,
-    build_text_response,
     build_response_with_suggestions,
     create_llm,
     LLMConfig,
@@ -33,6 +32,12 @@ from base.prompts import ECOMMERCE_ASSISTANT_PROMPT
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+DEFAULT_PROMPT_SUGGESTIONS = [
+    "Track my order",
+    "Browse menu",
+    "Contact support",
+]
 
 
 class EcommerceAssistant(BaseWebhookApp):
@@ -76,7 +81,7 @@ class EcommerceAssistant(BaseWebhookApp):
             greeting = f"Hi{name}! How can I help you today?" if name else "Hi! How can I help you today?"
             return build_response_with_suggestions(
                 greeting,
-                ["Track my order", "Browse menu", "Contact support"]
+                DEFAULT_PROMPT_SUGGESTIONS,
             )
         
         profile_context = self._get_profile_context(request.profile)
@@ -96,13 +101,14 @@ class EcommerceAssistant(BaseWebhookApp):
             if suggestions:
                 return build_response_with_suggestions(text, suggestions)
             else:
-                return build_text_response(text)
+                return build_response_with_suggestions(text, DEFAULT_PROMPT_SUGGESTIONS)
                 
         except Exception as e:
             logger.exception(f"LLM error: {e}")
-            return build_text_response(
+            return build_response_with_suggestions(
                 "I apologize, but I'm having trouble processing your request right now. "
-                "Please try again or contact support if this continues."
+                "Please try again or contact support if this continues.",
+                DEFAULT_PROMPT_SUGGESTIONS,
             )
     
     def _build_history(self, request: WebhookRequest) -> list[dict[str, str]]:

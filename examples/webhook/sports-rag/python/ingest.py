@@ -67,7 +67,7 @@ _configure_vertex_env_defaults()
 
 EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 FOOTBALL_DATA_API_KEY: str = os.environ.get("FOOTBALL_DATA_API_KEY", "")
-VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_sports")
 FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"

@@ -10,7 +10,7 @@ COPY . .
 RUN mkdir -p /data/chroma
 
 ENV CHROMA_PERSIST_DIR=/data/chroma \
-    VECTOR_STORE_BACKEND=chroma \
+    VECTOR_STORE_BACKEND=pgvector \
     VECTOR_STORE_DURABLE=false
 
 EXPOSE 8003

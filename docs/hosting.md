@@ -60,6 +60,10 @@ docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examp
 
 All GCP deployments use Cloud Build. There is no Terraform in this repository.
 
+For a minimal, decision-based path (single service vs RAG-only vs full stack),
+start with [GCP Deploy Playbook](gcp-deploy-playbook.md), then return here for
+full secret/IAM detail.
+
 ### Prerequisites
 
 1. **Authenticate**: `gcloud auth login && gcloud auth application-default login`
@@ -152,6 +156,33 @@ Notes:
 - Validates signed webhook flows (including OpenClaw bridge).
 - By default also triggers RAG ingest endpoints (`RUN_INGEST=true`).
 - To skip ingest triggers: `RUN_INGEST=false make smoke-live-services`.
+
+### End-to-end secret alignment with Nexo (required)
+
+For production, the secret used by Nexo for the OpenClaw app must match the
+secret used by `nexo-openclaw-bridge` (`OPENCLAW_WEBHOOK_SECRET`).
+
+Canonical values used in this repository:
+- Standard demo webhooks: `nexo-example-secret`
+- OpenClaw webhook: `nexo-openclaw-secret`
+
+Apply the same values to Nexo app config via demo seeding:
+
+```bash
+export NEXO_API_URL=https://nexo.luzia.com
+export NEXO_ADMIN_EMAIL=<admin-email>
+export NEXO_ADMIN_PASSWORD=<admin-password>
+export DEMO_EXAMPLES_WEBHOOK_SECRET=nexo-example-secret
+export DEMO_OPENCLAW_WEBHOOK_SECRET=nexo-openclaw-secret
+export DEMO_OPENCLAW_ENABLED=true
+python3 scripts/seed-demo-apps.py --env production
+```
+
+Then re-run:
+
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make smoke-live-services
+```
 
 ### OpenClaw connectivity smoke test (recommended before bridge deploy)
 
@@ -309,10 +340,10 @@ Expected production values:
 - `durable = true`
 - `warning = null`
 
-Local development remains supported with Chroma:
-- `VECTOR_STORE_BACKEND=chroma`
-- `VECTOR_STORE_DURABLE=false`
-- `CHROMA_PERSIST_DIR=./chroma_data`
+Local development should mirror production with pgvector:
+- `VECTOR_STORE_BACKEND=pgvector`
+- `VECTOR_STORE_DURABLE=true`
+- `PGVECTOR_DSN=postgresql://postgres:postgres@localhost:55432/nexo_rag`
 
 ### Cloud SQL setup for pgvector
 

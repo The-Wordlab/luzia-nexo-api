@@ -105,7 +105,7 @@ REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "
 CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
 OLLAMA_API_BASE: str = os.environ.get("OLLAMA_API_BASE", "http://localhost:11434")
 TOP_K: int = int(os.environ.get("TOP_K", "5"))
-VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
 
 _raw_feeds = os.environ.get("NEWS_FEEDS", "")
@@ -120,6 +120,25 @@ if LLM_MODEL.startswith("ollama/"):
 CHUNK_SIZE_CHARS: int = 2000   # ~500 tokens at 4 chars/token
 CHUNK_OVERLAP_CHARS: int = 200
 COLLECTION_NAME: str = "news_articles"
+SCHEMA_VERSION: str = "2026-03-01"
+CAPABILITY_NAME: str = "news.search"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-news-rag",
+    "description": "News RAG webhook example for headline search and summarization.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Search and summarize recent news with source attribution.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+            }
+        ]
+    },
+}
 
 # ---------------------------------------------------------------------------
 # Vector store state (Chroma or pgvector)
@@ -140,7 +159,7 @@ _index_stats: dict[str, Any] = {
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "chroma"
+    backend = VECTOR_STORE_BACKEND or "pgvector"
     if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
         durable = True
     elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
@@ -662,28 +681,46 @@ def prompt_suggestions_for_query(query: str) -> list[str]:
 
 
 def _empty_index_response() -> dict[str, Any]:
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [
-            {
-                "type": "text",
-                "text": (
-                    "I don't have enough news context to answer that right now. "
-                    "The index may still be loading — try again in a moment."
-                ),
-            }
-        ],
-        "cards": [],
-        "actions": [],
-        "metadata": {
+    return _build_envelope(
+        text=(
+            "I don't have enough news context to answer that right now. "
+            "The index may still be loading - try again in a moment."
+        ),
+        metadata={
             "prompt_suggestions": [
                 "What are the top headlines today?",
                 "Summarize the latest AI and tech news",
                 "Give me a quick global news briefing",
             ]
         },
+    )
+
+
+def _build_envelope(
+    *,
+    text: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+    error: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Build a canonical Nexo envelope with A2A-aligned fields."""
+    envelope: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": "task_news_search", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": metadata or {},
     }
+    if error is not None:
+        envelope["error"] = error
+    return envelope
 
 
 # ---------------------------------------------------------------------------
@@ -714,6 +751,12 @@ app = FastAPI(
 )
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card() -> JSONResponse:
+    """Publish capability metadata for A2A-style discovery."""
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root() -> JSONResponse:
     """Service discovery endpoint for local/manual testing."""
@@ -727,7 +770,7 @@ async def root() -> JSONResponse:
                 {"path": "/health", "method": "GET", "description": "Index and model health details"},
             ],
             "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
-            "schema_version": "2026-03-01",
+            "schema_version": SCHEMA_VERSION,
         }
     )
 
@@ -776,19 +819,10 @@ async def receive_webhook(request: Request):
     wants_stream = "text/event-stream" in request.headers.get("accept", "").lower()
 
     if not user_text:
-        envelope = {
-            "schema_version": "2026-03-01",
-            "status": "completed",
-            "content_parts": [
-                {
-                    "type": "text",
-                    "text": "Please ask me a question about the latest news.",
-                }
-            ],
-            "cards": [],
-            "actions": [],
-            "metadata": {"prompt_suggestions": prompt_suggestions_for_query("")},
-        }
+        envelope = _build_envelope(
+            text="Please ask me a question about the latest news.",
+            metadata={"prompt_suggestions": prompt_suggestions_for_query("")},
+        )
         if wants_stream:
             return _stream_envelope_response(envelope)
         return JSONResponse(envelope)
@@ -811,14 +845,26 @@ async def receive_webhook(request: Request):
             "Please try again."
         )
 
-    envelope = {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": answer}],
-        "cards": build_source_cards(hits),
-        "actions": build_read_actions(hits),
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_query(user_text)},
-    }
+    envelope = _build_envelope(
+        text=answer,
+        cards=build_source_cards(hits),
+        actions=build_read_actions(hits),
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "news_hits",
+                "data": [
+                    {
+                        "title": h.get("title"),
+                        "url": h.get("link"),
+                        "score": h.get("score"),
+                    }
+                    for h in deduplicate_sources(hits)[:5]
+                ],
+            }
+        ],
+        metadata={"prompt_suggestions": prompt_suggestions_for_query(user_text)},
+    )
     if wants_stream:
         return _stream_envelope_response(envelope)
     return JSONResponse(envelope)
@@ -833,8 +879,21 @@ def _stream_envelope_response(envelope: dict[str, Any]) -> StreamingResponse:
     ).strip()
 
     async def stream():
+        task = envelope.get("task") if isinstance(envelope.get("task"), dict) else {}
+        yield (
+            "event: task.started\ndata: "
+            + json.dumps({"task": {"id": task.get("id"), "status": "in_progress"}})
+            + "\n\n"
+        )
         if text:
             yield f'event: delta\ndata: {json.dumps({"text": text})}\n\n'
+            yield (
+                "event: task.delta\ndata: "
+                + json.dumps({"text": text})
+                + "\n\n"
+            )
+        for artifact in envelope.get("artifacts") or []:
+            yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
         yield f"event: done\ndata: {json.dumps(envelope)}\n\n"
 
     return StreamingResponse(

@@ -128,6 +128,14 @@ async def test_root_endpoint(open_app):
 
 
 @pytest.mark.asyncio
+async def test_agent_card_endpoint(open_app):
+    async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
+        r = await client.get("/.well-known/agent.json")
+    assert r.status_code == 200
+    assert r.json()["capabilities"]["items"][0]["name"] == "language.tutor"
+
+
+@pytest.mark.asyncio
 async def test_health_endpoint(open_app):
     """GET /health returns ok status."""
     async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
@@ -215,6 +223,9 @@ async def test_phrase_help_italian(open_app):
     data = r.json()
     assert data["status"] == "completed"
     assert data["schema_version"] == "2026-03-01"
+    assert data["task"]["status"] == "completed"
+    assert data["capability"]["name"] == "language.tutor"
+    assert isinstance(data["artifacts"], list)
     card = _card(data)
     assert card["type"] == "phrase_help"
     assert "Italian" in card["title"]

@@ -41,6 +41,25 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "language.tutor"
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-language-tutor",
+    "description": "Language tutor webhook example for phrase help, quizzes, and lesson plans.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Support language learning flows with practical cards and optional streaming responses.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["phrase_help", "quiz", "lesson_plan"]},
+            }
+        ]
+    },
+}
 
 
 def _verify_signature(secret: str, raw_body: bytes, timestamp: str, signature: str) -> bool:
@@ -102,6 +121,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["phrase_help"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_language_tutor_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 def _get_display_name(data: dict[str, Any]) -> str:
@@ -213,6 +258,11 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
 app = FastAPI(title="Language Tutor Webhook")
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card():
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root():
     return {
@@ -220,6 +270,7 @@ async def root():
         "description": "Language tutor webhook - phrase help, quizzes, and lesson plans.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
+            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
         ],
         "capabilities": [
@@ -253,6 +304,7 @@ async def webhook(request: Request):
 
     if intent == "quiz":
         card = build_quiz_card(language)
+        artifacts = [{"type": "application/json", "name": "quiz", "data": {"language": language}}]
         actions = [
             {"id": "start_quiz", "type": "primary", "label": "Start Quiz", "action": "start_quiz"},
             {"id": "show_answers", "type": "secondary", "label": "Show Model Answers", "action": "show_answers"},
@@ -260,6 +312,7 @@ async def webhook(request: Request):
         context = f"Language: {language}. Mode: quiz."
     elif intent == "lesson_plan":
         card = build_lesson_card(language)
+        artifacts = [{"type": "application/json", "name": "lesson_plan", "data": {"language": language, "weeks": 4}}]
         actions = [
             {"id": "begin_week1", "type": "primary", "label": "Begin Week 1", "action": "begin_week1"},
             {"id": "adapt_level", "type": "secondary", "label": "Adapt Difficulty", "action": "adapt_level"},
@@ -267,6 +320,7 @@ async def webhook(request: Request):
         context = f"Language: {language}. Mode: lesson plan."
     else:
         card = build_phrase_card(language)
+        artifacts = [{"type": "application/json", "name": "phrase_help", "data": {"language": language}}]
         actions = [
             {"id": "practice", "type": "primary", "label": "Practice Phrase", "action": "practice"},
             {"id": "more_variants", "type": "secondary", "label": "More Variants", "action": "more_variants"},
@@ -277,23 +331,44 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" User name: {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
-    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
-            if display_name:
-                yield f"data: {json.dumps({'type': 'delta', 'text': f'Hey {display_name}! '})}\n\n"
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": f"task_language_tutor_{intent}", "status": "in_progress"}})
+                + "\n\n"
+            )
+            prefix = f"Hey {display_name}! " if display_name else ""
+            if prefix:
+                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
             async for event in stream_llm(system, llm_prompt):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
                 yield event
-            done = {
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+            done_payload = {
                 "type": "done",
-                "schema_version": SCHEMA_VERSION,
-                "status": "completed",
-                "cards": [card],
-                "actions": actions,
-                "metadata": {"prompt_suggestions": prompt_suggestions},
+                **_build_envelope(
+                    text=prefix.strip(),
+                    intent=intent,
+                    cards=[card],
+                    actions=actions,
+                    artifacts=artifacts,
+                ),
             }
-            yield f"data: {json.dumps(done)}\n\n"
+            yield f"data: {json.dumps(done_payload)}\n\n"
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
@@ -301,12 +376,11 @@ async def webhook(request: Request):
     if display_name:
         reply = f"Hey {display_name}! {reply}"
     return JSONResponse(
-        {
-            "schema_version": SCHEMA_VERSION,
-            "status": "completed",
-            "content_parts": [{"type": "text", "text": reply}],
-            "cards": [card],
-            "actions": actions,
-            "metadata": {"prompt_suggestions": prompt_suggestions},
-        }
+        _build_envelope(
+            text=reply,
+            intent=intent,
+            cards=[card],
+            actions=actions,
+            artifacts=artifacts,
+        )
     )

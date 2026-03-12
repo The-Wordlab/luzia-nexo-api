@@ -105,13 +105,33 @@ REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 LIVE_POLL_INTERVAL_SECONDS: int = int(os.environ.get("LIVE_POLL_INTERVAL_SECONDS", "60"))
 TOP_K = 3
-VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "chroma").strip().lower()
+SCHEMA_VERSION = "2026-03-01"
+CAPABILITY_NAME = "sports.rag"
+VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
+
+AGENT_CARD: dict[str, Any] = {
+    "name": "nexo-sports-rag",
+    "description": "Sports RAG webhook example for scores, standings, and sports news.",
+    "url": "/",
+    "version": "1",
+    "capabilities": {
+        "items": [
+            {
+                "name": CAPABILITY_NAME,
+                "description": "Answer sports questions with cards and source-backed context.",
+                "supports_streaming": True,
+                "supports_cancellation": False,
+                "metadata": {"intents": ["scores", "standings", "news"]},
+            }
+        ]
+    },
+}
 
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "chroma"
+    backend = VECTOR_STORE_BACKEND or "pgvector"
     if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
         durable = True
     elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
@@ -222,6 +242,32 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
         ],
     }
     return suggestions.get(intent, suggestions["scores"])
+
+
+def _build_envelope(
+    *,
+    text: str,
+    intent: str,
+    cards: list[dict[str, Any]] | None = None,
+    actions: list[dict[str, Any]] | None = None,
+    artifacts: list[dict[str, Any]] | None = None,
+    task_status: str = "completed",
+    metadata: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    if metadata:
+        payload_metadata.update(metadata)
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "error" if task_status in {"failed", "canceled"} else "completed",
+        "task": {"id": f"task_sports_{intent}", "status": task_status},
+        "capability": {"name": CAPABILITY_NAME, "version": "1"},
+        "content_parts": [{"type": "text", "text": text}],
+        "cards": cards or [],
+        "actions": actions or [],
+        "artifacts": artifacts or [],
+        "metadata": payload_metadata,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -543,14 +589,19 @@ def build_scores_response(query: str, matches: list[dict[str, Any]]) -> dict[str
     cards = [match_to_card(m) for m in matches[:3]]
     actions = build_match_actions(matches)
 
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("scores")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="scores",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "matches",
+                "data": matches[:3],
+            }
+        ],
+    )
 
 
 def build_standings_response(query: str, standings_docs: list[dict[str, Any]]) -> dict[str, Any]:
@@ -568,14 +619,19 @@ def build_standings_response(query: str, standings_docs: list[dict[str, Any]]) -
     )
     actions = build_standings_actions(competition)
 
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": [standings_card],
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("standings")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="standings",
+        cards=[standings_card],
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "standings",
+                "data": SEED_STANDINGS[:10],
+            }
+        ],
+    )
 
 
 def build_news_response(query: str, articles: list[dict[str, Any]]) -> dict[str, Any]:
@@ -584,35 +640,38 @@ def build_news_response(query: str, articles: list[dict[str, Any]]) -> dict[str,
     cards = [c for a in articles[:3] if (c := build_article_card(a)) is not None]
     actions = build_article_actions(articles)
 
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": llm_reply}],
-        "cards": cards,
-        "actions": actions,
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("news")},
-    }
+    return _build_envelope(
+        text=llm_reply,
+        intent="news",
+        cards=cards,
+        actions=actions,
+        artifacts=[
+            {
+                "type": "application/json",
+                "name": "articles",
+                "data": [
+                    {
+                        "title": a.get("title"),
+                        "url": a.get("url"),
+                        "source": a.get("source"),
+                    }
+                    for a in articles[:5]
+                ],
+            }
+        ],
+    )
 
 
 def build_no_results_response() -> dict[str, Any]:
     """Return a graceful no-results envelope."""
-    return {
-        "schema_version": "2026-03-01",
-        "status": "completed",
-        "content_parts": [
-            {
-                "type": "text",
-                "text": (
-                    "I don't have enough sports context to answer that question right now. "
-                    "The index may still be loading — try again in a moment, or ask me about "
-                    "recent Premier League scores, standings, or transfer news."
-                ),
-            }
-        ],
-        "cards": [],
-        "actions": [],
-        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("news")},
-    }
+    return _build_envelope(
+        text=(
+            "I don't have enough sports context to answer that question right now. "
+            "The index may still be loading - try again in a moment, or ask me about "
+            "recent Premier League scores, standings, or transfer news."
+        ),
+        intent="news",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -751,6 +810,12 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
 
 
+@app.get("/.well-known/agent.json")
+async def agent_card() -> JSONResponse:
+    """Publish capability metadata for A2A-style discovery."""
+    return JSONResponse(AGENT_CARD)
+
+
 @app.get("/")
 async def root() -> JSONResponse:
     """Service discovery endpoint for local/manual testing."""
@@ -768,7 +833,7 @@ async def root() -> JSONResponse:
                 {"path": "/admin/detect", "method": "POST", "description": "Force one event detection cycle"},
             ],
             "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
-            "schema_version": "2026-03-01",
+            "schema_version": SCHEMA_VERSION,
         }
     )
 
@@ -827,22 +892,13 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     # Empty query - provide a helpful prompt
     if not query:
         return JSONResponse(
-            {
-                "schema_version": "2026-03-01",
-                "status": "completed",
-                "content_parts": [
-                    {
-                        "type": "text",
-                        "text": (
-                            "Ask me about football! I can help with match results, "
-                            "league standings, transfer news, and more."
-                        ),
-                    }
-                ],
-                "cards": [],
-                "actions": [],
-                "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("scores")},
-            }
+            _build_envelope(
+                text=(
+                    "Ask me about football! I can help with match results, "
+                    "league standings, transfer news, and more."
+                ),
+                intent="scores",
+            )
         )
 
     intent = detect_intent(query)
@@ -903,28 +959,70 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 system_prompt = _news_prompt(articles)
                 cards = [c for a in articles[:3] if (c := build_article_card(a)) is not None]
                 actions = build_article_actions(articles)
-            prompt_suggestions = prompt_suggestions_for_intent(intent)
+            artifacts: list[dict[str, Any]] = []
+            if intent == "scores":
+                artifacts = [{"type": "application/json", "name": "matches", "data": matches[:3]}]
+            elif intent == "standings":
+                artifacts = [{"type": "application/json", "name": "standings", "data": SEED_STANDINGS[:10]}]
+            elif intent == "news":
+                artifacts = [
+                    {
+                        "type": "application/json",
+                        "name": "articles",
+                        "data": [
+                            {"title": a.get("title"), "url": a.get("url"), "source": a.get("source")}
+                            for a in articles[:5]
+                        ],
+                    }
+                ]
+
+            envelope = _build_envelope(
+                text="",
+                intent=intent,
+                cards=cards,
+                actions=actions,
+                artifacts=artifacts,
+            )
+            task = envelope["task"]
+            yield (
+                "event: task.started\ndata: "
+                + json.dumps({"task": {"id": task["id"], "status": "in_progress"}})
+                + "\n\n"
+            )
 
             # Prefix with personalisation token so client can prepend if desired
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
             async for event in stream_llm(system_prompt, query):
+                if event.startswith("data:"):
+                    try:
+                        payload = json.loads(event[len("data:"):].strip())
+                    except json.JSONDecodeError:
+                        yield event
+                        continue
+                    if payload.get("type") == "delta":
+                        yield event
+                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        continue
+                    if payload.get("type") == "done":
+                        continue
                 yield event
 
-            # Final 'done' event carries cards + actions
-            done_payload = json.dumps(
-                {
-                    "type": "done",
-                    "schema_version": "2026-03-01",
-                    "status": "completed",
-                    "cards": cards,
-                    "actions": actions,
-                    "metadata": {"prompt_suggestions": prompt_suggestions},
-                }
+            for artifact in artifacts:
+                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+
+            done_envelope = _build_envelope(
+                text=prefix.strip(),
+                intent=intent,
+                cards=cards,
+                actions=actions,
+                artifacts=artifacts,
             )
-            yield f"data: {done_payload}\n\n"
+            done_payload = {"type": "done", **done_envelope}
+            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
