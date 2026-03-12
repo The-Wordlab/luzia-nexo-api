@@ -36,6 +36,7 @@ require_bin awk
 require_bin sed
 require_bin tr
 require_bin head
+require_bin jq
 
 service_url() {
   local service="$1"
@@ -181,6 +182,44 @@ http_post_signed_check() {
   record_pass "$label"
 }
 
+http_post_signed_prompt_suggestions_check() {
+  local label="$1"
+  local url="$2"
+  local payload="$3"
+
+  build_signature "$payload"
+  local tmp
+  tmp="$(mktemp)"
+  local code
+  code="$(
+    curl -sS --max-time "$TIMEOUT_SECONDS" -o "$tmp" -w '%{http_code}' \
+      -X POST "$url" \
+      -H 'Content-Type: application/json' \
+      -H "X-Timestamp: ${SIG_TIMESTAMP}" \
+      -H "X-Signature: ${SIG_VALUE}" \
+      --data "$payload" || true
+  )"
+
+  if [[ "$code" != "200" ]]; then
+    local body
+    body="$(head -c 500 "$tmp" | tr '\n' ' ')"
+    rm -f "$tmp"
+    record_fail "$label" "HTTP ${code}; body=${body}"
+    return
+  fi
+
+  if ! jq -e '.metadata.prompt_suggestions | (type == "array" and length > 0)' "$tmp" >/dev/null 2>&1; then
+    local body
+    body="$(head -c 500 "$tmp" | tr '\n' ' ')"
+    rm -f "$tmp"
+    record_fail "$label" "metadata.prompt_suggestions missing/empty; body=${body}"
+    return
+  fi
+
+  rm -f "$tmp"
+  record_pass "$label"
+}
+
 http_post_check() {
   local label="$1"
   local url="$2"
@@ -310,52 +349,52 @@ WEBHOOK_SECRET="$OPENCLAW_WEBHOOK_SECRET" http_post_signed_check \
   '{"event":"message_created","app":{"id":"smoke-openclaw"},"thread":{"id":"smoke-openclaw-thread"},"message":{"role":"user","content":"say hello from smoke test"},"profile":{"display_name":"Mark"}}' \
   "provider"
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "routines webhook" \
   "${URL_ROUTINES}/" \
   '{"event":"message_created","message":{"role":"user","content":"morning briefing"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "food-ordering webhook" \
   "${URL_FOOD_ORDERING}/" \
   '{"event":"message_created","message":{"role":"user","content":"show vegan options"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "travel-planning webhook" \
   "${URL_TRAVEL_PLANNING}/" \
   '{"event":"message_created","message":{"role":"user","content":"plan 3 days in Lisbon"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "fitness-coach webhook" \
   "${URL_FITNESS_COACH}/" \
   '{"event":"message_created","message":{"role":"user","content":"design a beginner workout plan"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "travel-planner webhook" \
   "${URL_TRAVEL_PLANNER}/" \
   '{"event":"message_created","message":{"role":"user","content":"plan a romantic weekend in Barcelona"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "language-tutor webhook" \
   "${URL_LANGUAGE_TUTOR}/" \
   '{"event":"message_created","message":{"role":"user","content":"teach me how to order food in Italian"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "news-rag webhook" \
   "${URL_NEWS_RAG}/" \
   '{"event":"message_created","message":{"role":"user","content":"top world headlines now"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "sports-rag webhook" \
   "${URL_SPORTS_RAG}/" \
   '{"event":"message_created","message":{"role":"user","content":"important football results"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "travel-rag webhook" \
   "${URL_TRAVEL_RAG}/" \
   '{"event":"message_created","message":{"role":"user","content":"suggest a city break"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_check \
+http_post_signed_prompt_suggestions_check \
   "football-live webhook" \
   "${URL_FOOTBALL_LIVE}/" \
   '{"event":"message_created","message":{"role":"user","content":"who are top scorers"},"profile":{"display_name":"Mark"}}'
