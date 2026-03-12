@@ -124,6 +124,28 @@ def detect_intent(message: str) -> str:
     return "menu_browse"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    if intent == "menu_browse":
+        return [
+            "Show vegetarian options under $20",
+            "What are your top-rated dishes?",
+            "Filter to gluten-free items",
+        ]
+    if intent == "order_build":
+        return [
+            "Add a dessert to this order",
+            "Remove the drink and recalculate",
+            "Confirm this order now",
+        ]
+    if intent == "order_track":
+        return [
+            "Refresh my delivery status",
+            "Contact support about this order",
+            "Share courier ETA again",
+        ]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Simulated menu data
 # ---------------------------------------------------------------------------
@@ -489,6 +511,8 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
+        prompt_suggestions = prompt_suggestions_for_intent(intent)
+
         async def _event_stream() -> AsyncIterator[str]:
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
@@ -503,6 +527,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": cards,
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             })
             yield f"data: {done_payload}\n\n"
 
@@ -519,4 +544,5 @@ async def webhook(request: Request):
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent(intent)},
     })

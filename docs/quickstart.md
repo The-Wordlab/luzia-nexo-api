@@ -157,7 +157,7 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
 ```json
 {
   "schema_version": "2026-03-01",
-  "status": "success",
+  "status": "completed",
   "content_parts": [{ "type": "text", "text": "Here are today's top stories." }],
   "cards": [
     {
@@ -168,11 +168,19 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
       "metadata": { "url": "https://example.com/article" }
     }
   ],
+  "metadata": {
+    "prompt_suggestions": [
+      "Show me another angle",
+      "Summarize this in 3 bullets"
+    ]
+  },
   "actions": [
     { "id": "read_1", "label": "Read full article", "url": "https://example.com/article", "style": "secondary" }
   ]
 }
 ```
+
+`metadata.prompt_suggestions` is optional. When present, Nexo renders these as contextual clickable prompt chips in chat.
 
 ### Add RAG
 

@@ -121,6 +121,28 @@ def detect_intent(message: str) -> str:
     return "morning_briefing"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    if intent == "morning_briefing":
+        return [
+            "Summarize my top priorities",
+            "What should I tackle first today?",
+            "Help me plan a 2-hour focus block",
+        ]
+    if intent == "schedule_management":
+        return [
+            "Show my next meeting",
+            "Find a free 30-minute slot this afternoon",
+            "Add a reminder for tomorrow morning",
+        ]
+    if intent == "follow_up":
+        return [
+            "Show high-priority tasks first",
+            "Draft a follow-up message for this task",
+            "Snooze non-urgent items to tomorrow",
+        ]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Simulated data
 # ---------------------------------------------------------------------------
@@ -413,6 +435,8 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
+        prompt_suggestions = prompt_suggestions_for_intent(intent)
+
         async def _event_stream() -> AsyncIterator[str]:
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
@@ -427,6 +451,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": cards,
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             })
             yield f"data: {done_payload}\n\n"
 
@@ -443,4 +468,5 @@ async def webhook(request: Request):
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent(intent)},
     })

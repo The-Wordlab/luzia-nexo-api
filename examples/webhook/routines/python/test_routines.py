@@ -309,6 +309,16 @@ class TestWebhookMorningBriefing:
             resp = client.post("/", json=_webhook_payload("morning briefing"))
         assert len(resp.json().get("actions", [])) > 0
 
+    def test_has_prompt_suggestions_metadata(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="briefing"):
+            resp = client.post("/", json=_webhook_payload("morning briefing"))
+        suggestions = resp.json().get("metadata", {}).get("prompt_suggestions", [])
+        assert isinstance(suggestions, list)
+        assert len(suggestions) > 0
+
     def test_personalisation_display_name(self, monkeypatch):
         client = _make_client()
         m = _get_app()
@@ -538,6 +548,7 @@ class TestSSEStreaming:
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
+        assert isinstance(done.get("metadata", {}).get("prompt_suggestions", []), list)
 
     def test_json_fallback_when_no_accept(self, monkeypatch):
         client = _make_client()

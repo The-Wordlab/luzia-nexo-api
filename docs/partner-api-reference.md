@@ -90,14 +90,17 @@ Return HTTP `200`:
 ```json
 {
   "schema_version": "2026-03-01",
-  "status": "success",
+  "status": "completed",
   "content_parts": [{ "type": "text", "text": "Sure - I can help with that." }],
   "cards": [],
-  "actions": []
+  "actions": [],
+  "metadata": {
+    "prompt_suggestions": ["Show me options", "Track status"]
+  }
 }
 ```
 
-`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards).
+`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards). `metadata.prompt_suggestions` is optional and can provide contextual next-prompt chips.
 
 #### SSE streaming
 
@@ -108,7 +111,7 @@ data: {"type":"delta","text":"Sure - "}
 
 data: {"type":"delta","text":"I can help with that."}
 
-data: {"type":"done","schema_version":"2026-03-01","status":"success"}
+data: {"type":"done","schema_version":"2026-03-01","status":"completed","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
 ```
 
 The `done` event is required and must include `schema_version` and `status`.

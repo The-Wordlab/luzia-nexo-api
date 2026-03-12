@@ -510,6 +510,16 @@ class TestWebhookOrderBuild:
         for card in cards:
             assert card.get("metadata", {}).get("capability_state") == "simulated"
 
+    def test_has_prompt_suggestions_metadata(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="order"):
+            resp = client.post("/", json=_webhook_payload("i'd like to order"))
+        suggestions = resp.json().get("metadata", {}).get("prompt_suggestions", [])
+        assert isinstance(suggestions, list)
+        assert len(suggestions) > 0
+
 
 # ---------------------------------------------------------------------------
 # Webhook endpoint -- order track
@@ -697,6 +707,7 @@ class TestSSEStreaming:
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03-01"
+        assert isinstance(done.get("metadata", {}).get("prompt_suggestions", []), list)
 
     def test_sse_done_event_status_completed(self, monkeypatch):
         client = _make_client()

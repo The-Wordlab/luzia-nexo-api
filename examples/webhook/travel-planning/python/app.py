@@ -130,6 +130,28 @@ def detect_intent(message: str) -> str:
     return "trip_plan"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    if intent == "trip_plan":
+        return [
+            "Show a cheaper destination alternative",
+            "Build a day-by-day itinerary",
+            "Adjust this plan for a shorter trip",
+        ]
+    if intent == "budget_check":
+        return [
+            "Show full budget breakdown",
+            "How can I reduce hotel costs?",
+            "Update budget to EUR 1200",
+        ]
+    if intent == "disruption_replan":
+        return [
+            "Find the fastest rebooking option",
+            "What are my refund options?",
+            "Create a fallback itinerary",
+        ]
+    return []
+
+
 # ---------------------------------------------------------------------------
 # Simulated travel data
 # ---------------------------------------------------------------------------
@@ -535,6 +557,8 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
+        prompt_suggestions = prompt_suggestions_for_intent(intent)
+
         async def _event_stream() -> AsyncIterator[str]:
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
@@ -549,6 +573,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": cards,
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             })
             yield f"data: {done_payload}\n\n"
 
@@ -565,4 +590,5 @@ async def webhook(request: Request):
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent(intent)},
     })
