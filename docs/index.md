@@ -4,7 +4,7 @@ Connect your agent or API to Luzia characters through the Nexo Agent Runtime API
 
 The Nexo Agent Runtime provides reliable webhook delivery, consented profile context, and trusted boundaries your customers can understand.
 
-Launch faster with:
+Launch fast with:
 
 - Signed webhook delivery
 - Consented profile context
@@ -14,6 +14,22 @@ Launch faster with:
 - Starter coding examples that AI coding agents can adapt, test, and deploy
 
 Use the examples in this repository as deployment-ready integration templates.
+
+## 5-minute path
+
+If you only need the shortest path to a real integration:
+
+1. Implement one `POST /webhook` endpoint in your backend.
+2. Return valid JSON (or SSE) response envelope.
+3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
+4. Send a test message from the dashboard.
+
+Start here: [Quickstart](quickstart.md)
+
+### Required vs optional
+
+- Required for live webhook integration: `webhook_url` + `WEBHOOK_SECRET`
+- Optional for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
 
 ## What You Can Build
 
@@ -35,7 +51,7 @@ For the full catalog, see [Demo Catalog](demos.md).
 
 ## Start Here
 
-1. [Quickstart](quickstart.md) - get a webhook running.
+1. [Quickstart](quickstart.md) - get a webhook live in minutes.
 2. [Demo Catalog](demos.md) - browse all demos and live services.
 3. [Examples Deep Dive](examples-showcase.md) - inspect full RAG and response patterns.
 4. [API Reference](partner-api-reference.md) - integrate contract details.

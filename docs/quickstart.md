@@ -2,6 +2,14 @@
 
 Ship your first partner integration quickly, then scale to richer, production-ready experiences.
 
+## What you need (minimum)
+
+- A webhook endpoint in your backend: `POST /webhook`
+- One secret shared with Nexo: `WEBHOOK_SECRET`
+- Your app configured in Nexo with `webhook_url` and `WEBHOOK_SECRET`
+
+Everything else in this docs site is optional capability expansion.
+
 ## 1) Implement your webhook in your backend
 
 Your webhook should accept Nexo requests and return one of these:
@@ -87,14 +95,14 @@ app.post("/webhook", (req, res) => {
 });
 ```
 
-## 2) Configure Nexo
+## 2) Configure Nexo (live path)
 
 This step is only required when you want Nexo to call your webhook in live integration mode.
 For independent local testing, skip to step 4 and hit your local webhook directly with curl.
 
 1. Go to [nexo.luzia.com/partners](https://nexo.luzia.com/partners)
 2. Create or open your app
-3. Set your webhook URL and secret
+3. Set your webhook URL and `WEBHOOK_SECRET`
 4. Send a test message and verify logs on your backend
 
 ## 3) Validate request handling

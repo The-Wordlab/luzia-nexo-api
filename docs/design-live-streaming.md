@@ -1,5 +1,8 @@
 # Design: Live Streaming Intelligence
 
+> Advanced architecture note.
+> Start with [Quickstart](quickstart.md) if you are integrating your first webhook.
+
 ## Problem
 
 Today's RAG examples are **pull-based**: a user asks a question, we search ChromaDB, call an LLM, and return a response. The data is there (RSS feeds refresh every 15 min, football-data.org has live scores) but nothing happens until someone asks.

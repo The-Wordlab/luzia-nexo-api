@@ -9,6 +9,13 @@ Use this repository to:
 - send proactive Partner API requests
 - reference optional deployment examples (Docker, Cloud Run)
 
+## Fast path (minimum integration)
+
+1. Build one webhook endpoint (`POST /webhook`)
+2. Return valid JSON or SSE response envelope
+3. Configure `webhook_url` and `WEBHOOK_SECRET` in Nexo
+4. Send a test message from the dashboard
+
 Model/runtime policy for partner RAG examples:
 - Production on Cloud Run: Gemini on Vertex via ADC (no Gemini API key)
 - Development override: OpenAI by setting `OPENAI_API_KEY`, `LLM_MODEL`, and `EMBEDDING_MODEL`
@@ -19,8 +26,8 @@ Model/runtime policy for partner RAG examples:
 
 Do not conflate app auth with hosted example auth:
 
-- `WEBHOOK_SECRET`: shared with Nexo for webhook signature verification. Also used as the app-level secret (`X-App-Secret`) when Partner API calls are made from an app context.
-- `EXAMPLES_SHARED_API_SECRET`: optional hardening secret for hosted reference services in `examples/hosted` (python/typescript examples).
+- `WEBHOOK_SECRET`: required for live Nexo webhook signature verification. Also used as the app-level secret (`X-App-Secret`) when Partner API calls are made from an app context.
+- `EXAMPLES_SHARED_API_SECRET`: optional hardening for hosted reference services in `examples/hosted` only.
 
 If you are integrating a real partner app with Nexo Agent Runtime, use app credentials (`X-App-Id` + `X-App-Secret`) and webhook signing with `WEBHOOK_SECRET`, not `EXAMPLES_SHARED_API_SECRET`.
 

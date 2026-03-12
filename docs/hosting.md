@@ -4,6 +4,15 @@ You can host your webhook anywhere.
 
 If you want a fast starting point, clone this repository, run the examples, and then extend them for your own integration.
 
+## Required for first live integration
+
+For a real webhook integration with Nexo, you only need:
+
+1. A deployed webhook URL
+2. `WEBHOOK_SECRET` shared between your app and Nexo
+
+Everything else on this page is capability expansion for production scale.
+
 ## Quick path: clone and run examples
 
 ```bash
@@ -41,7 +50,7 @@ docker build -t nexo-examples-ts ./examples/hosted/typescript
 docker run --rm -p 8080:8080 nexo-examples-ts
 ```
 
-Optional hardening for hosted examples:
+Optional hardening for hosted examples only (not required for Nexo webhook integration):
 ```bash
 docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-py
 docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examples-ts
