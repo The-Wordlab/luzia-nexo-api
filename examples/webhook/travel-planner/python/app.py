@@ -85,6 +85,27 @@ def detect_intent(message: str) -> str:
     return best if counts[best] > 0 else "itinerary"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "itinerary": [
+            "Plan a 3-day itinerary in Lisbon",
+            "Build a weekend plan in Barcelona under EUR 500",
+            "What are the must-see spots in Tokyo?",
+        ],
+        "flight_compare": [
+            "Compare flights to Lisbon next month",
+            "Find the cheapest way to get to Rome this weekend",
+            "Set a price watch for flights to Paris",
+        ],
+        "booking_handoff": [
+            "Prepare booking handoff for my Barcelona trip",
+            "I am ready to book - what do you need from me?",
+            "Change hotel constraints and regenerate options",
+        ],
+    }
+    return suggestions.get(intent, suggestions["itinerary"])
+
+
 def _get_display_name(data: dict[str, Any]) -> str:
     profile = data.get("profile") or {}
     return str(profile.get("display_name") or profile.get("name") or "").strip()
@@ -251,6 +272,7 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" User name: {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
+    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
@@ -264,6 +286,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": [card],
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             }
             yield f"data: {json.dumps(done)}\n\n"
 
@@ -279,5 +302,6 @@ async def webhook(request: Request):
             "content_parts": [{"type": "text", "text": reply}],
             "cards": [card],
             "actions": actions,
+            "metadata": {"prompt_suggestions": prompt_suggestions},
         }
     )

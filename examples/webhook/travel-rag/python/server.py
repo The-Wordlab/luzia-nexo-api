@@ -202,6 +202,32 @@ def detect_intent(message: str) -> str:
     return best
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "destination": [
+            "Where should I go in Europe for 4 days?",
+            "Recommend a warm destination in October",
+            "What are the best places for first-time Japan travel?",
+        ],
+        "itinerary": [
+            "Plan a 3-day itinerary for Barcelona",
+            "Build a 5-day Tokyo plan with food and culture",
+            "What should I do in Paris over a weekend?",
+        ],
+        "budget": [
+            "What budget do I need for 1 week in Bali?",
+            "How can I do Lisbon on a budget?",
+            "Compare daily costs for Tokyo vs Barcelona",
+        ],
+        "weather": [
+            "Best time to visit Paris?",
+            "What is the weather like in Bali in July?",
+            "When should I visit Japan for mild weather?",
+        ],
+    }
+    return suggestions.get(intent, suggestions["destination"])
+
+
 # ---------------------------------------------------------------------------
 # ChromaDB retrieval
 # ---------------------------------------------------------------------------
@@ -518,6 +544,7 @@ def _build_destination_response(
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
     }
 
 
@@ -541,6 +568,7 @@ def _build_itinerary_response(query: str, destinations: list[dict[str, Any]]) ->
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("itinerary")},
     }
 
 
@@ -554,6 +582,7 @@ def _build_budget_response(query: str, destinations: list[dict[str, Any]]) -> di
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("budget")},
     }
 
 
@@ -567,6 +596,7 @@ def _build_weather_response(query: str, destinations: list[dict[str, Any]]) -> d
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("weather")},
     }
 
 
@@ -586,6 +616,7 @@ def _no_results_response() -> dict[str, Any]:
         ],
         "cards": [],
         "actions": [],
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
     }
 
 
@@ -727,6 +758,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 ],
                 "cards": [],
                 "actions": [],
+                "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("destination")},
             }
         )
 
@@ -786,6 +818,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 actions = build_destination_actions(destinations)
                 if not actions and articles:
                     actions = build_article_actions(articles)
+            prompt_suggestions = prompt_suggestions_for_intent(intent)
 
             prefix = f"Hey {display_name}! " if display_name else ""
             if prefix:
@@ -801,6 +834,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                     "status": "completed",
                     "cards": cards,
                     "actions": actions,
+                    "metadata": {"prompt_suggestions": prompt_suggestions},
                 }
             )
             yield f"data: {done_payload}\n\n"

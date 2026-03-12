@@ -288,6 +288,11 @@ export async function processWebhook(raw, headers = {}, opts = {}) {
         provider: "openclaw",
         agent_id: openclawAgentId,
         thread_id: threadId,
+        prompt_suggestions: [
+          "Help me plan my week",
+          "Draft an email to my team about project updates",
+          "Give me 3 practical options to improve my productivity",
+        ],
       },
     },
   };
@@ -323,7 +328,18 @@ function writeNexoDelta(res, text) {
 }
 
 function writeNexoDone(res) {
-  res.write(`data: ${JSON.stringify({ type: "done" })}\n\n`);
+  res.write(
+    `data: ${JSON.stringify({
+      type: "done",
+      metadata: {
+        prompt_suggestions: [
+          "Help me plan my week",
+          "Draft an email to my team about project updates",
+          "Give me 3 practical options to improve my productivity",
+        ],
+      },
+    })}\n\n`,
+  );
 }
 
 export async function streamWebhook(raw, headers = {}, res, opts = {}) {

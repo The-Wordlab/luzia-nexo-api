@@ -640,6 +640,27 @@ def build_read_actions(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
     ]
 
 
+def prompt_suggestions_for_query(query: str) -> list[str]:
+    q = (query or "").lower()
+    if any(k in q for k in ["ai", "tech", "startup", "openai", "gemini"]):
+        return [
+            "Summarize the latest AI and tech news",
+            "What changed this week in AI?",
+            "Give me the top 3 tech headlines with sources",
+        ]
+    if any(k in q for k in ["market", "economy", "inflation", "stock"]):
+        return [
+            "What are the key market headlines today?",
+            "Summarize the latest economy updates",
+            "What is driving sentiment in the markets this week?",
+        ]
+    return [
+        "What are the top headlines today?",
+        "Give me a quick global news briefing",
+        "What should I know in the news right now?",
+    ]
+
+
 def _empty_index_response() -> dict[str, Any]:
     return {
         "schema_version": "2026-03-01",
@@ -655,6 +676,13 @@ def _empty_index_response() -> dict[str, Any]:
         ],
         "cards": [],
         "actions": [],
+        "metadata": {
+            "prompt_suggestions": [
+                "What are the top headlines today?",
+                "Summarize the latest AI and tech news",
+                "Give me a quick global news briefing",
+            ]
+        },
     }
 
 
@@ -759,6 +787,7 @@ async def receive_webhook(request: Request):
             ],
             "cards": [],
             "actions": [],
+            "metadata": {"prompt_suggestions": prompt_suggestions_for_query("")},
         }
         if wants_stream:
             return _stream_envelope_response(envelope)
@@ -788,6 +817,7 @@ async def receive_webhook(request: Request):
         "content_parts": [{"type": "text", "text": answer}],
         "cards": build_source_cards(hits),
         "actions": build_read_actions(hits),
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_query(user_text)},
     }
     if wants_stream:
         return _stream_envelope_response(envelope)

@@ -203,6 +203,27 @@ def detect_intent(message: str) -> str:
     return "news"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "scores": [
+            "Who scored in today's matches?",
+            "Show me the latest Premier League results",
+            "Did Arsenal win their last game?",
+        ],
+        "standings": [
+            "Premier League standings",
+            "Who is top of La Liga right now?",
+            "Show the top 5 teams in Serie A",
+        ],
+        "news": [
+            "Latest football transfer news",
+            "Any injury updates this week?",
+            "Summarize the top football headlines today",
+        ],
+    }
+    return suggestions.get(intent, suggestions["scores"])
+
+
 # ---------------------------------------------------------------------------
 # ChromaDB retrieval
 # ---------------------------------------------------------------------------
@@ -528,6 +549,7 @@ def build_scores_response(query: str, matches: list[dict[str, Any]]) -> dict[str
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("scores")},
     }
 
 
@@ -552,6 +574,7 @@ def build_standings_response(query: str, standings_docs: list[dict[str, Any]]) -
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": [standings_card],
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("standings")},
     }
 
 
@@ -567,6 +590,7 @@ def build_news_response(query: str, articles: list[dict[str, Any]]) -> dict[str,
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("news")},
     }
 
 
@@ -587,6 +611,7 @@ def build_no_results_response() -> dict[str, Any]:
         ],
         "cards": [],
         "actions": [],
+        "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("news")},
     }
 
 
@@ -816,6 +841,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 ],
                 "cards": [],
                 "actions": [],
+                "metadata": {"prompt_suggestions": prompt_suggestions_for_intent("scores")},
             }
         )
 
@@ -877,6 +903,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 system_prompt = _news_prompt(articles)
                 cards = [c for a in articles[:3] if (c := build_article_card(a)) is not None]
                 actions = build_article_actions(articles)
+            prompt_suggestions = prompt_suggestions_for_intent(intent)
 
             # Prefix with personalisation token so client can prepend if desired
             prefix = f"Hey {display_name}! " if display_name else ""
@@ -894,6 +921,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                     "status": "completed",
                     "cards": cards,
                     "actions": actions,
+                    "metadata": {"prompt_suggestions": prompt_suggestions},
                 }
             )
             yield f"data: {done_payload}\n\n"

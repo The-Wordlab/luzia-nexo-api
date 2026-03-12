@@ -97,6 +97,27 @@ def detect_intent(message: str) -> str:
     return best if counts[best] > 0 else "workout_plan"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "workout_plan": [
+            "Design a 4-week beginner workout plan",
+            "Create a push/pull/legs split for me",
+            "Give me a low-impact routine for this week",
+        ],
+        "progress_check": [
+            "I ran 5km in 28 minutes - how am I improving?",
+            "Review my progress from the last 2 weeks",
+            "Set a realistic target for next month",
+        ],
+        "nutrition_guidance": [
+            "What should I eat before a morning workout?",
+            "Give me a post-workout meal idea under 600 calories",
+            "How much protein should I target daily?",
+        ],
+    }
+    return suggestions.get(intent, suggestions["workout_plan"])
+
+
 def _get_display_name(data: dict[str, Any]) -> str:
     profile = data.get("profile") or {}
     name = profile.get("display_name") or profile.get("name") or ""
@@ -291,6 +312,7 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" The user's name is {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
+    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
@@ -304,6 +326,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": cards,
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             }
             yield f"data: {json.dumps(done)}\n\n"
 
@@ -319,5 +342,6 @@ async def webhook(request: Request):
             "content_parts": [{"type": "text", "text": reply}],
             "cards": cards,
             "actions": actions,
+            "metadata": {"prompt_suggestions": prompt_suggestions},
         }
     )

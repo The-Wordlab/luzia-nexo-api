@@ -83,6 +83,27 @@ def detect_intent(message: str) -> str:
     return best if counts[best] > 0 else "phrase_help"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "phrase_help": [
+            "Teach me how to order food in Italian",
+            "How do I introduce myself in Portuguese?",
+            "Give me 3 polite Spanish phrases for travel",
+        ],
+        "quiz": [
+            "Give me a quick Spanish conversation quiz",
+            "Test me on beginner Italian phrases",
+            "Run a short Portuguese pronunciation check",
+        ],
+        "lesson_plan": [
+            "Create a 4-week beginner Spanish plan",
+            "Build me a weekly Italian study routine",
+            "What should I practice every day for Portuguese?",
+        ],
+    }
+    return suggestions.get(intent, suggestions["phrase_help"])
+
+
 def _get_display_name(data: dict[str, Any]) -> str:
     profile = data.get("profile") or {}
     return str(profile.get("display_name") or profile.get("name") or "").strip()
@@ -256,6 +277,7 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT + (f" User name: {display_name}." if display_name else "")
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
+    prompt_suggestions = prompt_suggestions_for_intent(intent)
     if wants_stream:
 
         async def _event_stream() -> AsyncIterator[str]:
@@ -269,6 +291,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": [card],
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             }
             yield f"data: {json.dumps(done)}\n\n"
 
@@ -284,5 +307,6 @@ async def webhook(request: Request):
             "content_parts": [{"type": "text", "text": reply}],
             "cards": [card],
             "actions": actions,
+            "metadata": {"prompt_suggestions": prompt_suggestions},
         }
     )

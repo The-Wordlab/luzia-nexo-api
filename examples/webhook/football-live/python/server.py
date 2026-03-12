@@ -159,6 +159,32 @@ def detect_intent(message: str) -> str:
     return "general"
 
 
+def prompt_suggestions_for_intent(intent: str) -> list[str]:
+    suggestions = {
+        "scores": [
+            "Live scores right now",
+            "Who won in today's Premier League matches?",
+            "Show me the latest results for Barcelona",
+        ],
+        "standings": [
+            "Premier League table",
+            "Who is top of La Liga right now?",
+            "Show Champions League qualification spots",
+        ],
+        "scorers": [
+            "La Liga top scorers this season",
+            "Who leads the Golden Boot race?",
+            "Top 5 scorers in the Premier League",
+        ],
+        "general": [
+            "Give me a football update for today",
+            "What should I watch this weekend?",
+            "Summarize the key football storylines this week",
+        ],
+    }
+    return suggestions.get(intent, suggestions["general"])
+
+
 # ---------------------------------------------------------------------------
 # ChromaDB search helpers
 # ---------------------------------------------------------------------------
@@ -503,6 +529,7 @@ async def webhook(request: Request):
         return JSONResponse({"error": "Empty message"}, status_code=400)
 
     intent = detect_intent(query)
+    prompt_suggestions = prompt_suggestions_for_intent(intent)
     display_name = _get_display_name(data)
 
     # Build context and cards based on intent
@@ -588,6 +615,7 @@ async def webhook(request: Request):
                 "status": "completed",
                 "cards": cards,
                 "actions": actions,
+                "metadata": {"prompt_suggestions": prompt_suggestions},
             })
             yield f"data: {done_payload}\n\n"
 
@@ -604,6 +632,7 @@ async def webhook(request: Request):
         "content_parts": [{"type": "text", "text": llm_reply}],
         "cards": cards,
         "actions": actions,
+        "metadata": {"prompt_suggestions": prompt_suggestions},
     })
 
 
