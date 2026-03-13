@@ -114,23 +114,26 @@ if VECTOR_STORE_BACKEND != "pgvector":
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-sports-rag",
-    "description": "Sports RAG webhook example for scores, standings, and sports news.",
+    "description": "Broad sports flagship webhook example for scores, standings, fixtures, and sports news.",
     "url": "/",
     "version": "1",
     "capabilities": {
         "items": [
             {
                 "name": CAPABILITY_NAME,
-                "description": "Answer sports questions with cards and source-backed context.",
+                "description": "Answer broad sports questions with cards, source-backed context, and live-event awareness.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
                     "intents": ["scores", "standings", "news"],
                     "prompt_suggestions": [
-                        "Premier League standings",
+                        "What are tonight's key fixtures across sports?",
                         "Who scored in today's matches?",
                         "Give me the latest Champions League update",
                     ],
+                    "showcase_family": "sports",
+                    "showcase_role": "primary",
+                    "deep_dives": ["football-live"],
                 },
             }
         ]
@@ -849,7 +852,7 @@ async def root() -> JSONResponse:
     return JSONResponse(
         {
             "service": "webhook-sports-rag-python",
-            "description": "Sports RAG webhook with intent routing, streaming, and live event detection.",
+            "description": "Broad sports flagship webhook with intent routing, streaming, live event detection, and a football deep-dive companion.",
             "routes": [
                 {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
                 {"path": "/health", "method": "GET", "description": "Collection counts and runtime state"},
@@ -859,6 +862,11 @@ async def root() -> JSONResponse:
                 {"path": "/admin/events", "method": "GET", "description": "Recent detected events"},
                 {"path": "/admin/detect", "method": "POST", "description": "Force one event detection cycle"},
             ],
+            "showcase": {
+                "family": "sports",
+                "role": "primary",
+                "deep_dives": ["football-live"],
+            },
             "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
             "schema_version": SCHEMA_VERSION,
         }

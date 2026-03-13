@@ -104,6 +104,7 @@ class TestRoot:
         client = _make_client()
         data = client.get("/").json()
         assert "schema_version" in data
+        assert data["showcase"]["role"] == "flagship"
 
     def test_health_200(self):
         client = _make_client()
@@ -137,6 +138,8 @@ class TestRoot:
         data = resp.json()
         assert data["name"] == "nexo-travel-planning"
         assert data["capabilities"]["items"][0]["name"] == "travel.planning"
+        assert data["capabilities"]["items"][0]["metadata"]["showcase_role"] == "flagship"
+        assert "travel-planner" in data["capabilities"]["items"][0]["metadata"]["supersedes"]
 
 
 # ---------------------------------------------------------------------------

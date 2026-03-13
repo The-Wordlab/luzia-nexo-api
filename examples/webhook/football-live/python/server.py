@@ -81,14 +81,14 @@ CAPABILITY_NAME = "football.live"
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-football-live",
-    "description": "Live football webhook example for scores, standings, and top scorers.",
+    "description": "Football deep-dive webhook example for live scores, standings, top scorers, and football-specific questions.",
     "url": "/",
     "version": "1",
     "capabilities": {
         "items": [
             {
                 "name": CAPABILITY_NAME,
-                "description": "Answer football questions with live context cards and actions.",
+                "description": "Answer football questions with live context cards, scorer data, and football-specific actions.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
@@ -98,6 +98,9 @@ AGENT_CARD: dict[str, Any] = {
                         "La Liga top scorers this season",
                         "Premier League table",
                     ],
+                    "showcase_family": "sports",
+                    "showcase_role": "secondary",
+                    "deep_dive_for": "sports-rag",
                 },
             }
         ]
@@ -577,7 +580,7 @@ async def root():
     """Service discovery endpoint for local/manual testing."""
     return {
         "service": "webhook-football-live-python",
-        "description": "Live football webhook with matches, standings, scorers, and optional SSE output.",
+        "description": "Football deep-dive webhook with live matches, standings, scorers, and optional SSE output.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
             {"path": "/health", "method": "GET", "description": "Collection counts and timestamp"},
@@ -586,6 +589,11 @@ async def root():
             {"path": "/ingest", "method": "POST", "description": "Run full ingest"},
             {"path": "/ingest/live", "method": "POST", "description": "Run live matches ingest"},
         ],
+        "showcase": {
+            "family": "sports",
+            "role": "secondary",
+            "deep_dive_for": "sports-rag",
+        },
         "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature) on webhook path",
         "schema_version": SCHEMA_VERSION,
     }

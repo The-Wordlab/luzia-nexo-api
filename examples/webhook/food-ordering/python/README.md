@@ -1,6 +1,6 @@
 # Food Ordering Webhook
 
-A standalone FastAPI webhook example for the Nexo Partner Agent API demonstrating a simulated food ordering experience.
+A standalone FastAPI webhook example for the Nexo Partner Agent API demonstrating a deeper food-commerce flow: restaurant discovery, dietary-aware menu filtering, basket building, checkout approval, delivery tracking, and reorder.
 
 ## Capabilities
 
@@ -19,6 +19,8 @@ This example now reads optional consent-scoped profile fields defensively:
 - `profile.display_name` for greeting
 - `profile.preferences.dietary` or `profile.dietary_restrictions` to bias menu browse results
 - `profile.preferences.budget` to bias draft order composition
+- `profile.preferences.cuisine` to bias the restaurant shortlist
+- `profile.city` / `profile.country` to provide a delivery-area hint
 
 If those attributes are absent, the webhook falls back to generic behavior.
 Responses also include `metadata.personalization` describing which profile
@@ -83,6 +85,11 @@ pytest -v
   "artifacts": [],
   "cards": [
     {
+      "type": "restaurant_shortlist",
+      "title": "Nearby Delivery Options",
+      "fields": [...]
+    },
+    {
       "type": "menu",
       "title": "Today's Menu",
       "fields": [...],
@@ -97,6 +104,7 @@ pytest -v
 
 ## Card types
 
+- **`restaurant_shortlist`** - Nearby or preference-aware delivery partner shortlist
 - **`menu`** - Browsable list of items with price and dietary labels
-- **`order_summary`** - Items in cart, total, and notes
+- **`order_summary`** - Items in cart, total, notes, and checkout package
 - **`order_status`** - Simulated delivery tracking (preparing / on-the-way / delivered)

@@ -137,7 +137,7 @@
     {
       "demo_key": "travel-planner",
       "name": "Travel Planner",
-      "description": "Webhook travel planner - itinerary creation, flight options, and booking handoff",
+      "description": "Secondary compatibility travel demo - flight comparison and booking handoff. Travel Planning is the flagship trip lifecycle example.",
       "config_json": {
         "demo_key": "travel-planner",
         "integration_mode": "webhook",
@@ -146,10 +146,13 @@
         "demo_color": "#3B82F6",
         "demo_order": 4,
         "prompt_suggestions": [
-          "Plan a romantic weekend in Barcelona for under $500",
-          "I have 3 days in Tokyo - what's the must-see itinerary?",
-          "Compare flights to Lisbon next month"
-        ]
+          "Compare flights to Lisbon next month",
+          "Prepare booking handoff for my Barcelona trip",
+          "I am ready to book - what details do you need from me?"
+        ],
+        "showcase_family": "travel",
+        "showcase_role": "secondary",
+        "superseded_by": "travel-planning"
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNER_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planner-367427598362.europe-west1.run.app",
@@ -225,7 +228,7 @@
     {
       "demo_key": "sports-rag",
       "name": "Sports RAG",
-      "description": "RAG-powered sports assistant - match results, standings, and sports news with structured cards",
+      "description": "Broad sports flagship - match results, standings, fixtures, and sports news with structured cards",
       "config_json": {
         "demo_key": "sports-rag",
         "integration_mode": "webhook",
@@ -237,10 +240,13 @@
         "demo_color": "#F97316",
         "demo_order": 7,
         "prompt_suggestions": [
-          "Premier League standings",
+          "What are tonight's key fixtures across sports?",
           "Who scored in today's matches?",
           "What are tonight's key fixtures?"
-        ]
+        ],
+        "showcase_family": "sports",
+        "showcase_role": "primary",
+        "deep_dives": ["football-live"]
       },
       "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8091",
@@ -329,7 +335,7 @@
     {
       "demo_key": "football-live",
       "name": "Football Live",
-      "description": "Live football assistant - scores, standings, and top scorers with structured cards",
+      "description": "Football deep-dive - live scores, standings, and top scorers with structured cards",
       "config_json": {
         "demo_key": "football-live",
         "integration_mode": "webhook",
@@ -344,7 +350,10 @@
           "Live scores right now",
           "La Liga top scorers this season",
           "Show me this week's Premier League fixtures"
-        ]
+        ],
+        "showcase_family": "sports",
+        "showcase_role": "secondary",
+        "deep_dive_for": "sports-rag"
       },
       "webhook_url_env": "DEMO_FOOTBALL_LIVE_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8093",
@@ -377,7 +386,7 @@
     {
       "demo_key": "food-ordering",
       "name": "Food Ordering",
-      "description": "Simulated food ordering assistant - browse menu, build an order with dietary and budget constraints, track delivery status",
+      "description": "Food commerce flagship - discover restaurants, build a basket with dietary and budget constraints, prepare checkout, and track delivery",
       "config_json": {
         "demo_key": "food-ordering",
         "integration_mode": "webhook",
@@ -389,10 +398,12 @@
         "demo_color": "#F97316",
         "demo_order": 13,
         "prompt_suggestions": [
-          "I'm hungry - show me what's nearby for delivery",
-          "Order a margherita pizza to my place",
-          "Where's my delivery right now?"
-        ]
+          "I'm hungry - show me nearby vegetarian delivery for tonight",
+          "Build me a dinner order under EUR 25 and prepare checkout",
+          "Track my delivery and suggest a quick reorder"
+        ],
+        "showcase_family": "food",
+        "showcase_role": "flagship"
       },
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-food-ordering-v3me5awkta-ew.a.run.app",
@@ -401,7 +412,7 @@
     {
       "demo_key": "travel-planning",
       "name": "Travel Planning",
-      "description": "Multi-step travel planning orchestration - trip itinerary with budget breakdown, expense tracking, and flight disruption replanning",
+      "description": "Travel flagship - itinerary planning, flight comparison, booking handoff, budget tracking, and disruption replanning",
       "config_json": {
         "demo_key": "travel-planning",
         "integration_mode": "webhook",
@@ -414,9 +425,14 @@
         "demo_order": 14,
         "prompt_suggestions": [
           "Plan a budget trip to Japan for 10 days",
+          "Compare flights to Lisbon next month",
+          "Prepare booking handoff for my Barcelona trip",
           "My flight got cancelled - help me rebook",
           "What's my trip budget looking like?"
-        ]
+        ],
+        "showcase_family": "travel",
+        "showcase_role": "flagship",
+        "supersedes": ["travel-planner"]
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",

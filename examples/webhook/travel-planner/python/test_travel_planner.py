@@ -114,13 +114,17 @@ def test_root_returns_capabilities():
     assert "itinerary" in intent_names
     assert "flight_compare" in intent_names
     assert "booking_handoff" in intent_names
+    assert data["showcase"]["superseded_by"] == "travel-planning"
 
 
 def test_agent_card_endpoint():
     c = TestClient(travel_app.app, raise_server_exceptions=False)
     resp = c.get("/.well-known/agent.json")
     assert resp.status_code == 200
-    assert resp.json()["capabilities"]["items"][0]["name"] == "travel.planner"
+    data = resp.json()
+    assert data["capabilities"]["items"][0]["name"] == "travel.planner"
+    assert data["capabilities"]["items"][0]["metadata"]["showcase_role"] == "secondary"
+    assert data["capabilities"]["items"][0]["metadata"]["superseded_by"] == "travel-planning"
 
 
 def test_intent_mapping():

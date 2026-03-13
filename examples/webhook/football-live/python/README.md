@@ -1,6 +1,6 @@
 # Football Live — Real-Time RAG Webhook
 
-A production-quality webhook example for the Nexo Partner Agent API. Fetches live scores, standings, and top scorers from **football-data.org** for 3 leagues, stores them in pgvector for vector search, and answers user questions via RAG + LLM.
+A production-quality football deep-dive webhook example for the Nexo Partner Agent API. Fetches live scores, standings, and top scorers from **football-data.org** for 3 leagues, stores them in pgvector for vector search, and answers user questions via RAG + LLM.
 
 ## Leagues
 

@@ -64,14 +64,14 @@ CAPABILITY_NAME = "travel.planning"
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-travel-planning",
-    "description": "Travel planning webhook example for trip planning, budget checks, and disruption handling.",
+    "description": "Travel flagship webhook example for itinerary planning, flight comparison, booking handoff, budget checks, and disruption handling.",
     "url": "/",
     "version": "1",
     "capabilities": {
         "items": [
             {
                 "name": CAPABILITY_NAME,
-                "description": "Guide users through plan creation, spend management, and disruption replan flows.",
+                "description": "Guide users through full-trip planning, flight comparison, booking handoff, spend management, and disruption replan flows.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
@@ -89,6 +89,9 @@ AGENT_CARD: dict[str, Any] = {
                         "My flight got cancelled - help me rebook",
                         "What's my trip budget looking like?",
                     ],
+                    "showcase_family": "travel",
+                    "showcase_role": "flagship",
+                    "supersedes": ["travel-planner"],
                 },
             }
         ]
@@ -657,7 +660,7 @@ async def root():
     """Service discovery endpoint."""
     return {
         "service": "webhook-travel-planning-python",
-        "description": "Travel Planning webhook -- trip planning, budget tracking, disruption replanning.",
+        "description": "Travel flagship webhook -- itinerary planning, flight comparison, booking handoff, budget tracking, and disruption replanning.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
             {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
@@ -671,6 +674,11 @@ async def root():
             {"intent": "budget_check", "state": "simulated"},
             {"intent": "disruption_replan", "state": "simulated"},
         ],
+        "showcase": {
+            "family": "travel",
+            "role": "flagship",
+            "replaces": ["travel-planner"],
+        },
         "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
         "schema_version": SCHEMA_VERSION,
     }

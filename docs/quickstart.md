@@ -202,15 +202,15 @@ If your integration has a knowledge base (news, product catalogue, documentation
 - [News Feed RAG](examples-showcase.md#news-feed-rag) — RSS + vector retrieval + LLM + source cards
 - [Sports Feed RAG](examples-showcase.md#sports-feed-rag) — Live match data + intent detection + streaming
 - [Travel RAG](examples-showcase.md#travel-rag) — Destination guides + itinerary advice
-- [Football Live RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python) — Live scores, standings, and top scorers
+- [Football Live RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python) — Football deep dive for live scores, standings, and top scorers
 
 ### Add end-to-end vertical orchestration
 
 If your partner flow involves multi-step outcomes (not just Q&A), start from the flagship vertical examples:
 
 - [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) — Morning briefings, schedule actions, follow-up reminders
-- [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) — Menu search, order composition, checkout
-- [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) — Itinerary planning, budget guidance, disruption replanning
+- [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) — Discovery, basket building, checkout approval, delivery tracking
+- [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) — Itinerary planning, flight comparison, booking handoff, budget guidance, disruption replanning
 
 ### Add live event push
 

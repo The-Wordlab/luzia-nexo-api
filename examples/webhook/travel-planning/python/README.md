@@ -1,8 +1,8 @@
 # Travel Planning Webhook
 
-Multi-step travel planning orchestration demo for the Nexo Partner Agent API.
+Multi-step travel flagship orchestration demo for the Nexo Partner Agent API.
 
-Demonstrates 3 intents with simulated data - no real travel API required.
+Demonstrates the full travel lifecycle with simulated data - no real travel API required.
 
 ## Optional profile context
 
@@ -23,6 +23,8 @@ which profile context was applied.
 | Intent | Trigger keywords | Returns |
 |---|---|---|
 | `trip_plan` | plan, trip, travel, destination, itinerary | Destination card with itinerary + budget breakdown |
+| `flight_compare` | compare flights, price watch, direct flight | Flight shortlist card |
+| `booking_handoff` | book now, ready to book, handoff | Connector-ready booking package |
 | `budget_check` | budget, cost, spent, expense, how much | Expense tracking card with spent vs budget |
 | `disruption_replan` | delay, cancelled, rebook, reroute, refund | Disruption alert card + alternative options |
 
@@ -83,6 +85,8 @@ curl -X POST http://localhost:8096/ \
 ## Card types returned
 
 - `trip_plan` - Destination + itinerary + estimated budget breakdown
+- `flight_compare` - Flight shortlist tuned to the requested or saved budget tier
+- `booking_handoff` - Connector-ready travel package with next-step approvals
 - `budget_check` - Expense tracking card with spent vs budget, saving tips
 - `disruption_alert` - Flight disruption alert with alternative options and approval actions
 

@@ -45,23 +45,26 @@ CAPABILITY_NAME = "travel.planner"
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-travel-planner",
-    "description": "Travel planner webhook example for itinerary, flights, and booking handoff.",
+    "description": "Compatibility travel webhook focused on flight comparison and booking handoff. Use Travel Planning for the full flagship trip flow.",
     "url": "/",
     "version": "1",
     "capabilities": {
         "items": [
             {
                 "name": CAPABILITY_NAME,
-                "description": "Guide users through itinerary generation, flight comparison, and booking handoff preparation.",
+                "description": "Guide users through itinerary generation, flight comparison, and booking handoff preparation. This example is a narrower compatibility slice of the flagship Travel Planning flow.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
                     "intents": ["itinerary", "flight_compare", "booking_handoff"],
                     "prompt_suggestions": [
-                        "Plan a romantic weekend in Barcelona for under $500",
-                        "I have 3 days in Tokyo - what's the must-see itinerary?",
                         "Compare flights to Lisbon next month",
+                        "Prepare booking handoff for my Barcelona trip",
+                        "I am ready to book - what details do you need from me?",
                     ],
+                    "showcase_family": "travel",
+                    "showcase_role": "secondary",
+                    "superseded_by": "travel-planning",
                 },
             }
         ]
@@ -300,7 +303,7 @@ async def agent_card():
 async def root():
     return {
         "service": "webhook-travel-planner-python",
-        "description": "Travel planner webhook - itinerary, flight comparison, booking handoff.",
+        "description": "Travel compatibility webhook - itinerary, flight comparison, and booking handoff. Travel Planning is the flagship travel demo.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
             {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
@@ -311,6 +314,11 @@ async def root():
             {"intent": "flight_compare", "state": "live"},
             {"intent": "booking_handoff", "state": "requires_connector"},
         ],
+        "showcase": {
+            "family": "travel",
+            "role": "secondary",
+            "superseded_by": "travel-planning",
+        },
         "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
         "schema_version": SCHEMA_VERSION,
     }

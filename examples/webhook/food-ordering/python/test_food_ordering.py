@@ -126,6 +126,7 @@ class TestRoot:
         data = resp.json()
         assert data["name"] == "nexo-food-ordering"
         assert data["capabilities"]["items"][0]["name"] == "food.ordering"
+        assert data["capabilities"]["items"][0]["metadata"]["showcase_role"] == "flagship"
 
 
 # ---------------------------------------------------------------------------
@@ -186,6 +187,10 @@ class TestDetectIntent:
         m = _get_app()
         # "track my order" has both track and order keywords - track wins
         assert m.detect_intent("track my order status") == "order_track"
+
+    def test_discovery_prompt_with_delivery_stays_menu_browse(self):
+        m = _get_app()
+        assert m.detect_intent("show me nearby vegetarian delivery for tonight") == "menu_browse"
 
 
 # ---------------------------------------------------------------------------
@@ -272,6 +277,19 @@ class TestMenuCard:
         m = _get_app()
         card = m.build_menu_card(filter_dietary="vegan")
         assert "vegan" in card["subtitle"].lower()
+
+
+class TestRestaurantShortlistCard:
+    def test_type_is_restaurant_shortlist(self):
+        m = _get_app()
+        card = m.build_restaurant_shortlist_card()
+        assert card["type"] == "restaurant_shortlist"
+
+    def test_location_and_filter_appear_in_subtitle(self):
+        m = _get_app()
+        card = m.build_restaurant_shortlist_card(location_hint="Madrid", dietary_filter="vegetarian")
+        assert "Madrid" in card["subtitle"]
+        assert "vegetarian" in card["subtitle"].lower()
 
 
 class TestOrderSummaryCard:
@@ -416,6 +434,7 @@ class TestWebhookMenuBrowse:
             resp = client.post("/", json=_webhook_payload("show me the menu"))
         cards = resp.json().get("cards", [])
         assert any(c["type"] == "menu" for c in cards)
+        assert any(c["type"] == "restaurant_shortlist" for c in cards)
 
     def test_has_actions(self, monkeypatch):
         client = _make_client()
@@ -463,6 +482,27 @@ class TestWebhookMenuBrowse:
         menu_card = next(c for c in resp.json()["cards"] if c["type"] == "menu")
         assert "vegetarian" in menu_card["subtitle"].lower()
         assert resp.json()["metadata"]["personalization"]["used"]["preferences.dietary"] == "vegetarian"
+
+    def test_uses_cuisine_and_location_context_for_shortlist(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here are your best matches."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "show me dinner options",
+                    profile={
+                        "city": "Madrid",
+                        "preferences": {"cuisine": "italian"},
+                    },
+                ),
+            )
+        shortlist = next(c for c in resp.json()["cards"] if c["type"] == "restaurant_shortlist")
+        assert "Madrid" in shortlist["subtitle"]
+        used = resp.json()["metadata"]["personalization"]["used"]
+        assert used["preferences.cuisine"] == "italian"
+        assert used["location_hint"] == "Madrid"
 
     def test_no_name_no_prefix(self, monkeypatch):
         client = _make_client()
@@ -513,8 +553,17 @@ class TestWebhookOrderBuild:
             resp = client.post("/", json=_webhook_payload("place my order"))
         actions = resp.json().get("actions", [])
         labels = [a.get("label", "").lower() for a in actions]
-        assert any("confirm" in l for l in labels)
+        assert any("approve" in l for l in labels)
         assert any("modify" in l for l in labels)
+
+    def test_checkout_artifact_requires_approval(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="order"):
+            resp = client.post("/", json=_webhook_payload("place my order"))
+        artifact = next(a for a in resp.json()["artifacts"] if a["name"] == "checkout_package")
+        assert artifact["data"]["approval_required"] is True
 
     def test_order_summary_has_total(self, monkeypatch):
         client = _make_client()

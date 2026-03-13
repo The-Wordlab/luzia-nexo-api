@@ -58,23 +58,25 @@ CAPABILITY_NAME = "food.ordering"
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-food-ordering",
-    "description": "Food ordering webhook example for menu browse, order build, and delivery tracking.",
+    "description": "Food commerce webhook example for discovery, basket building, checkout approval, delivery tracking, and reorder.",
     "url": "/",
     "version": "1",
     "capabilities": {
         "items": [
             {
                 "name": CAPABILITY_NAME,
-                "description": "Assist users through menu discovery, order construction, and status tracking.",
+                "description": "Assist users through restaurant discovery, menu filtering, order construction, checkout approval, and status tracking.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
                     "intents": ["menu_browse", "order_build", "order_track"],
                     "prompt_suggestions": [
-                        "I'm hungry - show me what's nearby for delivery",
-                        "Order a margherita pizza to my place",
-                        "Where's my delivery right now?",
+                        "I'm hungry - show me nearby vegetarian delivery for tonight",
+                        "Build me a dinner order under EUR 25 and prepare checkout",
+                        "Track my delivery and suggest a quick reorder",
                     ],
+                    "showcase_family": "food",
+                    "showcase_role": "flagship",
                 },
             }
         ]
@@ -115,7 +117,7 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
     "menu_browse": [
         "menu", "what's available", "what do you have", "show me",
         "vegan", "vegetarian", "gluten-free", "options", "food",
-        "dishes", "eat", "hungry", "browse",
+        "dishes", "eat", "hungry", "browse", "nearby", "restaurants", "delivery for tonight",
     ],
     "order_build": [
         "order", "add", "i want", "i'd like", "get me", "buy",
@@ -136,6 +138,13 @@ def detect_intent(message: str) -> str:
     Priority: order_track > order_build > menu_browse > menu_browse (default).
     """
     text = message.lower()
+
+    # Discovery-style prompts often mention delivery generically. Treat them as
+    # browse unless the user is clearly asking about an existing order's status.
+    if any(token in text for token in ["show me", "what's available", "hungry", "nearby", "restaurant"]):
+        if not any(token in text for token in ["track", "status", "where is", "eta", "on the way", "my order", "preparing"]):
+            return "menu_browse"
+
     counts: dict[str, int] = {}
     for intent, keywords in INTENT_KEYWORDS.items():
         counts[intent] = sum(1 for kw in keywords if kw in text)
@@ -259,6 +268,30 @@ _MENU_ITEMS: list[dict[str, Any]] = [
     },
 ]
 
+_RESTAURANTS: list[dict[str, Any]] = [
+    {
+        "name": "Luzia Kitchen",
+        "cuisine": "mediterranean",
+        "eta": "20-25 min",
+        "delivery_fee": "EUR 1.99",
+        "tags": ["vegetarian-friendly", "family bundles"],
+    },
+    {
+        "name": "Green Fork",
+        "cuisine": "healthy",
+        "eta": "15-20 min",
+        "delivery_fee": "Free",
+        "tags": ["vegan", "gluten-free"],
+    },
+    {
+        "name": "Pizza Porto",
+        "cuisine": "italian",
+        "eta": "25-30 min",
+        "delivery_fee": "EUR 2.49",
+        "tags": ["comfort food", "group order"],
+    },
+]
+
 _ORDER_STATUSES = [
     {"status": "preparing", "label": "Preparing your order", "eta_minutes": 20},
     {"status": "on-the-way", "label": "On the way!", "eta_minutes": 10},
@@ -293,7 +326,46 @@ def build_menu_card(filter_dietary: str | None = None) -> dict[str, Any]:
         "type": "menu",
         "title": "Today's Menu",
         "subtitle": subtitle,
-        "badges": ["Food Ordering", "Simulated"],
+        "badges": ["Food Ordering", "Commerce Demo"],
+        "fields": fields,
+        "metadata": {"capability_state": "simulated"},
+    }
+
+
+def build_restaurant_shortlist_card(
+    *,
+    cuisine: str | None = None,
+    location_hint: str | None = None,
+    dietary_filter: str | None = None,
+) -> dict[str, Any]:
+    restaurants = _RESTAURANTS
+    if cuisine:
+        cuisine_l = cuisine.lower()
+        matched = [r for r in restaurants if cuisine_l in r["cuisine"] or any(cuisine_l in tag for tag in r["tags"])]
+        if matched:
+            restaurants = matched
+    fields: list[dict[str, str]] = []
+    for restaurant in restaurants[:3]:
+        tags = ", ".join(restaurant["tags"])
+        fields.append(
+            {
+                "label": f"{restaurant['name']} - {restaurant['eta']}",
+                "value": f"{restaurant['cuisine'].title()} • {restaurant['delivery_fee']} • {tags}",
+            }
+        )
+
+    subtitle_bits = []
+    if location_hint:
+        subtitle_bits.append(f"Near {location_hint}")
+    if dietary_filter:
+        subtitle_bits.append(f"Filtered for {dietary_filter}")
+    subtitle = " • ".join(subtitle_bits) if subtitle_bits else "Recommended delivery partners"
+
+    return {
+        "type": "restaurant_shortlist",
+        "title": "Nearby Delivery Options",
+        "subtitle": subtitle,
+        "badges": ["Food Ordering", "Commerce Demo"],
         "fields": fields,
         "metadata": {"capability_state": "simulated"},
     }
@@ -319,7 +391,7 @@ def build_order_summary_card(
         "type": "order_summary",
         "title": "Your Order",
         "subtitle": "Review and confirm before placing",
-        "badges": ["Food Ordering", "Simulated"],
+        "badges": ["Food Ordering", "Commerce Demo"],
         "fields": fields,
         "metadata": {"capability_state": "simulated"},
     }
@@ -345,7 +417,7 @@ def build_order_status_card(status_index: int = 0) -> dict[str, Any]:
         "type": "order_status",
         "title": "Order Tracking",
         "subtitle": status["label"],
-        "badges": ["Food Ordering", "Simulated"],
+        "badges": ["Food Ordering", "Commerce Demo"],
         "fields": fields,
         "metadata": {"capability_state": "simulated"},
     }
@@ -394,6 +466,23 @@ def _extract_profile_budget(data: dict[str, Any]) -> str | None:
     return str(budget).strip().lower()
 
 
+def _extract_profile_cuisine(data: dict[str, Any]) -> str | None:
+    preferences = _get_preferences(data)
+    value = preferences.get("favorite_cuisine") or preferences.get("cuisine")
+    if not value:
+        return None
+    return str(value).strip().lower()
+
+
+def _extract_location_hint(data: dict[str, Any]) -> str | None:
+    profile = _get_profile(data)
+    for key in ("city", "region", "country"):
+        value = profile.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def _get_locale(data: dict[str, Any]) -> str:
     profile = _get_profile(data)
     locale = (
@@ -437,19 +526,31 @@ def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
     used: dict[str, Any] = {}
     dietary = _extract_profile_dietary(data)
     budget = _extract_profile_budget(data)
+    cuisine = _extract_profile_cuisine(data)
     locale = _get_locale(data)
+    location_hint = _extract_location_hint(data)
     if dietary:
         used["preferences.dietary"] = dietary
     if budget:
         used["preferences.budget"] = budget
+    if cuisine:
+        used["preferences.cuisine"] = cuisine
     if locale:
         used["locale"] = locale
+    if location_hint:
+        used["location_hint"] = location_hint
     return {
         "mode": "profile" if used else "generic",
         "used": used,
         "missing_optional": [
             key
-            for key in ["preferences.dietary", "preferences.budget", "locale"]
+            for key in [
+                "preferences.dietary",
+                "preferences.budget",
+                "preferences.cuisine",
+                "locale",
+                "location_hint",
+            ]
             if key not in used
         ],
     }
@@ -492,7 +593,7 @@ def _build_demo_order_items(budget_preference: str | None = None) -> tuple[list[
 # LLM helpers
 # ---------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """You are a helpful food ordering assistant for a simulated restaurant. Help users browse the menu, build their order, and track delivery. Be concise, friendly, and clear. Mention dietary options when relevant. Keep responses brief - the structured cards show the full details."""
+SYSTEM_PROMPT = """You are a helpful food ordering assistant for a simulated commerce flow. Help users discover restaurants, browse the menu, build their order, prepare checkout approval, and track delivery. Be concise, friendly, and clear. Mention dietary options when relevant. Keep responses brief - the structured cards show the full details."""
 
 
 async def call_llm(system_prompt: str, user_message: str) -> str:
@@ -555,6 +656,7 @@ async def root():
     return {
         "service": "webhook-food-ordering-python",
         "description": "Food Ordering webhook -- menu browsing, order building, order tracking.",
+        "description": "Food commerce webhook -- restaurant discovery, basket building, checkout approval, delivery tracking, and reorder.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
             {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
@@ -614,23 +716,44 @@ async def webhook(request: Request):
 
     if intent == "menu_browse":
         dietary_filter = _extract_dietary_filter(query) or _extract_profile_dietary(data)
+        cuisine = _extract_profile_cuisine(data)
+        location_hint = _extract_location_hint(data)
+        cards.append(
+            build_restaurant_shortlist_card(
+                cuisine=cuisine,
+                location_hint=location_hint,
+                dietary_filter=dietary_filter,
+            )
+        )
         cards.append(build_menu_card(dietary_filter))
         visible_items = [
             i for i in _MENU_ITEMS
             if not dietary_filter or dietary_filter.lower() in [d.lower() for d in i["dietary"]]
         ]
-        context_block = "Available menu items:\n" + "\n".join(
+        context_block = "Available restaurants:\n" + "\n".join(
+            f"  - {restaurant['name']} ({restaurant['cuisine']}, {restaurant['eta']}, {restaurant['delivery_fee']})"
+            for restaurant in _RESTAURANTS[:3]
+        )
+        context_block += "\n\nAvailable menu items:\n" + "\n".join(
             f"  - {item['name']} (${item['price']:.2f}) [{', '.join(item['dietary'])}]: {item['description']}"
             for item in visible_items
         )
         if dietary_filter and "preferences.dietary" in personalization["used"]:
             context_block += f"\nSaved dietary preference: {dietary_filter}"
+        if cuisine and "preferences.cuisine" in personalization["used"]:
+            context_block += f"\nPreferred cuisine: {cuisine}"
+        if location_hint and "location_hint" in personalization["used"]:
+            context_block += f"\nDelivery area hint: {location_hint}"
         actions = [
             {"id": "build_order", "type": "primary", "label": "Build My Order", "action": "build_order"},
+            {"id": "open_restaurant", "type": "secondary", "label": "Open Restaurant", "action": "open_restaurant"},
             {"id": "filter_vegan", "type": "secondary", "label": "Vegan Options", "action": "filter_vegan"},
             {"id": "filter_gluten_free", "type": "secondary", "label": "Gluten-Free Options", "action": "filter_gluten_free"},
         ]
-        artifacts = [{"type": "application/json", "name": "menu_items", "data": visible_items[:10]}]
+        artifacts = [
+            {"type": "application/json", "name": "restaurant_shortlist", "data": _RESTAURANTS[:3]},
+            {"type": "application/json", "name": "menu_items", "data": visible_items[:10]},
+        ]
 
     elif intent == "order_build":
         budget_preference = _extract_profile_budget(data)
@@ -650,10 +773,22 @@ async def webhook(request: Request):
         if budget_note:
             context_block += f"\n  Personalization: {budget_note}"
         actions = [
-            {"id": "confirm_order", "type": "primary", "label": "Confirm Order", "action": "confirm_order"},
+            {"id": "approve_checkout", "type": "primary", "label": "Approve Checkout", "action": "approve_checkout"},
             {"id": "modify_order", "type": "secondary", "label": "Modify Order", "action": "modify_order"},
+            {"id": "save_favorite", "type": "secondary", "label": "Save As Favorite", "action": "save_favorite"},
         ]
-        artifacts = [{"type": "application/json", "name": "order_draft", "data": {"items": order_items, "total": total, "notes": budget_note}}]
+        artifacts = [
+            {
+                "type": "application/json",
+                "name": "checkout_package",
+                "data": {
+                    "items": order_items,
+                    "total": total,
+                    "notes": budget_note,
+                    "approval_required": True,
+                },
+            }
+        ]
 
     elif intent == "order_track":
         # Cycle through statuses for demo - always start at "preparing"
@@ -666,9 +801,20 @@ async def webhook(request: Request):
         )
         actions = [
             {"id": "refresh_status", "type": "primary", "label": "Refresh Status", "action": "refresh_status"},
+            {"id": "reorder_favorites", "type": "secondary", "label": "Reorder Favorites", "action": "reorder_favorites"},
             {"id": "contact_support", "type": "secondary", "label": "Contact Support", "action": "contact_support"},
         ]
-        artifacts = [{"type": "application/json", "name": "order_status", "data": _ORDER_STATUSES[0]}]
+        artifacts = [
+            {"type": "application/json", "name": "order_status", "data": _ORDER_STATUSES[0]},
+            {
+                "type": "application/json",
+                "name": "reorder_suggestions",
+                "data": [
+                    {"name": "Margherita Pizza", "price": 12.99},
+                    {"name": "Red Lentil Soup", "price": 8.50},
+                ],
+            },
+        ]
 
     # Build LLM prompt
     if context_block:
