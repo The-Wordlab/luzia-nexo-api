@@ -557,7 +557,7 @@ class TestWebhookScores:
             with patch.object(server, "call_llm", return_value="ok"):
                 resp = client.post("/", json={"message": {"content": "score"}})
         data = resp.json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["task"]["status"] == "completed"
         assert data["capability"]["name"] == "football.live"
         assert isinstance(data["artifacts"], list)
@@ -751,7 +751,7 @@ class TestSSEStreaming:
         done = done_events[-1]
         assert "cards" in done
         assert "actions" in done
-        assert done["schema_version"] == "2026-03-01"
+        assert done["schema_version"] == "2026-03"
         assert done["capability"]["name"] == "football.live"
         assert isinstance(done["artifacts"], list)
 

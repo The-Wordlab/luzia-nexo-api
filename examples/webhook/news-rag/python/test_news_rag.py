@@ -50,7 +50,7 @@ def _text_parts(data: dict) -> str:
 
 def _assert_envelope(data: dict) -> None:
     """Assert the canonical Nexo response envelope shape."""
-    assert data["schema_version"] == "2026-03-01"
+    assert data["schema_version"] == "2026-03"
     assert data["status"] == "completed"
     assert isinstance(data.get("content_parts"), list)
     assert len(data["content_parts"]) > 0

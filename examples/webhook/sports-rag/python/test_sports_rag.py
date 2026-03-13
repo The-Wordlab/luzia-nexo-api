@@ -235,7 +235,7 @@ class TestWebhookScores:
              patch.object(_server_module, "call_llm", return_value="Arsenal beat Chelsea 3-1."):
             data = client.post("/", json={"message": {"content": "Arsenal score"}}).json()
 
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["status"] == "completed"
         assert data["content_parts"][0]["text"] == "Arsenal beat Chelsea 3-1."
         assert data["task"]["status"] == "completed"
@@ -389,7 +389,7 @@ class TestWebhookEmpty:
     def test_empty_message_has_valid_envelope(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
         data = client.post("/", json={"message": {"content": ""}}).json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["status"] == "completed"
         assert len(data["content_parts"]) >= 1
 
@@ -541,7 +541,7 @@ class TestSSEStreaming:
         done = done_events[-1]
         assert "cards" in done
         assert "actions" in done
-        assert done["schema_version"] == "2026-03-01"
+        assert done["schema_version"] == "2026-03"
         assert done["status"] == "completed"
         assert done["capability"]["name"] == "sports.rag"
         assert isinstance(done["artifacts"], list)

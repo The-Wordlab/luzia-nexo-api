@@ -300,12 +300,12 @@ async def test_example_response_has_required_fields(example, monkeypatch, tmp_pa
         assert len(data["content_parts"]) > 0, (
             f"Example '{example['id']}': 'content_parts' must not be empty"
         )
-        assert data["schema_version"] == "2026-03-01", (
-            f"Example '{example['id']}': schema_version must be '2026-03-01', "
+        assert data["schema_version"] == "2026-03", (
+            f"Example '{example['id']}': schema_version must be '2026-03', "
             f"got {data['schema_version']!r}"
         )
-        assert data["status"] in {"success", "completed", "error"}, (
-            f"Example '{example['id']}': status must be 'success', 'completed', or 'error', "
+        assert data["status"] in {"completed", "error"}, (
+            f"Example '{example['id']}': status must be 'completed' or 'error', "
             f"got {data['status']!r}"
         )
     finally:

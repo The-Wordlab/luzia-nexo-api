@@ -44,8 +44,8 @@ POST /
                }
            }
     Reply: {
-               "schema_version": "2026-03-01",
-               "status": "success",
+               "schema_version": "2026-03",
+               "status": "completed",
                "content_parts": [{"type": "text", "text": "<text>"}],
                "cards": [...],                        # optional
                "metadata": {                          # optional
@@ -100,7 +100,7 @@ async def root() -> JSONResponse:
                     "auth": "None",
                 },
             ],
-            "schema_version": "2026-03-01",
+            "schema_version": "2026-03",
         }
     )
 
@@ -404,8 +404,8 @@ async def receive_webhook(request: Request) -> JSONResponse:
         reply = _build_action_reply(action_result, intent)
         cards = _build_action_cards(action_result)
         response_body: dict[str, Any] = {
-            "schema_version": "2026-03-01",
-            "status": "success",
+            "schema_version": "2026-03",
+            "status": "completed",
             "content_parts": [{"type": "text", "text": reply}],
             "cards": cards,
             "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent(intent)},
@@ -421,8 +421,8 @@ async def receive_webhook(request: Request) -> JSONResponse:
     reply_text = f'Received: "{content}"' if content else "Hello! How can I help you?"
     return JSONResponse(
         {
-            "schema_version": "2026-03-01",
-            "status": "success",
+            "schema_version": "2026-03",
+            "status": "completed",
             "content_parts": [{"type": "text", "text": reply_text}],
             "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent("")},
         }

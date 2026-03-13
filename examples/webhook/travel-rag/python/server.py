@@ -31,7 +31,7 @@ Environment variables:
 
 Webhook response envelope (canonical Nexo format):
     {
-        "schema_version": "2026-03-01",
+        "schema_version": "2026-03",
         "status": "completed",
         "content_parts": [{"type": "text", "text": "..."}],
         "cards":   [...],
@@ -100,7 +100,7 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "60"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 TOP_K: int = int(os.environ.get("TOP_K", "4"))
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "travel.rag"
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 if VECTOR_STORE_BACKEND != "pgvector":

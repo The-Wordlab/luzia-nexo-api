@@ -69,8 +69,8 @@ class Card(BaseModel):
 
 class WebhookResponse(BaseModel):
     """Response to send back to Nexo."""
-    schema_version: str = Field(default="2026-03-01")
-    status: str = Field(default="success", description="success or error")
+    schema_version: str = Field(default="2026-03")
+    status: str = Field(default="completed", description="completed or error")
     content_parts: list[ContentPart] = Field(default_factory=list)
     cards: list[Card] | None = Field(default=None)
     actions: list[dict[str, Any]] | None = Field(default=None)

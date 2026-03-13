@@ -77,8 +77,8 @@ pytest -v
 
 ```json
 {
-  "schema_version": "2026-03-01",
-  "status": "success" | "completed" | "error",
+  "schema_version": "2026-03",
+  "status": "completed" | "error",
   "content_parts": [{ "type": "text", "text": "..." }],
   "cards": [...],
   "actions": [...]

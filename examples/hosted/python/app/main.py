@@ -64,8 +64,8 @@ def _webhook_response(
     metadata: dict[str, Any] | None = None,
 ) -> WebhookResponseOut:
     return WebhookResponseOut(
-        schema_version="2026-03-01",
-        status="success",
+        schema_version="2026-03",
+        status="completed",
         content_parts=[ContentPartOut(type="text", text=text)],
         cards=cards,
         metadata=metadata,

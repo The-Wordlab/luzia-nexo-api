@@ -42,8 +42,8 @@ def _response_text(data: dict) -> str:
 
 
 def _assert_rich_success(data: dict) -> None:
-    assert data["schema_version"] == "2026-03-01"
-    assert data["status"] == "success"
+    assert data["schema_version"] == "2026-03"
+    assert data["status"] == "completed"
     assert isinstance(data.get("content_parts"), list)
     assert len(data["content_parts"]) > 0
 

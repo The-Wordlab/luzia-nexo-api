@@ -124,7 +124,7 @@ async def test_root_endpoint(open_app):
     data = r.json()
     assert data["service"] == "webhook-language-tutor-python"
     assert "capabilities" in data
-    assert data["schema_version"] == "2026-03-01"
+    assert data["schema_version"] == "2026-03"
 
 
 @pytest.mark.asyncio
@@ -222,7 +222,7 @@ async def test_phrase_help_italian(open_app):
     assert r.status_code == 200
     data = r.json()
     assert data["status"] == "completed"
-    assert data["schema_version"] == "2026-03-01"
+    assert data["schema_version"] == "2026-03"
     assert data["task"]["status"] == "completed"
     assert data["capability"]["name"] == "language.tutor"
     assert isinstance(data["artifacts"], list)
@@ -554,7 +554,7 @@ async def test_response_schema_version(open_app):
     with patch("language_tutor_app.call_llm", new_callable=AsyncMock, return_value="Ok"):
         async with AsyncClient(transport=ASGITransport(app=open_app), base_url="http://test") as client:
             r = await client.post("/", json=_payload("Quiz me on Spanish"))
-    assert r.json()["schema_version"] == "2026-03-01"
+    assert r.json()["schema_version"] == "2026-03"
 
 
 @pytest.mark.asyncio

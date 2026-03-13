@@ -12,8 +12,8 @@ Tests all 9 intents (3 per app) against the PartnerCard interface:
     }
 
 Response envelope contract:
-    schema_version: "2026-03-01"
-    status: "completed" | "success"
+    schema_version: "2026-03"
+    status: "completed"
     content_parts: [{type: "text", text: "..."}]
     cards: [PartnerCard]
     actions: [{label: str, type: "primary"|"secondary"}]
@@ -208,14 +208,14 @@ def _assert_card_contract(card: dict[str, Any], intent_label: str) -> None:
 def _assert_response_envelope(data: dict[str, Any], intent_label: str) -> None:
     """Assert the full response envelope contract."""
     # schema_version
-    assert data.get("schema_version") == "2026-03-01", (
-        f"[{intent_label}] schema_version must be '2026-03-01', got {data.get('schema_version')!r}"
+    assert data.get("schema_version") == "2026-03", (
+        f"[{intent_label}] schema_version must be '2026-03', got {data.get('schema_version')!r}"
     )
 
     # status
     assert "status" in data, f"[{intent_label}] response missing 'status'"
-    assert data["status"] in ("completed", "success"), (
-        f"[{intent_label}] status must be 'completed' or 'success', got {data['status']!r}"
+    assert data["status"] == "completed", (
+        f"[{intent_label}] status must be 'completed', got {data['status']!r}"
     )
 
     # content_parts: list with at least one text part

@@ -84,7 +84,7 @@ Optionally streams via SSE when `Accept: text/event-stream` is present and
 **Example response (scores intent):**
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "content_parts": [
     {"type": "text", "text": "Hey Alex! Arsenal beat Chelsea 3-1 at the Emirates..."}
@@ -125,7 +125,7 @@ curl -X POST http://localhost:8002/ \
 
 SSE events emitted:
 - `data: {"type": "delta", "text": "Arsenal..."}` — streamed tokens
-- `data: {"type": "done", "schema_version": "2026-03-01", "status": "completed", "cards": [...], "actions": [...]}` — final event with structured data
+- `data: {"type": "done", "schema_version": "2026-03", "status": "completed", "cards": [...], "actions": [...]}` — final event with structured data
 - plus A2A task events: `task.started`, `task.delta`, `task.artifact`, and `done`
 
 ### `POST /ingest`

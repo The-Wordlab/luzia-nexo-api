@@ -59,8 +59,8 @@ export function processWebhook(raw, headers = {}, secret = "") {
   return {
     status: 200,
     body: {
-      schema_version: "2026-03-01",
-      status: "success",
+      schema_version: "2026-03",
+      status: "completed",
       content_parts: [{ type: "text", text }],
       metadata: { prompt_suggestions: promptSuggestions },
     },
@@ -83,7 +83,7 @@ export function createServer(secretProvider = () => process.env.WEBHOOK_SECRET |
               auth: "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
             },
           ],
-          schema_version: "2026-03-01",
+          schema_version: "2026-03",
         }),
       );
       return;

@@ -77,7 +77,7 @@ pytest -v
 
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "task": {"id": "task_food_menu_browse", "status": "completed"},
   "capability": {"name": "food.ordering", "version": "1"},

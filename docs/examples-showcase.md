@@ -1,40 +1,47 @@
 # What You Can Build
 
-Real-world partner integrations built on Nexo. Each example is a full webhook server you can clone, run locally, and deploy to Cloud Run.
+Production-ready partner integrations built on Nexo. Each example is a complete webhook server you can clone, run locally, and deploy to Cloud Run.
 
-All four use the same pattern:
+The RAG examples share a common pattern:
+
 - Ingest domain data (RSS, APIs) into a vector store
 - Accept Nexo webhook requests
 - Retrieve relevant chunks, call an LLM, return rich responses
 - Return `cards` and `actions` alongside the text response
 
-Runtime policy:
+**Runtime configuration:**
+
 - Production (Cloud Run): Gemini on Vertex via ADC
-- Development (local and hosted): Gemini on Vertex via ADC
-- Durable vector storage on Cloud Run: `pgvector` on Cloud SQL
+- Development: Gemini on Vertex via ADC (or OpenAI with env override)
+- Durable vector storage: `pgvector` on Cloud SQL
 
 ---
 
-## Flagship Vertical Webhooks (Non-RAG)
+## Vertical Webhooks
 
-These examples focus on end-to-end orchestration flows rather than retrieval pipelines:
+These examples demonstrate end-to-end orchestration flows -- multi-step experiences beyond simple Q&A:
 
 | Example | What it demonstrates | Live URL |
 |---|---|---|
-| Routines | Morning briefing, schedule checks, follow-up reminders | <https://nexo-routines-367427598362.europe-west1.run.app/> |
-| Food Ordering | Restaurant discovery, basket building, checkout approval, and delivery tracking | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
-| Travel Planning | Itinerary generation, flight comparison, booking handoff, budget framing, and disruption replanning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
-| Fitness Coach | Workout plans, progress checks, nutrition guidance | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
-| Travel Planner | Secondary compatibility travel slice for flights and booking handoff | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
-| Language Tutor | Phrase coaching, quiz drills, lesson plans | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
+| Routines | Morning briefing, schedule checks, follow-up reminders | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
+| Food Ordering | Restaurant discovery, basket building, checkout approval, and delivery tracking | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
+| Travel Planning | Itinerary generation, flight comparison, booking handoff, budget framing, and disruption replanning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
+| Fitness Coach | Workout plans, progress checks, nutrition guidance | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
+| Language Tutor | Phrase coaching, quiz drills, lesson plans | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
+
+### Compatibility (secondary)
+
+| Example | What it demonstrates | Live URL |
+|---|---|---|
+| Travel Planner | Narrower booking-handoff slice (superseded by Travel Planning) | <https://nexo-travel-planner-v3me5awkta-ew.a.run.app/> |
 
 Source:
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python>
-- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python>
+- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python> (compatibility)
 
 ---
 
@@ -61,7 +68,7 @@ User asks: **"What's happening with Arsenal?"**
 
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "content_parts": [{
     "type": "text",
@@ -239,7 +246,7 @@ curl -X POST "https://nexo-sports-rag-v3me5awkta-ew.a.run.app/" \
 data: {"type":"delta","text":"Rice opened"}
 data: {"type":"delta","text":" the scoring in the 34th"}
 data: {"type":"delta","text":" minute..."}
-data: {"type":"done","schema_version":"2026-03-01","status":"completed","cards":[...],"actions":[...]}
+data: {"type":"done","schema_version":"2026-03","status":"completed","cards":[...],"actions":[...]}
 ```
 
 ### Live event detection
@@ -437,8 +444,6 @@ sequenceDiagram
 ```
 
 The user can ask questions in the same thread. The message flows through the normal webhook path back to the partner's RAG endpoint, which has all the live data indexed. The LLM sees the full conversation history — including the event cards — and can give contextual answers.
-
-For the full architecture and design: [design-live-streaming.md](design-live-streaming.md)
 
 ---
 

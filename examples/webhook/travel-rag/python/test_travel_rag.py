@@ -246,7 +246,7 @@ class TestWebhookContract:
              patch.object(_server_module, "search_articles", return_value=[]), \
              patch.object(_server_module, "call_llm", return_value="Paris is wonderful."):
             data = client.post("/", json={"message": {"content": "tell me about Paris"}}).json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["task"]["status"] == "completed"
         assert data["capability"]["name"] == "travel.rag"
         assert isinstance(data["artifacts"], list)
@@ -422,7 +422,7 @@ class TestWebhookEmpty:
     def test_empty_message_has_valid_envelope(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
         data = client.post("/", json={"message": {"content": ""}}).json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["status"] == "completed"
         assert len(data["content_parts"]) >= 1
 
@@ -587,7 +587,7 @@ class TestSSEStreaming:
         done = done_events[-1]
         assert "cards" in done
         assert "actions" in done
-        assert done["schema_version"] == "2026-03-01"
+        assert done["schema_version"] == "2026-03"
         assert done["status"] == "completed"
         assert done["capability"]["name"] == "travel.rag"
         assert isinstance(done["artifacts"], list)

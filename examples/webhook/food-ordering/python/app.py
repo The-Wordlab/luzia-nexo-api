@@ -53,7 +53,7 @@ WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
 
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "food.ordering"
 
 AGENT_CARD: dict[str, Any] = {

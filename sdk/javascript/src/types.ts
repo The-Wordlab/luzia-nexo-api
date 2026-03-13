@@ -35,7 +35,7 @@ export interface WebhookContentPart {
 /** Webhook response envelope. */
 export interface WebhookResponse {
   schema_version: string;
-  status: "success" | "error";
+  status: "completed" | "error";
   content_parts?: WebhookContentPart[];
   cards?: Array<Record<string, unknown>>;
   actions?: Array<Record<string, unknown>>;

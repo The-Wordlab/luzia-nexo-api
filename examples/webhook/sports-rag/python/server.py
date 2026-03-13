@@ -104,7 +104,7 @@ REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 LIVE_POLL_INTERVAL_SECONDS: int = int(os.environ.get("LIVE_POLL_INTERVAL_SECONDS", "60"))
 TOP_K = 3
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "sports.rag"
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 if VECTOR_STORE_BACKEND != "pgvector":

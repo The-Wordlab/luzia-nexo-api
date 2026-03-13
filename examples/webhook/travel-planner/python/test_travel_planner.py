@@ -55,7 +55,7 @@ travel_app = _load_travel_app()
 # Constants
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 _TIMESTAMP = "1700000000"
 _SECRET = "secret"
 

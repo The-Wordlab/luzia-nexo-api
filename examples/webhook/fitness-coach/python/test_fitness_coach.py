@@ -56,7 +56,7 @@ _fitness_mod = _load_fitness_app()
 # Constants
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 TEST_SECRET = "testsecret"
 TEST_TIMESTAMP = "1700000000"
 

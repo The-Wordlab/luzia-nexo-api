@@ -31,8 +31,8 @@ app.post("/webhook", (req, res) => {
   console.log(`Received message: ${payload.message.content}`);
 
   res.json({
-    schema_version: "2026-03-01",
-    status: "success",
+    schema_version: "2026-03",
+    status: "completed",
     content_parts: [{ type: "text", text: `Echo: ${payload.message.content}` }],
   });
 });
@@ -62,8 +62,8 @@ app.post("/webhook", async (request, reply) => {
 
   const payload = parseWebhookPayload(rawBody);
   return {
-    schema_version: "2026-03-01",
-    status: "success",
+    schema_version: "2026-03",
+    status: "completed",
     content_parts: [{ type: "text", text: `Echo: ${payload.message.content}` }],
   };
 });

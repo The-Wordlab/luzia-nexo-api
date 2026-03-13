@@ -27,8 +27,8 @@ def test_webhook_echo() -> None:
     resp = client.post("/webhook", json={"message": {"content": "hi"}})
     assert resp.status_code == 200
     assert resp.json() == {
-        "schema_version": "2026-03-01",
-        "status": "success",
+        "schema_version": "2026-03",
+        "status": "completed",
         "content_parts": [{"type": "text", "text": "Echo: hi"}],
         "metadata": {
             "prompt_suggestions": [
@@ -55,8 +55,8 @@ def test_webhook_profile_context() -> None:
     )
     assert resp.status_code == 200
     assert resp.json() == {
-        "schema_version": "2026-03-01",
-        "status": "success",
+        "schema_version": "2026-03",
+        "status": "completed",
         "content_parts": [
             {
                 "type": "text",
@@ -87,8 +87,8 @@ def test_webhook_with_valid_signature(monkeypatch) -> None:
     resp = client.post("/webhook", data=body, headers={"X-Timestamp": ts, "X-Signature": sig})
     assert resp.status_code == 200
     assert resp.json() == {
-        "schema_version": "2026-03-01",
-        "status": "success",
+        "schema_version": "2026-03",
+        "status": "completed",
         "content_parts": [{"type": "text", "text": "Echo: hi"}],
         "metadata": {
             "prompt_suggestions": [

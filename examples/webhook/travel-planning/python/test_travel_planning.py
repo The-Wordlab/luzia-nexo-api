@@ -446,7 +446,7 @@ class TestWebhookTripPlan:
         with patch.object(m, "call_llm", return_value="trip"):
             resp = client.post("/", json=_webhook_payload("plan my holiday"))
         data = resp.json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["task"]["status"] == "completed"
         assert data["capability"]["name"] == "travel.planning"
         assert isinstance(data["artifacts"], list)
@@ -646,7 +646,7 @@ class TestWebhookBudgetCheck:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="ok"):
             resp = client.post("/", json=_webhook_payload("show my spend"))
-        assert resp.json()["schema_version"] == "2026-03-01"
+        assert resp.json()["schema_version"] == "2026-03"
 
     def test_capability_state_in_card_metadata(self, monkeypatch):
         client = _make_client()
@@ -704,7 +704,7 @@ class TestWebhookDisruptionReplan:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="ok"):
             resp = client.post("/", json=_webhook_payload("need to rebook flight"))
-        assert resp.json()["schema_version"] == "2026-03-01"
+        assert resp.json()["schema_version"] == "2026-03"
 
     def test_disruption_card_has_options(self, monkeypatch):
         client = _make_client()
@@ -858,7 +858,7 @@ class TestSSEStreaming:
         done = done_events[-1]
         assert "cards" in done
         assert "actions" in done
-        assert done["schema_version"] == "2026-03-01"
+        assert done["schema_version"] == "2026-03"
         assert done["capability"]["name"] == "travel.planning"
         assert isinstance(done["artifacts"], list)
         assert isinstance(done.get("metadata", {}).get("prompt_suggestions", []), list)

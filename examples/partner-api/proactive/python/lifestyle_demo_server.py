@@ -270,8 +270,8 @@ class DemoWebhookHandler(BaseHTTPRequestHandler):
         self.wfile.write(
             json.dumps(
                 {
-                    "schema_version": "2026-03-01",
-                    "status": "success",
+                    "schema_version": "2026-03",
+                    "status": "completed",
                     "content_parts": [{"type": "text", "text": reply}],
                 }
             ).encode()

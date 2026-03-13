@@ -27,8 +27,8 @@ Contract:
                "context": {"intent": "..."}                    # optional
            }
   ->       {
-               "schema_version": "2026-03-01",
-               "status": "success",
+               "schema_version": "2026-03",
+               "status": "completed",
                "content_parts": [{"type": "text", "text": "<personalised text>"}],
                "cards": [...]  # optional
            }
@@ -60,7 +60,7 @@ async def root() -> JSONResponse:
                     "auth": "Optional WEBHOOK_SECRET (X-Signature)",
                 }
             ],
-            "schema_version": "2026-03-01",
+            "schema_version": "2026-03",
         }
     )
 
@@ -212,8 +212,8 @@ async def receive_webhook(request: Request) -> JSONResponse:
     reply = _build_reply(content, profile)
     cards = _build_cards(context)
     response: dict[str, Any] = {
-        "schema_version": "2026-03-01",
-        "status": "success",
+        "schema_version": "2026-03",
+        "status": "completed",
         "content_parts": [{"type": "text", "text": reply}],
         "metadata": {
             "prompt_suggestions": _prompt_suggestions_for_intent(

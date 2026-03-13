@@ -86,8 +86,8 @@ TRAVEL_PATH = WEBHOOK_ROOT / "travel-planning" / "python"
 # Contract constants
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = "2026-03-01"
-VALID_STATUSES = {"success", "completed", "error"}
+SCHEMA_VERSION = "2026-03"
+VALID_STATUSES = {"completed", "error"}
 VALID_CAPABILITY_STATES = {"live", "simulated", "requires_connector"}
 
 # ---------------------------------------------------------------------------
@@ -409,7 +409,7 @@ class TestHappyPath:
 
     @pytest.mark.parametrize("fixture_cls", WEBHOOK_FIXTURES)
     def test_response_has_schema_version(self, fixture_cls):
-        """Response includes schema_version: '2026-03-01'."""
+        """Response includes schema_version: '2026-03'."""
         client, mod = fixture_cls.load()
         try:
             payload = fixture_cls.happy_payload()
@@ -432,7 +432,7 @@ class TestHappyPath:
 
     @pytest.mark.parametrize("fixture_cls", WEBHOOK_FIXTURES)
     def test_response_has_valid_status(self, fixture_cls):
-        """Response status is one of: 'success', 'completed', 'error'."""
+        """Response status is one of: 'completed', 'error'."""
         client, mod = fixture_cls.load()
         try:
             payload = fixture_cls.happy_payload()

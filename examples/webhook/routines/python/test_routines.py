@@ -295,7 +295,7 @@ class TestWebhookMorningBriefing:
         with patch.object(m, "call_llm", return_value="briefing text"):
             resp = client.post("/", json=_webhook_payload("morning"))
         data = resp.json()
-        assert data["schema_version"] == "2026-03-01"
+        assert data["schema_version"] == "2026-03"
         assert data["task"]["status"] == "completed"
         assert data["capability"]["name"] == "routines.daily"
         assert isinstance(data["artifacts"], list)
@@ -459,7 +459,7 @@ class TestWebhookSchedule:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="ok"):
             resp = client.post("/", json=_webhook_payload("calendar"))
-        assert resp.json()["schema_version"] == "2026-03-01"
+        assert resp.json()["schema_version"] == "2026-03"
 
 
 # ---------------------------------------------------------------------------
@@ -501,7 +501,7 @@ class TestWebhookFollowUp:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="ok"):
             resp = client.post("/", json=_webhook_payload("reminder"))
-        assert resp.json()["schema_version"] == "2026-03-01"
+        assert resp.json()["schema_version"] == "2026-03"
 
 
 # ---------------------------------------------------------------------------
@@ -605,7 +605,7 @@ class TestSSEStreaming:
         done = done_events[-1]
         assert "cards" in done
         assert "actions" in done
-        assert done["schema_version"] == "2026-03-01"
+        assert done["schema_version"] == "2026-03"
         assert done["capability"]["name"] == "routines.daily"
         assert isinstance(done["artifacts"], list)
         assert isinstance(done.get("metadata", {}).get("prompt_suggestions", []), list)

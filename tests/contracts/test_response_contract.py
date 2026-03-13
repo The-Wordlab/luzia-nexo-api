@@ -61,19 +61,19 @@ def _assert_valid_response(data: dict) -> NexoWebhookResponse:
 def test_minimal_valid_response_validates() -> None:
     """A minimal valid response satisfies the contract."""
     resp = NexoWebhookResponse(
-        schema_version="2026-03-01",
-        status="success",
+        schema_version="2026-03",
+        status="completed",
         content_parts=[{"type": "text", "text": "Hello"}],
     )
-    assert resp.schema_version == "2026-03-01"
-    assert resp.status == "success"
+    assert resp.schema_version == "2026-03"
+    assert resp.status == "completed"
     assert len(resp.content_parts) == 1
 
 
 def test_completed_status_is_valid() -> None:
     """Status 'completed' (used by RAG examples) is valid."""
     resp = NexoWebhookResponse(
-        schema_version="2026-03-01",
+        schema_version="2026-03",
         status="completed",
         content_parts=[{"type": "text", "text": "Done"}],
     )
@@ -83,7 +83,7 @@ def test_completed_status_is_valid() -> None:
 def test_error_status_is_valid() -> None:
     """Status 'error' is valid for error responses."""
     resp = NexoWebhookResponse(
-        schema_version="2026-03-01",
+        schema_version="2026-03",
         status="error",
         content_parts=[{"type": "text", "text": "Something went wrong"}],
     )
@@ -95,7 +95,7 @@ def test_wrong_schema_version_fails() -> None:
     with pytest.raises(ValidationError, match="schema_version"):
         NexoWebhookResponse(
             schema_version="2025-01-01",
-            status="success",
+            status="completed",
             content_parts=[{"type": "text", "text": "Hi"}],
         )
 
@@ -104,7 +104,7 @@ def test_wrong_status_fails() -> None:
     """A response with an unknown status value violates the contract."""
     with pytest.raises(ValidationError, match="status"):
         NexoWebhookResponse(
-            schema_version="2026-03-01",
+            schema_version="2026-03",
             status="ok",  # not a valid status
             content_parts=[{"type": "text", "text": "Hi"}],
         )
@@ -114,8 +114,8 @@ def test_empty_content_parts_fails() -> None:
     """A response with empty content_parts violates the contract."""
     with pytest.raises(ValidationError, match="content_parts"):
         NexoWebhookResponse(
-            schema_version="2026-03-01",
-            status="success",
+            schema_version="2026-03",
+            status="completed",
             content_parts=[],
         )
 
@@ -124,7 +124,7 @@ def test_missing_schema_version_fails() -> None:
     """A response without schema_version violates the contract."""
     with pytest.raises(ValidationError):
         NexoWebhookResponse(
-            status="success",
+            status="completed",
             content_parts=[{"type": "text", "text": "Hi"}],
         )
 
@@ -133,8 +133,8 @@ def test_missing_content_parts_fails() -> None:
     """A response without content_parts violates the contract."""
     with pytest.raises(ValidationError):
         NexoWebhookResponse(
-            schema_version="2026-03-01",
-            status="success",
+            schema_version="2026-03",
+            status="completed",
         )
 
 

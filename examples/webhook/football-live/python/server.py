@@ -76,7 +76,7 @@ if VECTOR_STORE_BACKEND != "pgvector":
         "football-live only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
     )
 
-SCHEMA_VERSION = "2026-03-01"
+SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "football.live"
 
 AGENT_CARD: dict[str, Any] = {

@@ -19,7 +19,7 @@ Additional admin endpoints:
 
 Webhook response envelope (canonical Nexo format):
     {
-        "schema_version": "2026-03-01",
+        "schema_version": "2026-03",
         "status": "completed",
         "content_parts": [{"type": "text", "text": "..."}],
         "cards":   [...],   # source attribution cards
@@ -117,7 +117,7 @@ NEWS_FEEDS: list[str] = (
 CHUNK_SIZE_CHARS: int = 2000   # ~500 tokens at 4 chars/token
 CHUNK_OVERLAP_CHARS: int = 200
 COLLECTION_NAME: str = "news_articles"
-SCHEMA_VERSION: str = "2026-03-01"
+SCHEMA_VERSION: str = "2026-03"
 CAPABILITY_NAME: str = "news.search"
 
 AGENT_CARD: dict[str, Any] = {

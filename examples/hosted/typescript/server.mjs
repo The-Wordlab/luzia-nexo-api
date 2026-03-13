@@ -77,8 +77,8 @@ function wantsJson(format, acceptHeader = "") {
 
 function webhookResponse(text, options = {}) {
   const response = {
-    schema_version: "2026-03-01",
-    status: "success",
+    schema_version: "2026-03",
+    status: "completed",
     content_parts: [{ type: "text", text }],
   };
   if (options.cards) response.cards = options.cards;

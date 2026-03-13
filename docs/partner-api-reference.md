@@ -59,20 +59,22 @@ Example body:
 
 Your webhook should parse the fields it needs and safely ignore unknown extra fields.
 
-### Profile fields (current and upcoming)
+### Profile fields
 
-- Webhook payloads include consented profile attributes such as:
-  - `locale`
-  - `language`
-  - `location` (for example city/country)
-  - `age` or age range
-  - `date_of_birth`
-  - `gender`
-  - `dietary_preferences`
-  - `preferences` and selected profile facts
-- Availability depends on app permissions and user consent.
-- Additional attributes are added over time while keeping backward compatibility.
-- Parse defensively and ignore unknown fields.
+Webhook payloads include consented profile attributes:
+
+| Field | Type | Description |
+|---|---|---|
+| `locale` | string | User's locale (e.g. `es-MX`) |
+| `language` | string | User's language (e.g. `es`) |
+| `location` | string | City or country |
+| `age` | int | Age or age range |
+| `date_of_birth` | string | Date of birth |
+| `gender` | string | Gender |
+| `dietary_preferences` | string | Dietary preferences |
+| `preferences` | object | Additional profile facts |
+
+Availability depends on app permissions and user consent. Parse defensively and ignore unknown fields -- the schema is backward-compatible as new attributes are added.
 
 ### Signature verification
 
@@ -89,7 +91,7 @@ Return HTTP `200`:
 
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "content_parts": [{ "type": "text", "text": "Sure - I can help with that." }],
   "cards": [],
@@ -115,7 +117,7 @@ data: {"type":"delta","text":"Sure - "}
 
 data: {"type":"delta","text":"I can help with that."}
 
-data: {"type":"done","schema_version":"2026-03-01","status":"completed","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
+data: {"type":"done","schema_version":"2026-03","status":"completed","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
 ```
 
 The `done` event is required and must include `schema_version` and `status`.

@@ -20,8 +20,8 @@ test("processWebhook returns rich response for valid payload", () => {
   const result = processWebhook('{"message":{"content":"hi"}}');
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, {
-    schema_version: "2026-03-01",
-    status: "success",
+    schema_version: "2026-03",
+    status: "completed",
     content_parts: [{ type: "text", text: "Echo: hi" }],
     metadata: {
       prompt_suggestions: [
@@ -47,8 +47,8 @@ test("processWebhook uses optional profile context defensively", () => {
   );
   assert.equal(result.status, 200);
   assert.deepEqual(result.body, {
-    schema_version: "2026-03-01",
-    status: "success",
+    schema_version: "2026-03",
+    status: "completed",
     content_parts: [
       {
         type: "text",

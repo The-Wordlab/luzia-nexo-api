@@ -118,7 +118,7 @@ async def root() -> dict:
                 "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
             }
         ],
-        "schema_version": "2026-03-01",
+        "schema_version": "2026-03",
     }
 
 
@@ -130,8 +130,8 @@ async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookR
     display_name, locale, dietary = _extract_profile_context(payload.profile)
     content = payload.message.content if payload.message else ""
     return WebhookResponseOut(
-        schema_version="2026-03-01",
-        status="success",
+        schema_version="2026-03",
+        status="completed",
         content_parts=[
             ContentPartOut(
                 type="text",

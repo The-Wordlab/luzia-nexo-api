@@ -1,19 +1,17 @@
 # Luzia Nexo API
 
-Connect your agent or API to Luzia characters through the Nexo Agent Runtime API.
+Build conversational experiences that reach millions of Luzia users through a single webhook integration.
 
-The Nexo Agent Runtime provides reliable webhook delivery, consented profile context, and trusted boundaries your customers can understand.
+The Nexo Agent Runtime handles message routing, delivery, signature verification, and user consent -- so you can focus on your domain logic.
 
-Launch fast with:
+Ship your first integration in minutes:
 
-- Signed webhook delivery
-- Consented profile context
-- Rich cards and actions
-- Streaming responses
-- Proactive push events
-- Starter coding examples that AI coding agents can adapt, test, and deploy
-
-This repository provides deployment-ready integration templates.
+- **Signed webhook delivery** -- every request is HMAC-verified
+- **Consented profile context** -- locale, preferences, and more, with user permission
+- **Rich cards and actions** -- structured UI beyond plain text
+- **Streaming responses** -- real-time SSE for responsive experiences
+- **Proactive push events** -- notify users when something happens in your domain
+- **Production-ready examples** -- clone, customize, deploy
 
 !!! tip "Nexo dashboard"
     Manage apps, webhook secrets, and live tests in the partner dashboard.
@@ -22,23 +20,20 @@ This repository provides deployment-ready integration templates.
 
 ## 5-minute path
 
-If you only need the shortest path to a real integration:
-
 1. Implement one `POST /webhook` endpoint in your backend.
-2. Return valid JSON (or SSE) response envelope.
+2. Return a valid JSON (or SSE) response envelope.
 3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
 4. Send a test message from the dashboard.
 
 Start here: [Quickstart](quickstart.md)
 
-### Optional UX accelerator: contextual prompt chips
+### Prompt chips
 
-To improve first-message UX, your webhook can optionally return
-`metadata.prompt_suggestions`. Nexo renders these as clickable chips in chat.
+Improve first-message UX by returning `metadata.prompt_suggestions` in your webhook response. Nexo renders these as clickable chips in chat.
 
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "content_parts": [{ "type": "text", "text": "I can help with that." }],
   "metadata": {
@@ -53,34 +48,33 @@ To improve first-message UX, your webhook can optionally return
 
 ### Required vs optional
 
-- Required for live webhook integration: `webhook_url` + `WEBHOOK_SECRET`
-- Optional for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
+- **Required** for live integration: `webhook_url` + `WEBHOOK_SECRET`
+- **Optional** for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
 
 ## What You Can Build
 
-Use these deployable examples as starter blueprints:
+Clone a starter example, customize it for your domain, and deploy:
 
-| Outcome | Example | Live demo |
+| Use case | Example | Live demo |
 |---|---|---|
-| Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-367427598362.europe-west1.run.app/> |
-| Food-commerce flow with discovery, checkout, and tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
-| Travel flagship with flights, budget, handoff, and replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
-| Fitness coaching plans and check-ins | [Fitness Coach](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python) | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
-| Compatibility travel slice for booking handoff | [Travel Planner](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planner/python) | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
-| Language tutoring with lesson and quiz cards | [Language Tutor](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python) | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
+| Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
+| Food-commerce: discovery, checkout, tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
+| Travel: flights, budget, handoff, replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
+| Fitness coaching plans and check-ins | [Fitness Coach](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python) | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
+| Language tutoring with quizzes | [Language Tutor](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python) | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
 | News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
-| Broad sports coverage with football deep-dive companion | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
+| Sports coverage with live match data | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
 | OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
 
 For the full catalog, see [Demo Catalog](demos.md).
 
 ## Start Here
 
-1. [Quickstart](quickstart.md) - get a webhook live in minutes.
-2. [Demo Catalog](demos.md) - browse all demos and live services.
-3. [Examples Deep Dive](examples-showcase.md) - inspect full RAG and response patterns.
-4. [API Reference](partner-api-reference.md) - integrate contract details.
-5. [Hosting](hosting.md) - deploy every server-side demo to Cloud Run.
+1. [Quickstart](quickstart.md) -- get a webhook live in minutes.
+2. [Demo Catalog](demos.md) -- browse all examples and live services.
+3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
+4. [API Reference](partner-api-reference.md) -- full contract details.
+5. [Hosting](hosting.md) -- deploy to Cloud Run.
 
 ## Integration Architecture
 
@@ -105,17 +99,17 @@ sequenceDiagram
     Luzia-->>User: Final reply
 ```
 
-## Capability Surface
+## Capabilities
 
-| Capability | What it means in practice | Example |
+| Capability | Description | Example |
 |---|---|---|
 | Webhook contract | Deterministic request and response schema | `webhook/minimal` |
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
-| Operational hardening | Signature checks, retries, idempotency | `webhook/advanced` |
+| Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
 | Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
-| Vertical orchestration demos | End-to-end partner flows across routines, food, and travel planning | `routines`, `food-ordering`, `travel-planning` |
+| Vertical orchestration | End-to-end partner flows: routines, food ordering, travel planning | `routines`, `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
-| Proactive delivery | Partner-pushed events into subscriber threads | `partner-api/proactive` |
+| Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
 
 ## Live Examples
 
@@ -126,22 +120,22 @@ sequenceDiagram
 | nexo-travel-rag | <https://nexo-travel-rag-v3me5awkta-ew.a.run.app/> |
 | nexo-football-live | <https://nexo-football-live-v3me5awkta-ew.a.run.app/> |
 | nexo-openclaw-bridge | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
-| nexo-routines | <https://nexo-routines-367427598362.europe-west1.run.app/> |
-| nexo-food-ordering | <https://nexo-food-ordering-367427598362.europe-west1.run.app/> |
-| nexo-travel-planning | <https://nexo-travel-planning-367427598362.europe-west1.run.app/> |
-| nexo-fitness-coach | <https://nexo-fitness-coach-367427598362.europe-west1.run.app/> |
-| nexo-travel-planner | <https://nexo-travel-planner-367427598362.europe-west1.run.app/> |
-| nexo-language-tutor | <https://nexo-language-tutor-367427598362.europe-west1.run.app/> |
+| nexo-routines | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
+| nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
+| nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
+| nexo-fitness-coach | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
+| nexo-travel-planner *(compatibility)* | <https://nexo-travel-planner-v3me5awkta-ew.a.run.app/> |
+| nexo-language-tutor | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |
 
-For source links and what each demo does, use [Demo Catalog](demos.md).
+For source links and what each demo does, see [Demo Catalog](demos.md).
 
 ## Design Principles
 
-- Contract-first: same schema rules across local and production.
-- Capability-first: docs describe what can be built, not only minimal setup.
-- Deployable-by-default: all server demos are deployment-ready.
-- Privacy is structural: consent and profile boundaries are part of the runtime contract.
-- Safe configuration: no secrets hardcoded in code or docs.
+- **Contract-first:** Same schema rules across local and production.
+- **Capability-first:** Docs describe what you can build, not just minimal setup.
+- **Deployable by default:** All server examples are production-ready.
+- **Privacy is structural:** Consent and profile boundaries are part of the runtime contract.
+- **Safe configuration:** No secrets hardcoded in code or docs.

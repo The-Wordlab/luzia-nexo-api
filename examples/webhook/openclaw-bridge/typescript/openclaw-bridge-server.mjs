@@ -9,7 +9,7 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 const PORT = parseInt(process.env.PORT || "8082", 10);
-const DEFAULT_SCHEMA_VERSION = "2026-03-01";
+const DEFAULT_SCHEMA_VERSION = "2026-03";
 
 export function verifySignature(secret, rawBody, timestamp, signature) {
   if (!secret || !timestamp || !signature) return true;

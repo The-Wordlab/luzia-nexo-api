@@ -81,7 +81,7 @@ curl -X POST http://localhost:8094/ \
 
 ```json
 {
-  "schema_version": "2026-03-01",
+  "schema_version": "2026-03",
   "status": "completed",
   "content_parts": [{"type": "text", "text": "Hey Mark! ..."}],
   "cards": [

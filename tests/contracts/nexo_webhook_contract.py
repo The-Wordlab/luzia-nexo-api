@@ -8,7 +8,7 @@ This is the single source of truth for:
 When Nexo changes its payload format, update these models and all examples
 must pass against the new schema.
 
-Schema version: 2026-03-01
+Schema version: 2026-03
 """
 
 from __future__ import annotations
@@ -23,8 +23,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # Request contract: what Nexo sends to partner webhooks
 # ---------------------------------------------------------------------------
 
-CURRENT_SCHEMA_VERSION = "2026-03-01"
-VALID_STATUSES = {"success", "completed", "error"}
+CURRENT_SCHEMA_VERSION = "2026-03"
+VALID_STATUSES = {"completed", "error"}
 VALID_ACTION_STYLES = {"primary", "secondary"}
 
 
@@ -167,16 +167,16 @@ class NexoWebhookResponse(BaseModel):
     """Canonical response that partner webhooks must return.
 
     Required fields:
-        schema_version - must be '2026-03-01'
-        status         - must be 'success', 'completed', or 'error'
+        schema_version - must be '2026-03'
+        status         - must be 'completed' or 'error'
         content_parts  - non-empty list; at least one text part expected
 
     Optional fields:
         cards, actions, metadata - may be omitted or empty lists
     """
 
-    schema_version: str = Field(description="Schema version, must be '2026-03-01'")
-    status: str = Field(description="'success', 'completed', or 'error'")
+    schema_version: str = Field(description="Schema version, must be '2026-03'")
+    status: str = Field(description="'completed' or 'error'")
     content_parts: list[NexoContentPart] = Field(
         description="Non-empty list of content parts"
     )

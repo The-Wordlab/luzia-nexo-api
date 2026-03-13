@@ -63,8 +63,8 @@ def test_webhook_minimal_with_secret(monkeypatch) -> None:
     )
     assert resp.status_code == 200
     body = resp.json()
-    assert body["schema_version"] == "2026-03-01"
-    assert body["status"] == "success"
+    assert body["schema_version"] == "2026-03"
+    assert body["status"] == "completed"
     assert _response_text(body) == "Echo: hi"
 
 
