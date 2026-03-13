@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -31,13 +32,17 @@ _api_module = None
 def _get_modules():
     global _server_module, _ingest_module, _api_module
     if _server_module is None:
-        import server as _sm
-        import ingest as _im
-        import football_api as _am
-
-        _server_module = _sm
-        _ingest_module = _im
-        _api_module = _am
+        app_dir = Path(__file__).resolve().parent
+        original_path = list(sys.path)
+        sys.path.insert(0, str(app_dir))
+        try:
+            for name in ("server", "ingest", "football_api"):
+                sys.modules.pop(name, None)
+            _server_module = importlib.import_module("server")
+            _ingest_module = importlib.import_module("ingest")
+            _api_module = importlib.import_module("football_api")
+        finally:
+            sys.path[:] = original_path
     return _server_module, _ingest_module, _api_module
 
 

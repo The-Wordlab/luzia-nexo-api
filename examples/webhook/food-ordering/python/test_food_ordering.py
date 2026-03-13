@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import importlib.util
 import json
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -17,13 +20,19 @@ from fastapi.testclient import TestClient
 # ---------------------------------------------------------------------------
 
 _app_module = None
+_APP_DIR = Path(__file__).resolve().parent
+_MODULE_NAME = "food_ordering_app"
 
 
 def _get_app():
     global _app_module
     if _app_module is None:
-        import app as _am
-        _app_module = _am
+        spec = importlib.util.spec_from_file_location(_MODULE_NAME, _APP_DIR / "app.py")
+        assert spec and spec.loader
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[_MODULE_NAME] = mod
+        spec.loader.exec_module(mod)
+        _app_module = mod
     return _app_module
 
 

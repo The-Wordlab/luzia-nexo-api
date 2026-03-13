@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -32,20 +33,31 @@ sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 from test_support.fake_vector_store import FakeVectorStoreRegistry
 
-import ingest as _ingest_module
-import server as _server_module
-from ingest import (
-    SEED_MATCHES,
-    SEED_STANDINGS,
-    format_match_text,
-    format_standings_text,
-)
-from server import (
-    app,
-    build_standings_card,
-    detect_intent,
-    match_to_card,
-)
+_APP_DIR = Path(__file__).resolve().parent
+
+
+def _load_sports_modules():
+    original_path = list(sys.path)
+    sys.path.insert(0, str(_APP_DIR))
+    try:
+        for name in ("server", "ingest", "event_detector", "event_store", "match_state"):
+            sys.modules.pop(name, None)
+        ingest_module = importlib.import_module("ingest")
+        server_module = importlib.import_module("server")
+        return ingest_module, server_module
+    finally:
+        sys.path[:] = original_path
+
+
+_ingest_module, _server_module = _load_sports_modules()
+SEED_MATCHES = _ingest_module.SEED_MATCHES
+SEED_STANDINGS = _ingest_module.SEED_STANDINGS
+format_match_text = _ingest_module.format_match_text
+format_standings_text = _ingest_module.format_standings_text
+app = _server_module.app
+build_standings_card = _server_module.build_standings_card
+detect_intent = _server_module.detect_intent
+match_to_card = _server_module.match_to_card
 
 
 # ---------------------------------------------------------------------------
