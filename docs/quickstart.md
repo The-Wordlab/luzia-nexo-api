@@ -191,6 +191,10 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
 
 `metadata.prompt_suggestions` is optional. When present, Nexo renders these as contextual clickable prompt chips in chat.
 
+For first-load starter chips before any message is sent, publish prompt
+suggestions from `GET /.well-known/agent.json` under
+`capabilities.items[].metadata.prompt_suggestions`.
+
 ### Add RAG
 
 If your integration has a knowledge base (news, product catalogue, documentation), add retrieval-augmented generation. See the production examples:

@@ -68,7 +68,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Assist users through menu discovery, order construction, and status tracking.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["menu_browse", "order_build", "order_track"]},
+                "metadata": {
+                    "intents": ["menu_browse", "order_build", "order_track"],
+                    "prompt_suggestions": [
+                        "I'm hungry - show me what's nearby for delivery",
+                        "Order a margherita pizza to my place",
+                        "Where's my delivery right now?",
+                    ],
+                },
             }
         ]
     },

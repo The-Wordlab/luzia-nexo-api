@@ -65,7 +65,12 @@ AGENT_CARD: dict[str, Any] = {
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
-                    "intents": ["workout_plan", "progress_check", "nutrition_guidance"]
+                    "intents": ["workout_plan", "progress_check", "nutrition_guidance"],
+                    "prompt_suggestions": [
+                        "Design a 4-week beginner workout plan",
+                        "I just ran 5km in 28 minutes - how am I doing?",
+                        "What should I eat before a morning workout?",
+                    ],
                 },
             }
         ]

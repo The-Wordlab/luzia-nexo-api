@@ -120,7 +120,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Answer travel planning questions with destination cards and actionable links.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["destination", "itinerary", "budget", "weather"]},
+                "metadata": {
+                    "intents": ["destination", "itinerary", "budget", "weather"],
+                    "prompt_suggestions": [
+                        "Best time to visit Paris?",
+                        "Top activities in Bali",
+                        "Build me a 5-day Lisbon itinerary",
+                    ],
+                },
             }
         ]
     },

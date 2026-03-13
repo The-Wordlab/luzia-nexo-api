@@ -55,7 +55,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Guide users through itinerary generation, flight comparison, and booking handoff preparation.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["itinerary", "flight_compare", "booking_handoff"]},
+                "metadata": {
+                    "intents": ["itinerary", "flight_compare", "booking_handoff"],
+                    "prompt_suggestions": [
+                        "Plan a romantic weekend in Barcelona for under $500",
+                        "I have 3 days in Tokyo - what's the must-see itinerary?",
+                        "Compare flights to Lisbon next month",
+                    ],
+                },
             }
         ]
     },

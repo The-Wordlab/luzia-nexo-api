@@ -55,7 +55,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Support language learning flows with practical cards and optional streaming responses.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["phrase_help", "quiz", "lesson_plan"]},
+                "metadata": {
+                    "intents": ["phrase_help", "quiz", "lesson_plan"],
+                    "prompt_suggestions": [
+                        "Teach me how to order food in Italian",
+                        "Give me a quick Spanish conversation quiz",
+                        "How do I introduce myself in Portuguese?",
+                    ],
+                },
             }
         ]
     },

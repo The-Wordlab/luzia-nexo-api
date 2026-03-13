@@ -124,7 +124,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Answer sports questions with cards and source-backed context.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["scores", "standings", "news"]},
+                "metadata": {
+                    "intents": ["scores", "standings", "news"],
+                    "prompt_suggestions": [
+                        "Premier League standings",
+                        "Who scored in today's matches?",
+                        "Give me the latest Champions League update",
+                    ],
+                },
             }
         ]
     },

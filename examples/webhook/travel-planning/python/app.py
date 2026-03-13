@@ -74,7 +74,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Guide users through plan creation, spend management, and disruption replan flows.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["trip_plan", "budget_check", "disruption_replan"]},
+                "metadata": {
+                    "intents": ["trip_plan", "budget_check", "disruption_replan"],
+                    "prompt_suggestions": [
+                        "Plan a budget trip to Japan for 10 days",
+                        "My flight got cancelled - help me rebook",
+                        "What's my trip budget looking like?",
+                    ],
+                },
             }
         ]
     },

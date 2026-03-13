@@ -132,6 +132,13 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Search and summarize recent news with source attribution.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
+                "metadata": {
+                    "prompt_suggestions": [
+                        "What are the top headlines today?",
+                        "Summarize the latest AI and tech news",
+                        "Give me a concise Europe politics update",
+                    ]
+                },
             }
         ]
     },

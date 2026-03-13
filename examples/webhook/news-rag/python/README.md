@@ -215,7 +215,6 @@ The included `cloudbuild.yaml` builds and deploys to Cloud Run. Before first dep
 1. Create Secret Manager secrets:
    ```bash
    echo -n "your_webhook_secret" | gcloud secrets create webhook-secret --data-file=-
-   # Optional only for OpenAI development override:
    ```
 
 2. Grant the Cloud Run service account access to both secrets.

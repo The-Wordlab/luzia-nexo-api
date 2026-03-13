@@ -104,6 +104,13 @@ GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
 ./scripts/check-rag-scheduler.sh worker
 ```
 
+6. Verify worker jobs are aligned with the live RAG services:
+
+```bash
+GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
+./scripts/check-rag-worker-sync.sh
+```
+
 ### C) Deploy full server-side showcase
 
 Use this when you want the same broad capability surface shown in the public docs.
@@ -163,7 +170,7 @@ Production intent for RAG examples:
 - Embeddings: Vertex embeddings via ADC
 - Vector store: `pgvector` on Cloud SQL
 
-OpenAI remains an explicit development override only.
+Chroma and OpenAI are not part of the supported deployed path.
 
 ## Minimal secret matrix by scope
 

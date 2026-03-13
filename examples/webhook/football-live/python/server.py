@@ -91,7 +91,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Answer football questions with live context cards and actions.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["scores", "standings", "scorers", "general"]},
+                "metadata": {
+                    "intents": ["scores", "standings", "scorers", "general"],
+                    "prompt_suggestions": [
+                        "Live scores right now",
+                        "La Liga top scorers this season",
+                        "Premier League table",
+                    ],
+                },
             }
         ]
     },

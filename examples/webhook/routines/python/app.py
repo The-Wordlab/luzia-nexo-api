@@ -68,7 +68,14 @@ AGENT_CARD: dict[str, Any] = {
                 "description": "Assist with morning planning, schedule management, and follow-ups.",
                 "supports_streaming": True,
                 "supports_cancellation": False,
-                "metadata": {"intents": ["morning_briefing", "schedule_management", "follow_up"]},
+                "metadata": {
+                    "intents": ["morning_briefing", "schedule_management", "follow_up"],
+                    "prompt_suggestions": [
+                        "Give me my morning briefing",
+                        "What meetings do I have today?",
+                        "Summarize my pending tasks",
+                    ],
+                },
             }
         ]
     },

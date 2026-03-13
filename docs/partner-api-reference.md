@@ -102,6 +102,10 @@ Return HTTP `200`:
 
 `content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards). `metadata.prompt_suggestions` is optional and can provide contextual next-prompt chips (up to 5 strings).
 
+For demo discovery and onboarding, hosted examples should also publish starter
+prompt chips from `GET /.well-known/agent.json` under
+`capabilities.items[].metadata.prompt_suggestions`.
+
 #### SSE streaming
 
 Return HTTP `200` + `Content-Type: text/event-stream`:
