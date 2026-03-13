@@ -176,6 +176,38 @@ def _get_display_name(data: dict[str, Any]) -> str:
     return str(name).strip()
 
 
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = data.get("profile") or {}
+    locale = profile.get("locale") or profile.get("language") or ""
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _language_instruction(locale: str) -> str:
+    if not locale:
+        return ""
+    return (
+        f" Respond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep exercise names and metrics readable."
+    )
+
+
 def _extract_level(query: str) -> str:
     text = query.lower()
     if any(k in text for k in ["advanced", "athlete", "experienced"]):
@@ -338,6 +370,7 @@ async def webhook(request: Request):
 
     intent = detect_intent(query)
     display_name = _get_display_name(data)
+    locale = _get_locale(data)
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
@@ -371,7 +404,7 @@ async def webhook(request: Request):
         ]
 
     llm_prompt = f"Context:\n{context_block}\n\nUser message: {query}"
-    system = SYSTEM_PROMPT + (f" The user's name is {display_name}." if display_name else "")
+    system = SYSTEM_PROMPT + (f" The user's name is {display_name}." if display_name else "") + _language_instruction(locale)
 
     wants_stream = STREAMING_ENABLED and "text/event-stream" in request.headers.get("accept", "")
     if wants_stream:
@@ -382,7 +415,7 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_fitness_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -416,8 +449,9 @@ async def webhook(request: Request):
         return StreamingResponse(_event_stream(), media_type="text/event-stream")
 
     reply = await call_llm(system, llm_prompt)
-    if display_name:
-        reply = f"Hey {display_name}! {reply}"
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        reply = f"{prefix}{reply}"
     return JSONResponse(
         _build_envelope(
             text=reply,

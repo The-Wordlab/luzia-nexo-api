@@ -468,6 +468,38 @@ def _get_display_name(data: dict[str, Any]) -> str:
     return name.strip()
 
 
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = data.get("profile", {}) or {}
+    locale = profile.get("locale") or profile.get("language") or ""
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _language_instruction(locale: str) -> str:
+    if not locale:
+        return ""
+    return (
+        f"\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep club names, competition names, and scorelines unchanged when useful."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Background refresh
 # ---------------------------------------------------------------------------
@@ -578,6 +610,7 @@ async def webhook(request: Request):
     intent = detect_intent(query)
     prompt_suggestions = prompt_suggestions_for_intent(intent)
     display_name = _get_display_name(data)
+    locale = _get_locale(data)
 
     # Build context and cards based on intent
     context_parts: list[str] = []
@@ -649,6 +682,7 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT
     if display_name:
         system += f"\nThe user's name is {display_name}. Address them by name occasionally."
+    system += _language_instruction(locale)
 
     # SSE streaming or JSON response
     wants_stream = (
@@ -663,7 +697,7 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_football_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -703,8 +737,9 @@ async def webhook(request: Request):
 
     # Non-streaming JSON response
     llm_reply = await call_llm(system, llm_prompt)
-    if display_name:
-        llm_reply = f"Hey {display_name}! {llm_reply}"
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        llm_reply = f"{prefix}{llm_reply}"
 
     return JSONResponse(
         _build_envelope(

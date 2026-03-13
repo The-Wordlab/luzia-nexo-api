@@ -573,14 +573,46 @@ def _news_prompt(articles: list[dict[str, Any]]) -> str:
     )
 
 
+def _get_locale(profile: dict[str, Any]) -> str:
+    locale = profile.get("locale") or profile.get("language") or ""
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _apply_language_instruction(system_prompt: str, locale: str) -> str:
+    if not locale:
+        return system_prompt
+    return (
+        system_prompt
+        + f"\n\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep team names, competition names, and scores unchanged when useful."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Response builders (synchronous, for non-streaming path)
 # ---------------------------------------------------------------------------
 
 
-def build_scores_response(query: str, matches: list[dict[str, Any]]) -> dict[str, Any]:
+def build_scores_response(query: str, matches: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
     """Build a full Nexo response envelope for a scores/results query."""
-    llm_reply = call_llm(_scores_prompt(matches), query)
+    llm_reply = call_llm(_apply_language_instruction(_scores_prompt(matches), locale), query)
     cards = [match_to_card(m) for m in matches[:3]]
     actions = build_match_actions(matches)
 
@@ -599,9 +631,9 @@ def build_scores_response(query: str, matches: list[dict[str, Any]]) -> dict[str
     )
 
 
-def build_standings_response(query: str, standings_docs: list[dict[str, Any]]) -> dict[str, Any]:
+def build_standings_response(query: str, standings_docs: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
     """Build a full Nexo response envelope for a standings query."""
-    llm_reply = call_llm(_standings_prompt(standings_docs), query)
+    llm_reply = call_llm(_apply_language_instruction(_standings_prompt(standings_docs), locale), query)
 
     # Determine competition from retrieved doc or default to Premier League
     competition = "Premier League"
@@ -629,9 +661,9 @@ def build_standings_response(query: str, standings_docs: list[dict[str, Any]]) -
     )
 
 
-def build_news_response(query: str, articles: list[dict[str, Any]]) -> dict[str, Any]:
+def build_news_response(query: str, articles: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
     """Build a full Nexo response envelope for a news query."""
-    llm_reply = call_llm(_news_prompt(articles), query)
+    llm_reply = call_llm(_apply_language_instruction(_news_prompt(articles), locale), query)
     cards = [c for a in articles[:3] if (c := build_article_card(a)) is not None]
     actions = build_article_actions(articles)
 
@@ -900,6 +932,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     logger.info("Query: %r | Intent: %s", query[:80], intent)
 
     display_name: str = profile.get("display_name") or profile.get("name") or ""
+    locale = _get_locale(profile)
     wants_stream = (
         STREAMING_ENABLED
         and "text/event-stream" in request.headers.get("accept", "")
@@ -942,16 +975,16 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
         async def _event_stream() -> AsyncIterator[str]:
             # Determine prompt based on intent
             if intent == "scores":
-                system_prompt = _scores_prompt(matches)
+                system_prompt = _apply_language_instruction(_scores_prompt(matches), locale)
                 cards = [match_to_card(m) for m in matches[:3]]
                 actions = build_match_actions(matches)
             elif intent == "standings":
-                system_prompt = _standings_prompt(standings_docs)
+                system_prompt = _apply_language_instruction(_standings_prompt(standings_docs), locale)
                 competition = standings_docs[0].get("competition", "Premier League") if standings_docs else "Premier League"
                 cards = [build_standings_card(SEED_STANDINGS, competition, "Matchday 28 - March 2026")]
                 actions = build_standings_actions(competition)
             else:
-                system_prompt = _news_prompt(articles)
+                system_prompt = _apply_language_instruction(_news_prompt(articles), locale)
                 cards = [c for a in articles[:3] if (c := build_article_card(a)) is not None]
                 actions = build_article_actions(articles)
             artifacts: list[dict[str, Any]] = []
@@ -986,7 +1019,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
             )
 
             # Prefix with personalisation token so client can prepend if desired
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -1026,14 +1059,18 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     # ---------------------------------------------------------------------------
 
     if intent == "scores":
-        response_body = build_scores_response(query, matches)
+        response_body = build_scores_response(query, matches, locale=locale)
     elif intent == "standings":
-        response_body = build_standings_response(query, standings_docs)
+        response_body = build_standings_response(query, standings_docs, locale=locale)
     else:
-        response_body = build_news_response(query, articles)
+        response_body = build_news_response(query, articles, locale=locale)
 
     if display_name:
         response_body = _personalise(response_body, display_name)
+        localized = _localized_prefix(locale, display_name)
+        text = response_body["content_parts"][0]["text"]
+        if localized and text.startswith(f"Hey {display_name}! "):
+            response_body["content_parts"][0]["text"] = localized + text[len(f"Hey {display_name}! "):]
 
     return JSONResponse(response_body)
 

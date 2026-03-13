@@ -525,7 +525,7 @@ async def retrieve(query: str, top_k: int = TOP_K) -> list[dict[str, Any]]:
 
 
 def build_rag_prompt(
-    context_chunks: list[dict[str, Any]], question: str
+    context_chunks: list[dict[str, Any]], question: str, locale: str = ""
 ) -> list[dict[str, str]]:
     """Build the messages list for the LLM given retrieved chunks and a question."""
     context_text = "\n\n---\n\n".join(
@@ -539,10 +539,48 @@ def build_rag_prompt(
         "article numbers (e.g. [1], [2]) where you draw information from.\n\n"
         f"News context:\n{context_text}"
     )
+    if locale:
+        system += (
+            f"\n\nRespond in the user's preferred language ({locale}) for all free-form text. "
+            "Keep article titles, publication names, and citation markers unchanged when helpful."
+        )
     return [
         {"role": "system", "content": system},
         {"role": "user", "content": question},
     ]
+
+
+def _get_profile(data: dict[str, Any]) -> dict[str, Any]:
+    profile = data.get("profile") or {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = _get_profile(data)
+    locale = profile.get("locale") or profile.get("language") or ""
+    return str(locale).strip()
+
+
+def _get_display_name(data: dict[str, Any]) -> str:
+    profile = _get_profile(data)
+    return str(profile.get("display_name") or profile.get("name") or "").strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
 
 
 async def ask_llm(messages: list[dict[str, str]]) -> str:
@@ -795,6 +833,8 @@ async def receive_webhook(request: Request):
 
     message: dict[str, Any] = data.get("message") or {}
     user_text: str = message.get("content", "").strip()
+    locale = _get_locale(data)
+    display_name = _get_display_name(data)
 
     wants_stream = "text/event-stream" in request.headers.get("accept", "").lower()
 
@@ -815,7 +855,7 @@ async def receive_webhook(request: Request):
             return _stream_envelope_response(envelope)
         return JSONResponse(envelope)
 
-    messages = build_rag_prompt(hits, user_text)
+    messages = build_rag_prompt(hits, user_text, locale=locale)
     try:
         answer = await ask_llm(messages)
     except Exception:
@@ -824,6 +864,9 @@ async def receive_webhook(request: Request):
             "I found relevant news articles but couldn't generate a response right now. "
             "Please try again."
         )
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        answer = f"{prefix}{answer}"
 
     envelope = _build_envelope(
         text=answer,

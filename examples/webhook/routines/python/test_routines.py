@@ -190,6 +190,19 @@ class TestMorningBriefingCard:
         card = m.build_morning_briefing_card("")
         assert "title" in card
 
+    def test_locale_changes_greeting(self):
+        m = _get_app()
+        card = m.build_morning_briefing_card("Carlos", locale="pt-BR")
+        assert "Bom dia" in card["title"]
+
+    def test_personal_focus_field_is_included(self):
+        m = _get_app()
+        card = m.build_morning_briefing_card(
+            "Sarah",
+            personal_focus="keep a plant-based lunch in the plan",
+        )
+        assert any(f["label"] == "Personal focus" for f in card["fields"])
+
 
 class TestScheduleCard:
     def test_type_is_schedule(self):
@@ -376,6 +389,37 @@ class TestWebhookMorningBriefing:
         cards = resp.json().get("cards", [])
         briefing_cards = [c for c in cards if c["type"] == "morning_briefing"]
         assert any("Mark" in c.get("title", "") for c in briefing_cards)
+
+    def test_locale_and_preferences_shape_personal_focus(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="briefing"):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "morning briefing",
+                    profile={
+                        "display_name": "Sarah",
+                        "locale": "en-US",
+                        "preferences": {"dietary": "vegetarian", "dining_style": "healthy"},
+                        "facts": ["Works out 4x per week"],
+                    },
+                ),
+            )
+        briefing_card = next(c for c in resp.json()["cards"] if c["type"] == "morning_briefing")
+        focus_field = next(f for f in briefing_card["fields"] if f["label"] == "Personal focus")
+        assert "plant-based" in focus_field["value"]
+        assert "workout" in focus_field["value"]
+        assert resp.json()["metadata"]["personalization"]["mode"] == "profile"
+
+    def test_generic_mode_when_profile_context_missing(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="briefing"):
+            resp = client.post("/", json=_webhook_payload("morning briefing"))
+        assert resp.json()["metadata"]["personalization"]["mode"] == "generic"
 
 
 # ---------------------------------------------------------------------------

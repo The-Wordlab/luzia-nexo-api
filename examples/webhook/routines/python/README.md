@@ -12,6 +12,19 @@ A Nexo partner webhook that demonstrates multi-step orchestration for daily prod
 
 > **Simulated** — calendar, weather, and task data are seeded placeholders. No real calendar or weather APIs are called. Connect your own APIs to promote these to `live`.
 
+## Optional profile context
+
+This example supports optional consent-scoped context without requiring it:
+
+- `profile.display_name` for greeting
+- `profile.locale` to shape greeting/tone
+- `profile.preferences.*` and `profile.facts` to create a visible "Personal focus"
+  hint in the morning briefing
+
+If those fields are missing, the webhook returns the generic seeded briefing.
+Responses include `metadata.personalization` so Nexo can surface what context
+was used.
+
 ## Run locally
 
 ```bash

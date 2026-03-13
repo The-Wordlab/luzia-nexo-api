@@ -448,6 +448,22 @@ class TestWebhookMenuBrowse:
         text = resp.json()["content_parts"][0]["text"]
         assert "Maria" in text
 
+    def test_uses_profile_dietary_preference_when_query_is_generic(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here are your options."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "show me the menu",
+                    profile={"preferences": {"dietary": "vegetarian"}},
+                ),
+            )
+        menu_card = next(c for c in resp.json()["cards"] if c["type"] == "menu")
+        assert "vegetarian" in menu_card["subtitle"].lower()
+        assert resp.json()["metadata"]["personalization"]["used"]["preferences.dietary"] == "vegetarian"
+
     def test_no_name_no_prefix(self, monkeypatch):
         client = _make_client()
         m = _get_app()
@@ -456,6 +472,14 @@ class TestWebhookMenuBrowse:
             resp = client.post("/", json=_webhook_payload("show me the menu"))
         text = resp.json()["content_parts"][0]["text"]
         assert not text.startswith("Hey ")
+
+    def test_generic_mode_when_profile_preferences_absent(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here is the menu."):
+            resp = client.post("/", json=_webhook_payload("show me the menu"))
+        assert resp.json()["metadata"]["personalization"]["mode"] == "generic"
 
 
 # ---------------------------------------------------------------------------
@@ -531,6 +555,24 @@ class TestWebhookOrderBuild:
         suggestions = resp.json().get("metadata", {}).get("prompt_suggestions", [])
         assert isinstance(suggestions, list)
         assert len(suggestions) > 0
+
+    def test_uses_profile_budget_preference_for_order_draft(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Order ready."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "build my order",
+                    profile={"preferences": {"budget": "low"}},
+                ),
+            )
+        summary_card = next(c for c in resp.json()["cards"] if c["type"] == "order_summary")
+        notes_field = next((f for f in summary_card["fields"] if f["label"] == "Notes"), None)
+        assert notes_field is not None
+        assert "budget" in notes_field["value"].lower()
+        assert resp.json()["metadata"]["personalization"]["used"]["preferences.budget"] == "low"
 
 
 # ---------------------------------------------------------------------------

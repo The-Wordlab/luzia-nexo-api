@@ -85,14 +85,20 @@ class TestRoot:
         assert "capabilities" in data
         intents = [c["intent"] for c in data["capabilities"]]
         assert "trip_plan" in intents
+        assert "flight_compare" in intents
+        assert "booking_handoff" in intents
         assert "budget_check" in intents
         assert "disruption_replan" in intents
 
-    def test_root_capabilities_all_simulated(self):
+    def test_root_capabilities_states_match_contract(self):
         client = _make_client()
         data = client.get("/").json()
-        for cap in data["capabilities"]:
-            assert cap["state"] == "simulated"
+        states = {cap["intent"]: cap["state"] for cap in data["capabilities"]}
+        assert states["trip_plan"] == "simulated"
+        assert states["flight_compare"] == "simulated"
+        assert states["booking_handoff"] == "requires_connector"
+        assert states["budget_check"] == "simulated"
+        assert states["disruption_replan"] == "simulated"
 
     def test_root_has_schema_version(self):
         client = _make_client()
@@ -154,6 +160,14 @@ class TestDetectIntent:
     def test_itinerary_keyword(self):
         m = _get_app()
         assert m.detect_intent("Create an itinerary for my trip") == "trip_plan"
+
+    def test_flight_compare_keyword(self):
+        m = _get_app()
+        assert m.detect_intent("Compare flights to Lisbon next month") == "flight_compare"
+
+    def test_booking_handoff_keyword(self):
+        m = _get_app()
+        assert m.detect_intent("I am ready to book now") == "booking_handoff"
 
     def test_budget_keyword(self):
         m = _get_app()
@@ -240,6 +254,10 @@ class TestGetBudgetTier:
     def test_premium_detected_as_luxury(self):
         m = _get_app()
         assert m._get_budget_tier("I prefer premium hotels") == "luxury"
+
+    def test_extract_budget_tier_returns_none_for_generic_query(self):
+        m = _get_app()
+        assert m._extract_budget_tier("Plan my trip") is None
 
 
 class TestGetDestinationData:
@@ -495,6 +513,76 @@ class TestWebhookTripPlan:
             resp = client.post("/", json=_webhook_payload("plan a trip"))
         text = resp.json()["content_parts"][0]["text"]
         assert not text.startswith("Hey ")
+
+    def test_uses_profile_budget_when_query_has_no_budget_hint(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here is your trip."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "plan a trip to Lisbon",
+                    profile={"preferences": {"budget": "high"}},
+                ),
+            )
+        trip_card = next(c for c in resp.json()["cards"] if c["type"] == "trip_plan")
+        budget_field = next(f for f in trip_card["fields"] if f["label"] == "Budget Tier")
+        assert "luxury" in budget_field["value"].lower()
+        assert resp.json()["metadata"]["personalization"]["used"]["preferences.budget"] == "luxury"
+
+    def test_generic_mode_when_budget_preference_missing(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here is your trip."):
+            resp = client.post("/", json=_webhook_payload("plan a trip to Lisbon"))
+        assert resp.json()["metadata"]["personalization"]["mode"] == "generic"
+
+    def test_locale_instruction_added_to_system_prompt(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        captured: dict[str, str] = {}
+
+        async def _fake_call(system_prompt: str, user_message: str) -> str:
+            captured["system_prompt"] = system_prompt
+            return "Trip ready."
+
+        with patch.object(m, "call_llm", side_effect=_fake_call):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "plan a trip to Lisbon",
+                    profile={"display_name": "Sara", "locale": "pt-BR"},
+                ),
+            )
+
+        assert resp.status_code == 200
+        assert "preferred language (pt-BR)" in captured["system_prompt"]
+
+
+class TestWebhookFlightCompare:
+    def test_returns_flight_compare_card(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here are the best flight options."):
+            resp = client.post("/", json=_webhook_payload("Compare flights to Lisbon next month"))
+        cards = resp.json().get("cards", [])
+        assert any(c["type"] == "flight_compare" for c in cards)
+
+
+class TestWebhookBookingHandoff:
+    def test_returns_booking_handoff_card(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Your booking handoff is ready."):
+            resp = client.post("/", json=_webhook_payload("Prepare booking handoff for Barcelona"))
+        cards = resp.json().get("cards", [])
+        handoff = next(c for c in cards if c["type"] == "booking_handoff")
+        assert handoff["metadata"]["capability_state"] == "requires_connector"
 
 
 # ---------------------------------------------------------------------------

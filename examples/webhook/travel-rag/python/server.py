@@ -564,6 +564,38 @@ def _weather_prompt(destinations: list[dict[str, Any]]) -> str:
     )
 
 
+def _get_locale(profile: dict[str, Any]) -> str:
+    locale = profile.get("locale") or profile.get("language") or ""
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _apply_language_instruction(system_prompt: str, locale: str) -> str:
+    if not locale:
+        return system_prompt
+    return (
+        system_prompt
+        + f"\n\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep destination names, currencies, and itinerary fields readable."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Response builders
 # ---------------------------------------------------------------------------
@@ -573,8 +605,9 @@ def _build_destination_response(
     query: str,
     destinations: list[dict[str, Any]],
     articles: list[dict[str, Any]],
+    locale: str = "",
 ) -> dict[str, Any]:
-    llm_reply = call_llm(_destination_prompt(destinations, articles), query)
+    llm_reply = call_llm(_apply_language_instruction(_destination_prompt(destinations, articles), locale), query)
     cards = [destination_to_card(d) for d in destinations[:3]]
     actions = build_destination_actions(destinations)
     if not actions and articles:
@@ -602,8 +635,8 @@ def _build_destination_response(
     )
 
 
-def _build_itinerary_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
-    llm_reply = call_llm(_itinerary_prompt(destinations), query)
+def _build_itinerary_response(query: str, destinations: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
+    llm_reply = call_llm(_apply_language_instruction(_itinerary_prompt(destinations), locale), query)
 
     # Parse days from query (default 3)
     days_match = re.search(r"\b(\d+)\s*(?:-?\s*)?days?\b", query, re.IGNORECASE)
@@ -631,8 +664,8 @@ def _build_itinerary_response(query: str, destinations: list[dict[str, Any]]) ->
     )
 
 
-def _build_budget_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
-    llm_reply = call_llm(_budget_prompt(destinations), query)
+def _build_budget_response(query: str, destinations: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
+    llm_reply = call_llm(_apply_language_instruction(_budget_prompt(destinations), locale), query)
     cards = [destination_to_card(d) for d in destinations[:2]]
     actions = build_destination_actions(destinations)
     return _build_envelope(
@@ -650,8 +683,8 @@ def _build_budget_response(query: str, destinations: list[dict[str, Any]]) -> di
     )
 
 
-def _build_weather_response(query: str, destinations: list[dict[str, Any]]) -> dict[str, Any]:
-    llm_reply = call_llm(_weather_prompt(destinations), query)
+def _build_weather_response(query: str, destinations: list[dict[str, Any]], locale: str = "") -> dict[str, Any]:
+    llm_reply = call_llm(_apply_language_instruction(_weather_prompt(destinations), locale), query)
     cards = [destination_to_card(d) for d in destinations[:2]]
     actions = build_destination_actions(destinations)
     return _build_envelope(
@@ -823,6 +856,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     logger.info("Query: %r | Intent: %s", query[:80], intent)
 
     display_name: str = profile.get("display_name") or profile.get("name") or ""
+    locale = _get_locale(profile)
     wants_stream = (
         STREAMING_ENABLED
         and "text/event-stream" in request.headers.get("accept", "")
@@ -853,7 +887,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
 
         async def _event_stream() -> AsyncIterator[str]:
             if intent == "itinerary":
-                system_prompt = _itinerary_prompt(destinations)
+                system_prompt = _apply_language_instruction(_itinerary_prompt(destinations), locale)
                 days_match = re.search(r"\b(\d+)\s*(?:-?\s*)?days?\b", query, re.IGNORECASE)
                 num_days = min(int(days_match.group(1)), 7) if days_match else 3
                 cards = []
@@ -862,15 +896,15 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                     cards.append(build_itinerary_card(destinations[0], days=num_days))
                 actions = build_destination_actions(destinations)
             elif intent == "budget":
-                system_prompt = _budget_prompt(destinations)
+                system_prompt = _apply_language_instruction(_budget_prompt(destinations), locale)
                 cards = [destination_to_card(d) for d in destinations[:2]]
                 actions = build_destination_actions(destinations)
             elif intent == "weather":
-                system_prompt = _weather_prompt(destinations)
+                system_prompt = _apply_language_instruction(_weather_prompt(destinations), locale)
                 cards = [destination_to_card(d) for d in destinations[:2]]
                 actions = build_destination_actions(destinations)
             else:
-                system_prompt = _destination_prompt(destinations, articles)
+                system_prompt = _apply_language_instruction(_destination_prompt(destinations, articles), locale)
                 cards = [destination_to_card(d) for d in destinations[:3]]
                 actions = build_destination_actions(destinations)
                 if not actions and articles:
@@ -910,7 +944,7 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
                 + "\n\n"
             )
 
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -950,16 +984,20 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
     # ---------------------------------------------------------------------------
 
     if intent == "itinerary":
-        response_body = _build_itinerary_response(query, destinations)
+        response_body = _build_itinerary_response(query, destinations, locale=locale)
     elif intent == "budget":
-        response_body = _build_budget_response(query, destinations)
+        response_body = _build_budget_response(query, destinations, locale=locale)
     elif intent == "weather":
-        response_body = _build_weather_response(query, destinations)
+        response_body = _build_weather_response(query, destinations, locale=locale)
     else:
-        response_body = _build_destination_response(query, destinations, articles)
+        response_body = _build_destination_response(query, destinations, articles, locale=locale)
 
     if display_name:
         response_body = _personalise(response_body, display_name)
+        localized = _localized_prefix(locale, display_name)
+        text = response_body["content_parts"][0]["text"]
+        if localized and text.startswith(f"Hey {display_name}! "):
+            response_body["content_parts"][0]["text"] = localized + text[len(f"Hey {display_name}! "):]
 
     return JSONResponse(response_body)
 

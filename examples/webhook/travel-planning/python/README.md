@@ -4,6 +4,20 @@ Multi-step travel planning orchestration demo for the Nexo Partner Agent API.
 
 Demonstrates 3 intents with simulated data - no real travel API required.
 
+## Optional profile context
+
+This example reads optional consent-scoped travel hints:
+
+- `profile.display_name` for greeting
+- `profile.preferences.budget` to choose a default trip budget tier when the
+  user message does not specify one
+- `profile.locale` and `profile.country` are preserved in response
+  personalization metadata for future proof/debug surfaces
+
+If these fields are absent, the webhook falls back to the generic mid-range
+planning path. Responses include `metadata.personalization` so Nexo can show
+which profile context was applied.
+
 ## Intents
 
 | Intent | Trigger keywords | Returns |

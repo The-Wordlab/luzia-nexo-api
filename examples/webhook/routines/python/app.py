@@ -225,9 +225,14 @@ _SEED_WEATHER = {"condition": "Partly cloudy", "temp_c": 18, "temp_f": 64}
 # ---------------------------------------------------------------------------
 
 
-def build_morning_briefing_card(display_name: str) -> dict[str, Any]:
+def build_morning_briefing_card(
+    display_name: str,
+    *,
+    locale: str = "",
+    personal_focus: str | None = None,
+) -> dict[str, Any]:
     """Build a morning_briefing card with weather, calendar summary, and priorities."""
-    greeting = f"Good morning, {display_name}!" if display_name else "Good morning!"
+    greeting = _localized_morning_greeting(locale, display_name)
     fields: list[dict[str, str]] = [
         {
             "label": "Weather",
@@ -242,6 +247,8 @@ def build_morning_briefing_card(display_name: str) -> dict[str, Any]:
             "value": " · ".join(f"#{i + 1} {p}" for i, p in enumerate(_SEED_PRIORITIES[:2])),
         },
     ]
+    if personal_focus:
+        fields.append({"label": "Personal focus", "value": personal_focus})
     return {
         "type": "morning_briefing",
         "title": greeting,
@@ -313,6 +320,112 @@ def _get_display_name(data: dict[str, Any]) -> str:
     profile = data.get("profile") or {}
     name = profile.get("display_name") or profile.get("name") or ""
     return name.strip()
+
+
+def _get_profile(data: dict[str, Any]) -> dict[str, Any]:
+    profile = data.get("profile") or {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def _get_preferences(data: dict[str, Any]) -> dict[str, Any]:
+    preferences = _get_profile(data).get("preferences") or {}
+    return preferences if isinstance(preferences, dict) else {}
+
+
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = _get_profile(data)
+    locale = profile.get("locale") or profile.get("language") or _get_preferences(data).get("language") or ""
+    return str(locale).strip()
+
+
+def _build_personal_focus(data: dict[str, Any]) -> str | None:
+    preferences = _get_preferences(data)
+    profile = _get_profile(data)
+    facts = profile.get("facts") or []
+    if not isinstance(facts, list):
+        facts = []
+
+    focus_parts: list[str] = []
+    dietary = preferences.get("dietary")
+    if dietary == "vegetarian":
+        focus_parts.append("keep a plant-based lunch in the plan")
+    elif dietary:
+        focus_parts.append(f"make room for {dietary} meal options")
+
+    dining_style = preferences.get("dining_style")
+    if dining_style == "family":
+        focus_parts.append("leave time to coordinate dinner for the family")
+    elif dining_style == "quick":
+        focus_parts.append("keep meals and errands efficient")
+
+    budget = preferences.get("budget")
+    if budget == "low":
+        focus_parts.append("keep meals and errands budget-conscious")
+    elif budget == "high":
+        focus_parts.append("protect time for premium reservations and planning")
+
+    lowered_facts = [str(f).lower() for f in facts if isinstance(f, str)]
+    if any(
+        "work out" in fact or "workout" in fact or "works out" in fact
+        for fact in lowered_facts
+    ):
+        focus_parts.append("protect a workout block")
+
+    if not focus_parts:
+        return None
+    return "; ".join(focus_parts)
+
+
+def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    used: dict[str, Any] = {}
+    locale = _get_locale(data)
+    personal_focus = _build_personal_focus(data)
+    if locale:
+        used["locale"] = locale
+    if personal_focus:
+        used["routine_focus"] = personal_focus
+    return {
+        "mode": "profile" if used else "generic",
+        "used": used,
+        "missing_optional": [key for key in ["locale", "routine_focus"] if key not in used],
+    }
+
+
+def _localized_morning_greeting(locale: str, display_name: str) -> str:
+    greeting = "Good morning"
+    if locale.startswith("pt"):
+        greeting = "Bom dia"
+    elif locale.startswith("fr"):
+        greeting = "Bonjour"
+    elif locale.startswith("ja"):
+        greeting = "Ohayo"
+    return f"{greeting}, {display_name}!" if display_name else f"{greeting}!"
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _language_instruction(locale: str) -> str:
+    if not locale:
+        return ""
+    return (
+        f"\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep schedule times and structured fields easy to scan."
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -431,6 +544,9 @@ async def webhook(request: Request):
 
     intent = detect_intent(query)
     display_name = _get_display_name(data)
+    locale = _get_locale(data)
+    personal_focus = _build_personal_focus(data)
+    personalization = _build_personalization_metadata(data)
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
@@ -438,7 +554,13 @@ async def webhook(request: Request):
     context_block = ""
 
     if intent == "morning_briefing":
-        cards.append(build_morning_briefing_card(display_name))
+        cards.append(
+            build_morning_briefing_card(
+                display_name,
+                locale=locale,
+                personal_focus=personal_focus,
+            )
+        )
         # Include schedule overview in context
         schedule_summary = "\n".join(
             f"  {s['time']} — {s['title']} ({s.get('duration', '')})" for s in _SEED_SCHEDULE
@@ -449,6 +571,8 @@ async def webhook(request: Request):
             f"Today's meetings:\n{schedule_summary}\n"
             f"Top priorities:\n{priorities_summary}"
         )
+        if personal_focus:
+            context_block += f"\nPersonal focus:\n  - {personal_focus}"
         actions = [
             {"id": "show_schedule", "type": "primary", "label": "View Schedule", "action": "show_schedule"},
             {"id": "show_reminders", "type": "secondary", "label": "Set a Reminder", "action": "show_reminders"},
@@ -490,6 +614,11 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT
     if display_name:
         system += f"\nThe user's name is {display_name}. Address them by name."
+    if locale:
+        system += f"\nThe user's locale is {locale}. Match tone and greeting naturally."
+    system += _language_instruction(locale)
+    if personal_focus:
+        system += f"\nUse this saved routine context when relevant: {personal_focus}."
 
     # SSE or JSON
     wants_stream = (
@@ -506,7 +635,7 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_routines_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -535,7 +664,10 @@ async def webhook(request: Request):
                     cards=cards,
                     actions=actions,
                     artifacts=artifacts,
-                    metadata={"prompt_suggestions": prompt_suggestions},
+                    metadata={
+                        "prompt_suggestions": prompt_suggestions,
+                        "personalization": personalization,
+                    },
                 ),
             }
             yield f"data: {json.dumps(done_payload)}\n\n"
@@ -545,8 +677,9 @@ async def webhook(request: Request):
 
     # Non-streaming JSON
     llm_reply = await call_llm(system, llm_prompt)
-    if display_name:
-        llm_reply = f"Hey {display_name}! {llm_reply}"
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        llm_reply = f"{prefix}{llm_reply}"
 
     return JSONResponse(
         _build_envelope(
@@ -555,5 +688,6 @@ async def webhook(request: Request):
             cards=cards,
             actions=actions,
             artifacts=artifacts,
+            metadata={"personalization": personalization},
         )
     )

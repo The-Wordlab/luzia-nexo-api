@@ -75,9 +75,17 @@ AGENT_CARD: dict[str, Any] = {
                 "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
-                    "intents": ["trip_plan", "budget_check", "disruption_replan"],
+                    "intents": [
+                        "trip_plan",
+                        "flight_compare",
+                        "booking_handoff",
+                        "budget_check",
+                        "disruption_replan",
+                    ],
                     "prompt_suggestions": [
                         "Plan a budget trip to Japan for 10 days",
+                        "Compare flights to Lisbon next month",
+                        "Prepare booking handoff for my Barcelona trip",
                         "My flight got cancelled - help me rebook",
                         "What's my trip budget looking like?",
                     ],
@@ -123,6 +131,14 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
         "visit", "holiday", "vacation", "book", "flights", "hotel", "days",
         "week", "weekend", "where should", "suggest", "recommend",
     ],
+    "flight_compare": [
+        "compare flights", "flight options", "cheapest flight", "price watch",
+        "depart", "return", "direct flight", "flight compare",
+    ],
+    "booking_handoff": [
+        "book now", "ready to book", "booking handoff", "reserve hotel",
+        "confirm booking", "handoff", "checkout", "approve booking",
+    ],
     "budget_check": [
         "budget", "cost", "spend", "spent", "expense", "how much", "afford",
         "price", "money", "total", "check budget", "over budget", "savings",
@@ -139,7 +155,7 @@ INTENT_KEYWORDS: dict[str, list[str]] = {
 def detect_intent(message: str) -> str:
     """Detect user intent from message text via keyword counting.
 
-    Priority: disruption_replan > budget_check > trip_plan > trip_plan (default).
+    Priority: disruption_replan > booking_handoff > flight_compare > budget_check > trip_plan.
     """
     text = message.lower()
     counts: dict[str, int] = {}
@@ -147,7 +163,7 @@ def detect_intent(message: str) -> str:
         counts[intent] = sum(1 for kw in keywords if kw in text)
 
     # Priority ordering for tie-breaking
-    priority = ["disruption_replan", "budget_check", "trip_plan"]
+    priority = ["disruption_replan", "booking_handoff", "flight_compare", "budget_check", "trip_plan"]
     best_intent = max(priority, key=lambda k: counts[k])
     if counts[best_intent] > 0:
         return best_intent
@@ -162,6 +178,18 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
             "Show a cheaper destination alternative",
             "Build a day-by-day itinerary",
             "Adjust this plan for a shorter trip",
+        ]
+    if intent == "flight_compare":
+        return [
+            "Show the cheapest direct option",
+            "Add a baggage-friendly option",
+            "Set a price watch for this route",
+        ]
+    if intent == "booking_handoff":
+        return [
+            "Lock the best hotel and flight bundle",
+            "Adjust hotel constraints before handoff",
+            "What details do you need to complete booking?",
         ]
     if intent == "budget_check":
         return [
@@ -296,17 +324,31 @@ def _get_destination_data(query: str) -> dict[str, Any]:
     return _DESTINATIONS["default"]
 
 
-def _get_budget_tier(query: str) -> str:
-    """Detect budget tier from query text."""
+def _extract_budget_tier(query: str) -> str | None:
+    """Detect an explicit budget tier from query text."""
     text = query.lower()
     if any(w in text for w in ["luxury", "premium", "business class", "5 star", "five star"]):
         return "luxury"
     if any(w in text for w in ["budget", "cheap", "backpack", "hostel", "affordable"]):
         return "budget"
+    return None
+
+
+def _get_budget_tier(query: str) -> str:
+    """Detect budget tier from query text."""
+    explicit = _extract_budget_tier(query)
+    if explicit:
+        return explicit
     return "mid-range"
 
 
-def build_trip_plan_card(destination_data: dict[str, Any], budget: dict[str, float], days: int) -> dict[str, Any]:
+def build_trip_plan_card(
+    destination_data: dict[str, Any],
+    budget: dict[str, float],
+    days: int,
+    *,
+    budget_tier: str | None = None,
+) -> dict[str, Any]:
     """Build a destination + itinerary card with budget breakdown."""
     nightly_total = budget["hotels"] * days
     per_day_food = budget["food"] * days
@@ -316,6 +358,7 @@ def build_trip_plan_card(destination_data: dict[str, Any], budget: dict[str, flo
     fields: list[dict[str, str]] = [
         {"label": "Destination", "value": destination_data["name"]},
         {"label": "Duration", "value": f"{days} days"},
+        {"label": "Budget Tier", "value": budget_tier or "mid-range"},
         {"label": "Weather", "value": destination_data["weather"]},
         {"label": "Top highlights", "value": ", ".join(destination_data["highlights"])},
         {"label": "Best time to visit", "value": destination_data["best_months"]},
@@ -369,6 +412,56 @@ def build_budget_check_card(budget_total: float, spent: float) -> dict[str, Any]
     }
 
 
+def build_flights_card(destination_data: dict[str, Any], budget_tier: str) -> dict[str, Any]:
+    destination_name = destination_data["name"]
+    option_rows = {
+        "budget": [
+            "1 stop - EUR 180 - 4h20",
+            "Early direct - EUR 215 - 2h55",
+            "Late direct - EUR 205 - 3h05",
+        ],
+        "mid-range": [
+            "Direct flex - EUR 260 - 2h50",
+            "Direct saver - EUR 230 - 2h55",
+            "1 stop premium economy - EUR 290 - 4h10",
+        ],
+        "luxury": [
+            "Business flex - EUR 620 - 2h50",
+            "Premium direct - EUR 410 - 2h55",
+            "Business plus lounge - EUR 690 - 3h00",
+        ],
+    }
+    options = option_rows.get(budget_tier, option_rows["mid-range"])
+    return {
+        "type": "flight_compare",
+        "title": f"Flight Options to {destination_name}",
+        "subtitle": f"Shortlisted for a {budget_tier} traveller",
+        "badges": ["Travel Planning", "Simulated"],
+        "fields": [
+            {"label": "Option A", "value": options[0]},
+            {"label": "Option B", "value": options[1]},
+            {"label": "Option C", "value": options[2]},
+        ],
+        "metadata": {"capability_state": "simulated"},
+    }
+
+
+def build_booking_handoff_card(destination_data: dict[str, Any], budget_tier: str) -> dict[str, Any]:
+    return {
+        "type": "booking_handoff",
+        "title": f"Ready to Book {destination_data['name']}",
+        "subtitle": "Connector-ready travel package",
+        "badges": ["Travel Planning", "Requires Connector"],
+        "fields": [
+            {"label": "Flight bundle", "value": f"{budget_tier.title()} shortlist prepared"},
+            {"label": "Hotel shortlist", "value": "3 options near the city centre"},
+            {"label": "Transfer plan", "value": "Airport transfer and local transit guidance included"},
+            {"label": "Next step", "value": "Approve handoff to continue in the booking flow"},
+        ],
+        "metadata": {"capability_state": "requires_connector"},
+    }
+
+
 def build_disruption_card(scenario_index: int = 0) -> dict[str, Any]:
     """Build a disruption alert card with alternative options."""
     idx = min(scenario_index, len(_DISRUPTION_SCENARIOS) - 1)
@@ -405,6 +498,84 @@ def _get_display_name(data: dict[str, Any]) -> str:
     profile = data.get("profile") or {}
     name = profile.get("display_name") or profile.get("name") or ""
     return name.strip()
+
+
+def _get_profile(data: dict[str, Any]) -> dict[str, Any]:
+    profile = data.get("profile") or {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def _get_preferences(data: dict[str, Any]) -> dict[str, Any]:
+    preferences = _get_profile(data).get("preferences") or {}
+    return preferences if isinstance(preferences, dict) else {}
+
+
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = _get_profile(data)
+    locale = profile.get("locale") or profile.get("language") or _get_preferences(data).get("language") or ""
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _language_instruction(locale: str) -> str:
+    if not locale:
+        return ""
+    return (
+        f"\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep destination names, fares, and structured fields easy to scan."
+    )
+
+
+def _extract_profile_budget_tier(data: dict[str, Any]) -> str | None:
+    raw = _get_preferences(data).get("budget")
+    if not raw:
+        return None
+    normalized = str(raw).strip().lower()
+    return {
+        "low": "budget",
+        "budget": "budget",
+        "medium": "mid-range",
+        "mid-range": "mid-range",
+        "high": "luxury",
+        "luxury": "luxury",
+    }.get(normalized)
+
+
+def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    profile = _get_profile(data)
+    used: dict[str, Any] = {}
+    budget_tier = _extract_profile_budget_tier(data)
+    locale = _get_locale(data)
+    country = profile.get("country")
+    if budget_tier:
+        used["preferences.budget"] = budget_tier
+    if locale:
+        used["locale"] = locale
+    if country:
+        used["country"] = country
+    return {
+        "mode": "profile" if used else "generic",
+        "used": used,
+        "missing_optional": [
+            key for key in ["preferences.budget", "locale", "country"] if key not in used
+        ],
+    }
 
 
 def _extract_trip_days(query: str) -> int:
@@ -495,6 +666,8 @@ async def root():
         ],
         "capabilities": [
             {"intent": "trip_plan", "state": "simulated"},
+            {"intent": "flight_compare", "state": "simulated"},
+            {"intent": "booking_handoff", "state": "requires_connector"},
             {"intent": "budget_check", "state": "simulated"},
             {"intent": "disruption_replan", "state": "simulated"},
         ],
@@ -536,6 +709,8 @@ async def webhook(request: Request):
 
     intent = detect_intent(query)
     display_name = _get_display_name(data)
+    locale = _get_locale(data)
+    personalization = _build_personalization_metadata(data)
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
@@ -544,11 +719,11 @@ async def webhook(request: Request):
 
     if intent == "trip_plan":
         destination_data = _get_destination_data(query)
-        budget_tier = _get_budget_tier(query)
+        budget_tier = _extract_budget_tier(query) or _extract_profile_budget_tier(data) or "mid-range"
         budget = _BUDGET_TEMPLATES[budget_tier]
         days = _extract_trip_days(query)
 
-        cards.append(build_trip_plan_card(destination_data, budget, days))
+        cards.append(build_trip_plan_card(destination_data, budget, days, budget_tier=budget_tier))
         context_block = (
             f"Trip plan for {destination_data['name']}:\n"
             f"  Duration: {days} days\n"
@@ -558,12 +733,50 @@ async def webhook(request: Request):
             f"  Estimated flights: EUR {budget['flights']:.0f}\n"
             f"  Hotels per night: EUR {budget['hotels']:.0f}\n"
         )
+        if "preferences.budget" in personalization["used"]:
+            context_block += (
+                f"  Budget source: saved preference ({personalization['used']['preferences.budget']})\n"
+            )
         actions = [
             {"id": "check_budget", "type": "primary", "label": "Check Budget", "action": "check_budget"},
             {"id": "adjust_preferences", "type": "secondary", "label": "Adjust Preferences", "action": "adjust_preferences"},
             {"id": "see_alternatives", "type": "secondary", "label": "See Alternatives", "action": "see_alternatives"},
         ]
         artifacts = [{"type": "application/json", "name": "trip_plan", "data": {"destination": destination_data, "budget": budget, "days": days}}]
+
+    elif intent == "flight_compare":
+        destination_data = _get_destination_data(query)
+        budget_tier = _extract_budget_tier(query) or _extract_profile_budget_tier(data) or "mid-range"
+        cards.append(build_flights_card(destination_data, budget_tier))
+        context_block = (
+            f"Flight comparison for {destination_data['name']}:\n"
+            f"  Budget tier: {budget_tier}\n"
+            "  Compare direct and flexible options while keeping the recommendation concise.\n"
+            "  Highlight at least one value option and one convenience option."
+        )
+        actions = [
+            {"id": "pick_option", "type": "primary", "label": "Pick Option", "action": "pick_option"},
+            {"id": "set_price_watch", "type": "secondary", "label": "Set Price Watch", "action": "set_price_watch"},
+            {"id": "prepare_booking", "type": "secondary", "label": "Prepare Booking", "action": "prepare_booking"},
+        ]
+        artifacts = [{"type": "application/json", "name": "flight_options", "data": {"destination": destination_data["name"], "budget_tier": budget_tier}}]
+
+    elif intent == "booking_handoff":
+        destination_data = _get_destination_data(query)
+        budget_tier = _extract_budget_tier(query) or _extract_profile_budget_tier(data) or "mid-range"
+        cards.append(build_booking_handoff_card(destination_data, budget_tier))
+        context_block = (
+            f"Booking handoff for {destination_data['name']}:\n"
+            f"  Budget tier: {budget_tier}\n"
+            "  Confirm the travel bundle is ready to hand off to a booking connector.\n"
+            "  Make clear what details are already prepared and what the user should confirm next."
+        )
+        actions = [
+            {"id": "approve_handoff", "type": "primary", "label": "Approve Booking Handoff", "action": "approve_handoff"},
+            {"id": "change_constraints", "type": "secondary", "label": "Change Constraints", "action": "change_constraints"},
+            {"id": "review_flights", "type": "secondary", "label": "Review Flights", "action": "review_flights"},
+        ]
+        artifacts = [{"type": "application/json", "name": "booking_handoff", "data": {"destination": destination_data["name"], "budget_tier": budget_tier}}]
 
     elif intent == "budget_check":
         # Simulated: 65% spent of a EUR 1500 budget
@@ -612,6 +825,12 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT
     if display_name:
         system += f"\nThe user's name is {display_name}. Address them by name."
+    system += _language_instruction(locale)
+    if personalization["used"]:
+        system += (
+            "\nUse the user's saved travel context when relevant. Applied profile context: "
+            + json.dumps(personalization["used"], sort_keys=True)
+        )
 
     # SSE or JSON
     wants_stream = (
@@ -628,7 +847,7 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_travel_planning_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -657,7 +876,10 @@ async def webhook(request: Request):
                     cards=cards,
                     actions=actions,
                     artifacts=artifacts,
-                    metadata={"prompt_suggestions": prompt_suggestions},
+                    metadata={
+                        "prompt_suggestions": prompt_suggestions,
+                        "personalization": personalization,
+                    },
                 ),
             }
             yield f"data: {json.dumps(done_payload)}\n\n"
@@ -667,8 +889,9 @@ async def webhook(request: Request):
 
     # Non-streaming JSON
     llm_reply = await call_llm(system, llm_prompt)
-    if display_name:
-        llm_reply = f"Hey {display_name}! {llm_reply}"
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        llm_reply = f"{prefix}{llm_reply}"
 
     return JSONResponse(
         _build_envelope(
@@ -677,5 +900,6 @@ async def webhook(request: Request):
             cards=cards,
             actions=actions,
             artifacts=artifacts,
+            metadata={"personalization": personalization},
         )
     )

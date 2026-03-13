@@ -12,6 +12,18 @@ A standalone FastAPI webhook example for the Nexo Partner Agent API demonstratin
 
 All capabilities are simulated - no real restaurant API or payment integration required.
 
+## Optional profile context
+
+This example now reads optional consent-scoped profile fields defensively:
+
+- `profile.display_name` for greeting
+- `profile.preferences.dietary` or `profile.dietary_restrictions` to bias menu browse results
+- `profile.preferences.budget` to bias draft order composition
+
+If those attributes are absent, the webhook falls back to generic behavior.
+Responses also include `metadata.personalization` describing which profile
+inputs were actually used.
+
 ## Running locally
 
 ```bash

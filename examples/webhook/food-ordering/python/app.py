@@ -362,6 +362,99 @@ def _get_display_name(data: dict[str, Any]) -> str:
     return name.strip()
 
 
+def _get_profile(data: dict[str, Any]) -> dict[str, Any]:
+    profile = data.get("profile") or {}
+    return profile if isinstance(profile, dict) else {}
+
+
+def _get_preferences(data: dict[str, Any]) -> dict[str, Any]:
+    preferences = _get_profile(data).get("preferences") or {}
+    return preferences if isinstance(preferences, dict) else {}
+
+
+def _extract_profile_dietary(data: dict[str, Any]) -> str | None:
+    profile = _get_profile(data)
+    preferences = _get_preferences(data)
+    dietary = preferences.get("dietary") or profile.get("dietary_preferences")
+    if dietary:
+        return str(dietary).strip().lower()
+
+    restrictions = profile.get("dietary_restrictions")
+    if isinstance(restrictions, list) and restrictions:
+        first = restrictions[0]
+        if isinstance(first, str) and first.strip():
+            return first.strip().lower()
+    return None
+
+
+def _extract_profile_budget(data: dict[str, Any]) -> str | None:
+    budget = _get_preferences(data).get("budget")
+    if not budget:
+        return None
+    return str(budget).strip().lower()
+
+
+def _get_locale(data: dict[str, Any]) -> str:
+    profile = _get_profile(data)
+    locale = (
+        profile.get("locale")
+        or profile.get("language")
+        or _get_preferences(data).get("language")
+        or ""
+    )
+    return str(locale).strip()
+
+
+def _localized_prefix(locale: str, display_name: str) -> str:
+    if not display_name:
+        return ""
+    lowered = locale.lower()
+    if lowered.startswith("pt"):
+        return f"Oi {display_name}! "
+    if lowered.startswith("fr"):
+        return f"Salut {display_name}! "
+    if lowered.startswith("it"):
+        return f"Ciao {display_name}! "
+    if lowered.startswith("ja"):
+        return f"{display_name}さん、こんにちは！ "
+    if lowered.startswith("es"):
+        return f"Hola {display_name}! "
+    if lowered.startswith("de"):
+        return f"Hallo {display_name}! "
+    return f"Hey {display_name}! "
+
+
+def _language_instruction(locale: str) -> str:
+    if not locale:
+        return ""
+    return (
+        f"\nRespond in the user's preferred language ({locale}) for all free-form text. "
+        "Keep item names, numbers, and structured fields readable."
+    )
+
+
+def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    used: dict[str, Any] = {}
+    dietary = _extract_profile_dietary(data)
+    budget = _extract_profile_budget(data)
+    locale = _get_locale(data)
+    if dietary:
+        used["preferences.dietary"] = dietary
+    if budget:
+        used["preferences.budget"] = budget
+    if locale:
+        used["locale"] = locale
+    return {
+        "mode": "profile" if used else "generic",
+        "used": used,
+        "missing_optional": [
+            key
+            for key in ["preferences.dietary", "preferences.budget", "locale"]
+            if key not in used
+        ],
+    }
+
+
 def _extract_dietary_filter(query: str) -> str | None:
     """Extract dietary preference from query text."""
     text = query.lower()
@@ -374,12 +467,23 @@ def _extract_dietary_filter(query: str) -> str | None:
     return None
 
 
-def _build_demo_order_items() -> tuple[list[dict[str, Any]], float]:
-    """Return a demo order with 2 items and computed total."""
-    items = [
-        {"name": "Margherita Pizza", "price": 12.99, "qty": 1},
-        {"name": "Lentil Soup", "price": 8.50, "qty": 1},
-    ]
+def _build_demo_order_items(budget_preference: str | None = None) -> tuple[list[dict[str, Any]], float]:
+    """Return a demo order with items adapted to budget preference."""
+    if budget_preference == "low":
+        items = [
+            {"name": "Lentil Soup", "price": 8.50, "qty": 1},
+            {"name": "Garden Salad", "price": 9.25, "qty": 1},
+        ]
+    elif budget_preference == "high":
+        items = [
+            {"name": "Salmon Poke Bowl", "price": 18.95, "qty": 1},
+            {"name": "Margherita Pizza", "price": 12.99, "qty": 1},
+        ]
+    else:
+        items = [
+            {"name": "Margherita Pizza", "price": 12.99, "qty": 1},
+            {"name": "Lentil Soup", "price": 8.50, "qty": 1},
+        ]
     total = sum(i["price"] * i["qty"] for i in items)
     return items, total
 
@@ -500,6 +604,8 @@ async def webhook(request: Request):
 
     intent = detect_intent(query)
     display_name = _get_display_name(data)
+    locale = _get_locale(data)
+    personalization = _build_personalization_metadata(data)
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
@@ -507,7 +613,7 @@ async def webhook(request: Request):
     context_block = ""
 
     if intent == "menu_browse":
-        dietary_filter = _extract_dietary_filter(query)
+        dietary_filter = _extract_dietary_filter(query) or _extract_profile_dietary(data)
         cards.append(build_menu_card(dietary_filter))
         visible_items = [
             i for i in _MENU_ITEMS
@@ -517,6 +623,8 @@ async def webhook(request: Request):
             f"  - {item['name']} (${item['price']:.2f}) [{', '.join(item['dietary'])}]: {item['description']}"
             for item in visible_items
         )
+        if dietary_filter and "preferences.dietary" in personalization["used"]:
+            context_block += f"\nSaved dietary preference: {dietary_filter}"
         actions = [
             {"id": "build_order", "type": "primary", "label": "Build My Order", "action": "build_order"},
             {"id": "filter_vegan", "type": "secondary", "label": "Vegan Options", "action": "filter_vegan"},
@@ -525,17 +633,22 @@ async def webhook(request: Request):
         artifacts = [{"type": "application/json", "name": "menu_items", "data": visible_items[:10]}]
 
     elif intent == "order_build":
-        order_items, total = _build_demo_order_items()
+        budget_preference = _extract_profile_budget(data)
+        order_items, total = _build_demo_order_items(budget_preference=budget_preference)
         # Check for budget constraint
         budget_note = ""
         if "budget" in query.lower():
             budget_note = "Budget-conscious selection chosen"
+        elif budget_preference:
+            budget_note = f"Adjusted for your {budget_preference} budget preference"
         cards.append(build_order_summary_card(order_items, total, notes=budget_note))
         context_block = (
             f"Order summary:\n"
             + "\n".join(f"  - {i['name']} ${i['price']:.2f} x{i['qty']}" for i in order_items)
             + f"\n  Total: ${total:.2f}"
         )
+        if budget_note:
+            context_block += f"\n  Personalization: {budget_note}"
         actions = [
             {"id": "confirm_order", "type": "primary", "label": "Confirm Order", "action": "confirm_order"},
             {"id": "modify_order", "type": "secondary", "label": "Modify Order", "action": "modify_order"},
@@ -566,6 +679,12 @@ async def webhook(request: Request):
     system = SYSTEM_PROMPT
     if display_name:
         system += f"\nThe user's name is {display_name}. Address them by name."
+    system += _language_instruction(locale)
+    if personalization["used"]:
+        system += (
+            "\nUse the user's saved preferences when relevant. Applied profile context: "
+            + json.dumps(personalization["used"], sort_keys=True)
+        )
 
     # SSE or JSON
     wants_stream = (
@@ -582,7 +701,7 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_food_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = f"Hey {display_name}! " if display_name else ""
+            prefix = _localized_prefix(locale, display_name)
             if prefix:
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
@@ -611,7 +730,10 @@ async def webhook(request: Request):
                     cards=cards,
                     actions=actions,
                     artifacts=artifacts,
-                    metadata={"prompt_suggestions": prompt_suggestions},
+                    metadata={
+                        "prompt_suggestions": prompt_suggestions,
+                        "personalization": personalization,
+                    },
                 ),
             }
             yield f"data: {json.dumps(done_payload)}\n\n"
@@ -621,8 +743,9 @@ async def webhook(request: Request):
 
     # Non-streaming JSON
     llm_reply = await call_llm(system, llm_prompt)
-    if display_name:
-        llm_reply = f"Hey {display_name}! {llm_reply}"
+    prefix = _localized_prefix(locale, display_name)
+    if prefix:
+        llm_reply = f"{prefix}{llm_reply}"
 
     return JSONResponse(
         _build_envelope(
@@ -631,5 +754,6 @@ async def webhook(request: Request):
             cards=cards,
             actions=actions,
             artifacts=artifacts,
+            metadata={"personalization": personalization},
         )
     )
