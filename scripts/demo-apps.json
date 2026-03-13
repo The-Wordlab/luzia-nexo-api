@@ -120,7 +120,7 @@
         ]
       },
       "webhook_url_env": "DEMO_FITNESS_COACH_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-fitness-coach-367427598362.europe-west1.run.app",
+      "webhook_url_default": "https://nexo-fitness-coach-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "partner_skill",
@@ -150,12 +150,14 @@
           "Prepare booking handoff for my Barcelona trip",
           "I am ready to book - what details do you need from me?"
         ],
+        "deprecated": true,
+        "deprecated_reason": "Compatibility slice - prefer Travel Planning for the flagship trip lifecycle flow",
         "showcase_family": "travel",
         "showcase_role": "secondary",
         "superseded_by": "travel-planning"
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNER_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-travel-planner-367427598362.europe-west1.run.app",
+      "webhook_url_default": "https://nexo-travel-planner-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "partner_skill",
@@ -187,7 +189,7 @@
         ]
       },
       "webhook_url_env": "DEMO_LANGUAGE_TUTOR_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-language-tutor-367427598362.europe-west1.run.app",
+      "webhook_url_default": "https://nexo-language-tutor-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "character_transfer",
