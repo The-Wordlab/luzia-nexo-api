@@ -19,7 +19,7 @@ docker compose up --build
 | minimal        | 8080      | POST /webhook   | Python   | Echo server, minimal webhook contract         |
 | structured     | 8081      | POST /          | Python   | Locale-aware greetings, card hints            |
 | advanced       | 8082      | POST /          | Python   | Connector actions, idempotency, retry         |
-| news-rag       | 8090      | POST /          | Python   | RSS news RAG via ChromaDB + LLM              |
+| news-rag       | 8090      | POST /          | Python   | RSS news RAG via pgvector + LLM              |
 | sports-rag     | 8091      | POST /          | Python   | Sports RSS + match data RAG                   |
 | travel-rag     | 8092      | POST /          | Python   | Travel destination + blog RAG                 |
 | football-live  | 8093      | POST /          | Python   | Live football scores, standings, scorers RAG  |
@@ -38,9 +38,10 @@ curl -s http://localhost:8090/health | jq .
 
 ### LLM configuration
 
-The RAG examples default to `ollama/llama3.2`. Install [Ollama](https://ollama.ai/) locally
-and run `ollama pull llama3.2` before starting, or set `LLM_MODEL=gpt-4o` and
-`OPENAI_API_KEY=sk-...` in `.env` to use OpenAI.
+The RAG examples default to `vertex_ai/gemini-2.5-flash` with
+`vertex_ai/text-embedding-004`. Authenticate with
+`gcloud auth application-default login` and set `GOOGLE_CLOUD_PROJECT`
+plus `GOOGLE_CLOUD_LOCATION` in `.env` before starting.
 
 ### Pointing Nexo at local services
 
@@ -51,7 +52,7 @@ Set webhook URLs in the Nexo dashboard to `http://host.docker.internal:<port>/<p
 
 ```bash
 docker compose down       # stop containers, keep volumes
-docker compose down -v    # stop containers and delete ChromaDB volumes
+docker compose down -v    # stop containers and delete local data volumes
 ```
 
 Includes an explicit **OpenClaw Bridge** example at `webhook/openclaw-bridge` for teams that want a webhook adapter between Nexo payloads and OpenClaw `/v1/responses`.

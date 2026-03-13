@@ -31,6 +31,8 @@ from nexo_webhook_contract import (
 )
 
 EXAMPLES_ROOT = Path(__file__).parent.parent.parent / "examples/webhook"
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "examples"))
+from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 # ---------------------------------------------------------------------------
 # Example registry
@@ -45,10 +47,13 @@ EXAMPLES_ROOT = Path(__file__).parent.parent.parent / "examples/webhook"
 
 
 def _setup_news_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch ChromaDB and LLM for the news-RAG example."""
-    mod._collection = None
-    mod._chroma_client = None
-    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "news_chroma"))
+    """Patch pgvector-backed retrieval and LLM for the news-RAG example."""
+    del tmp_path
+    fake_store = FakeVectorStoreRegistry()
+    mod._collection = fake_store.get()
+    mod.get_collection = lambda: fake_store.get()
+    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
     # Patch retrieve and crawl at the module level so they're intercepted
     # regardless of when app startup fires
     sample_hits = [
@@ -68,29 +73,36 @@ def _setup_news_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
 
 
 def _setup_sports_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch ChromaDB and LLM for the sports-RAG example."""
+    """Patch pgvector-backed retrieval and LLM for the sports-RAG example."""
+    del tmp_path
     import ingest as sports_ingest
-    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "sports_chroma"))
+    fake_store = FakeVectorStoreRegistry()
+    sports_ingest._collection_matches = fake_store.get("matches")
+    sports_ingest._collection_articles = fake_store.get("articles")
+    sports_ingest._collection_standings = fake_store.get("standings")
+    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
     # Patch LLM call so no network is required
     mod.call_llm = lambda system, user: "Test sports answer."
     # Patch search functions to return seed data
-    from ingest import SEED_MATCHES
     mod.search_matches = lambda q, n_results=3: []
     mod.search_articles = lambda q, n_results=3: []
     mod.search_standings = lambda q, n_results=1: []
 
 
 def _setup_travel_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch ChromaDB and LLM for the travel-RAG example."""
-    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "travel_chroma"))
+    """Patch pgvector-backed retrieval and LLM for the travel-RAG example."""
+    del tmp_path
+    fake_store = FakeVectorStoreRegistry()
+    mod._destinations_collection = fake_store.get("destinations")
+    mod._articles_collection = fake_store.get("articles")
+    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
     # Patch LLM call so no network is required
     mod.call_llm = lambda system, user: "Test travel answer."
     # Patch search functions to return empty results
     mod.search_destinations = lambda q, n_results=4: []
     mod.search_articles = lambda q, n_results=3: []
-    # Reset ingest module's chroma client so it uses the tmp_path
-    import ingest as travel_ingest
-    travel_ingest.reset_client()
 
 
 WEBHOOK_EXAMPLES = [
@@ -121,7 +133,7 @@ WEBHOOK_EXAMPLES = [
         "endpoint": "/",
         "module": "example_news_rag",
         "setup": _setup_news_rag,
-        "requires": ["chromadb", "litellm", "feedparser"],
+        "requires": ["litellm", "feedparser"],
     },
     {
         "id": "sports-rag",
@@ -129,7 +141,7 @@ WEBHOOK_EXAMPLES = [
         "endpoint": "/",
         "module": "example_sports_rag",
         "setup": _setup_sports_rag,
-        "requires": ["chromadb", "litellm"],
+        "requires": ["litellm"],
     },
     {
         "id": "travel-rag",
@@ -137,7 +149,7 @@ WEBHOOK_EXAMPLES = [
         "endpoint": "/",
         "module": "example_travel_rag",
         "setup": _setup_travel_rag,
-        "requires": ["chromadb", "litellm", "feedparser"],
+        "requires": ["litellm", "feedparser"],
     },
 ]
 

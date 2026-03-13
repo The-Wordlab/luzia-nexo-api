@@ -25,13 +25,6 @@ export GOOGLE_CLOUD_PROJECT=<project>
 export GOOGLE_CLOUD_LOCATION=europe-west1
 ```
 
-Optional OpenAI override for development:
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-```
-
 ## Endpoints
 
 - `GET /` service info

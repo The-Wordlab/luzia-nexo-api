@@ -62,10 +62,9 @@ Streaming responses include both legacy `delta`/`done` payloads and A2A task eve
 | `STREAMING_ENABLED` | `true` | Enable SSE streaming |
 | `REFRESH_INTERVAL` | `300` | Background refresh interval (seconds) |
 | `TOP_K` | `5` | Number of search results per query |
-| `CHROMA_PERSIST_DIR` | `./chroma_football_live` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma` |
-| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Only supported vector backend for this example. |
 | `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
-| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used by pgvector storage |
 | `PGVECTOR_SCHEMA` | `rag_football` | Schema for football vectors and metadata |
 
 ## Architecture

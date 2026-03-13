@@ -10,7 +10,7 @@ All four use the same pattern:
 
 Runtime policy:
 - Production (Cloud Run): Gemini on Vertex via ADC
-- Development override: OpenAI by setting `OPENAI_API_KEY`, `LLM_MODEL`, and `EMBEDDING_MODEL`
+- Development (local and hosted): Gemini on Vertex via ADC
 - Durable vector storage on Cloud Run: `pgvector` on Cloud SQL
 
 ---
@@ -473,14 +473,6 @@ GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvico
 # Football Live RAG on :8003
 cd examples/webhook/football-live/python
 GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
-```
-
-OpenAI development override example:
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-export EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 ## Deploying to Cloud Run

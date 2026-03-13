@@ -28,6 +28,9 @@ from nexo_webhook_contract import (
     NexoAction,
 )
 
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / "examples"))
+from test_support.fake_vector_store import FakeVectorStoreRegistry
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -404,14 +407,13 @@ async def test_advanced_example_action_response_has_cards(make_client):
 
 # ---------------------------------------------------------------------------
 # News-RAG example - response compliance
-# (skipped when chromadb/litellm/feedparser are not installed)
+# (skipped when litellm/feedparser are not installed)
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
 async def test_news_rag_example_empty_index_validates(make_client, monkeypatch, tmp_path):
     """News-RAG example with empty index returns contract-compliant response."""
-    pytest.importorskip("chromadb", reason="chromadb not installed; skipping news-rag tests")
     pytest.importorskip("litellm", reason="litellm not installed; skipping news-rag tests")
     pytest.importorskip("feedparser", reason="feedparser not installed; skipping news-rag tests")
 
@@ -419,9 +421,8 @@ async def test_news_rag_example_empty_index_validates(make_client, monkeypatch, 
     sys.path.insert(0, str(news_rag_path))
     try:
         monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
-        monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma"))
-        monkeypatch.setenv("LLM_MODEL", "ollama/llama3.2")
-        monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+        monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+        monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
         import importlib
         import importlib.util
@@ -432,8 +433,9 @@ async def test_news_rag_example_empty_index_validates(make_client, monkeypatch, 
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         # Reset shared state
-        mod._collection = None
-        mod._chroma_client = None
+        fake_store = FakeVectorStoreRegistry()
+        mod._collection = fake_store.get()
+        mod.get_collection = lambda: fake_store.get()
 
         from unittest.mock import AsyncMock
         with (
@@ -455,7 +457,6 @@ async def test_news_rag_example_empty_index_validates(make_client, monkeypatch, 
 @pytest.mark.asyncio
 async def test_news_rag_example_with_results_validates(make_client, monkeypatch, tmp_path):
     """News-RAG example with LLM results returns contract-compliant response with cards and actions."""
-    pytest.importorskip("chromadb", reason="chromadb not installed; skipping news-rag tests")
     pytest.importorskip("litellm", reason="litellm not installed; skipping news-rag tests")
     pytest.importorskip("feedparser", reason="feedparser not installed; skipping news-rag tests")
 
@@ -463,7 +464,8 @@ async def test_news_rag_example_with_results_validates(make_client, monkeypatch,
     sys.path.insert(0, str(news_rag_path))
     try:
         monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
-        monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma2"))
+        monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+        monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
         import importlib.util
         spec = importlib.util.spec_from_file_location(
@@ -472,8 +474,9 @@ async def test_news_rag_example_with_results_validates(make_client, monkeypatch,
         )
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        mod._collection = None
-        mod._chroma_client = None
+        fake_store = FakeVectorStoreRegistry()
+        mod._collection = fake_store.get()
+        mod.get_collection = lambda: fake_store.get()
 
         sample_hits = [
             {
@@ -522,7 +525,8 @@ async def test_travel_rag_example_empty_index_validates(make_client, monkeypatch
     sys.path.insert(0, str(travel_rag_path))
     try:
         monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
-        monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma_travel"))
+        monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+        monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
         import importlib.util
         # Load ingest module first (dependency of server)
@@ -533,7 +537,9 @@ async def test_travel_rag_example_empty_index_validates(make_client, monkeypatch
         ingest_mod = importlib.util.module_from_spec(ingest_spec)
         sys.modules["ingest"] = ingest_mod
         ingest_spec.loader.exec_module(ingest_mod)
-        ingest_mod.reset_client()
+        fake_store = FakeVectorStoreRegistry()
+        ingest_mod._destinations_collection = fake_store.get("destinations")
+        ingest_mod._articles_collection = fake_store.get("articles")
 
         spec = importlib.util.spec_from_file_location(
             "travel_rag_server",
@@ -567,7 +573,8 @@ async def test_travel_rag_example_with_destinations_validates(make_client, monke
     sys.path.insert(0, str(travel_rag_path))
     try:
         monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
-        monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma_travel2"))
+        monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+        monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
         import importlib.util
         ingest_spec = importlib.util.spec_from_file_location(
@@ -577,7 +584,9 @@ async def test_travel_rag_example_with_destinations_validates(make_client, monke
         ingest_mod = importlib.util.module_from_spec(ingest_spec)
         sys.modules["ingest"] = ingest_mod
         ingest_spec.loader.exec_module(ingest_mod)
-        ingest_mod.reset_client()
+        fake_store = FakeVectorStoreRegistry()
+        ingest_mod._destinations_collection = fake_store.get("destinations")
+        ingest_mod._articles_collection = fake_store.get("articles")
 
         spec = importlib.util.spec_from_file_location(
             "travel_rag_server2",

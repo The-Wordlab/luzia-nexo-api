@@ -1,7 +1,7 @@
 """
 Tests for the news-feed RAG webhook server.
 
-All external I/O (ChromaDB, litellm embeddings/completions, feedparser) is
+All external I/O (vector storage, litellm embeddings/completions, feedparser) is
 mocked so the tests are fast and fully self-contained — no network calls,
 no API keys, no running Ollama required.
 
@@ -14,11 +14,17 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
+
+sys.path.append(str(Path(__file__).resolve().parents[3]))
+
+from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 
 # ---------------------------------------------------------------------------
@@ -95,26 +101,19 @@ _SAMPLE_HITS: list[dict[str, Any]] = [
 
 @pytest.fixture
 def app(monkeypatch, tmp_path):
-    """Return the FastAPI app with:
-    - WEBHOOK_SECRET unset (open access for most tests)
-    - ChromaDB pointed at a temp directory
-    - litellm embedding + completion calls mocked
-    - feedparser mocked so no network is required
-    """
+    """Return the FastAPI app with mocked storage and no external I/O."""
     monkeypatch.delenv("WEBHOOK_SECRET", raising=False)
-    monkeypatch.setenv("VECTOR_STORE_BACKEND", "chroma")
-    monkeypatch.setenv("VECTOR_STORE_DURABLE", "false")
-    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma"))
-    monkeypatch.setenv("LLM_MODEL", "ollama/llama3.2")
-    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
     import importlib
     import server
 
     importlib.reload(server)
     # Reset shared state
-    server._collection = None
-    server._chroma_client = None
+    fake_store = FakeVectorStoreRegistry()
+    server._collection = fake_store.get()
+    monkeypatch.setattr(server, "get_collection", lambda: fake_store.get())
     server._index_stats["num_chunks"] = 0
     server._index_stats["last_refresh"] = None
 
@@ -125,18 +124,16 @@ def app(monkeypatch, tmp_path):
 def secret_app(monkeypatch, tmp_path):
     """Same as app but with WEBHOOK_SECRET=testsecret."""
     monkeypatch.setenv("WEBHOOK_SECRET", "testsecret")
-    monkeypatch.setenv("VECTOR_STORE_BACKEND", "chroma")
-    monkeypatch.setenv("VECTOR_STORE_DURABLE", "false")
-    monkeypatch.setenv("CHROMA_PERSIST_DIR", str(tmp_path / "chroma"))
-    monkeypatch.setenv("LLM_MODEL", "ollama/llama3.2")
-    monkeypatch.setenv("EMBEDDING_MODEL", "text-embedding-3-small")
+    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
+    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 
     import importlib
     import server
 
     importlib.reload(server)
-    server._collection = None
-    server._chroma_client = None
+    fake_store = FakeVectorStoreRegistry()
+    server._collection = fake_store.get()
+    monkeypatch.setattr(server, "get_collection", lambda: fake_store.get())
 
     return server.app
 
@@ -742,7 +739,6 @@ def test_vector_store_metadata_pgvector_is_durable(monkeypatch):
 
     importlib.reload(server)
     monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "pgvector")
-    monkeypatch.setattr(server, "VECTOR_STORE_DURABLE_OVERRIDE", "")
     data = server._vector_store_metadata()
     assert data["backend"] == "pgvector"
     assert data["durable"] is True

@@ -28,6 +28,9 @@ AR_REPO="${AR_REPO:-nexo-examples}"
 JOB_PREFIX="${JOB_PREFIX:-nexo-rag}"
 JOB_TASK_TIMEOUT="${JOB_TASK_TIMEOUT:-900s}"
 JOB_MAX_RETRIES="${JOB_MAX_RETRIES:-1}"
+WORKER_LLM_MODEL="${WORKER_LLM_MODEL:-vertex_ai/gemini-2.5-flash}"
+WORKER_EMBEDDING_MODEL="${WORKER_EMBEDDING_MODEL:-vertex_ai/text-embedding-004}"
+SYNC_WORKER_IMAGE_WITH_SERVICE="${SYNC_WORKER_IMAGE_WITH_SERVICE:-true}"
 ALL_TARGETS="news sports travel football"
 
 usage() {
@@ -66,6 +69,19 @@ image_ref() {
     travel) service="nexo-travel-rag" ;;
     football) service="nexo-football-live" ;;
   esac
+  if [[ "${SYNC_WORKER_IMAGE_WITH_SERVICE}" == "true" ]]; then
+    local deployed_image
+    deployed_image="$(
+      gcloud run services describe "${service}" \
+        --project "${GCP_PROJECT_ID}" \
+        --region "${REGION}" \
+        --format='value(spec.template.spec.containers[0].image)' 2>/dev/null || true
+    )"
+    if [[ -n "${deployed_image}" ]]; then
+      echo "${deployed_image}"
+      return
+    fi
+  fi
   echo "${REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPO}/${service}:latest"
 }
 
@@ -81,16 +97,16 @@ job_args() {
 job_env_vars() {
   case "$1" in
     news)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_news,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_news,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     sports)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports,SPORTS_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_sports,SPORTS_WORKER_MODE=live,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     travel)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_travel,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_travel,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
     football)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football,FOOTBALL_WORKER_MODE=live,LLM_MODEL=vertex_ai/gemini-2.5-flash,EMBEDDING_MODEL=vertex_ai/text-embedding-004,VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
+      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football,FOOTBALL_WORKER_MODE=live,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
   esac
 }

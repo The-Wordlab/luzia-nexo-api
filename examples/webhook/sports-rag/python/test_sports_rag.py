@@ -1,7 +1,7 @@
 """Tests for the sports-feed RAG webhook partner (python/ variant).
 
-All tests use monkeypatching and mocks to avoid requiring a running ChromaDB
-instance, live RSS feeds, or an LLM API key.
+All tests use monkeypatching and mocks to avoid requiring a live vector store,
+RSS feeds, or an LLM API key.
 
 Coverage:
   - Intent detection (unit)
@@ -20,11 +20,17 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+
+sys.path.append(str(Path(__file__).resolve().parents[3]))
+
+from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 import ingest as _ingest_module
 import server as _server_module
@@ -49,6 +55,7 @@ from server import (
 
 def _make_client(monkeypatch) -> TestClient:
     """Return a test client with startup hooks stubbed out."""
+    fake_store = FakeVectorStoreRegistry()
 
     def _noop_seed_matches():
         pass
@@ -64,8 +71,8 @@ def _make_client(monkeypatch) -> TestClient:
     monkeypatch.setattr(_server_module, "seed_matches", _noop_seed_matches)
     monkeypatch.setattr(_server_module, "seed_standings", _noop_seed_standings)
     monkeypatch.setattr(_ingest_module, "crawl_feeds", _noop_crawl_feeds)
-    monkeypatch.setattr(_ingest_module, "VECTOR_STORE_BACKEND", "chroma")
-    monkeypatch.setattr(_server_module, "VECTOR_STORE_BACKEND", "chroma")
+    monkeypatch.setattr(_ingest_module, "get_collection", fake_store.get)
+    monkeypatch.setattr(_server_module, "get_collection", fake_store.get)
 
     return TestClient(app)
 
@@ -612,7 +619,6 @@ class TestHealthEndpoint:
 
     def test_vector_store_metadata_pgvector_is_durable(self, monkeypatch) -> None:
         monkeypatch.setattr(_server_module, "VECTOR_STORE_BACKEND", "pgvector")
-        monkeypatch.setattr(_server_module, "VECTOR_STORE_DURABLE_OVERRIDE", "")
         data = _server_module._vector_store_metadata()
         assert data["backend"] == "pgvector"
         assert data["durable"] is True

@@ -32,11 +32,11 @@ pip install fastapi httpx pydantic pytest pytest-asyncio anyio
 pytest -v
 ```
 
-For the news-rag and sports-rag tests, you also need `chromadb`, `litellm`, and `feedparser`. If these are not installed, those tests are automatically skipped.
+For the RAG contract tests, you also need `litellm` and `feedparser`. If these are not installed, those tests are automatically skipped.
 
 ```bash
 # Full suite including RAG examples
-pip install chromadb litellm feedparser beautifulsoup4
+pip install litellm feedparser beautifulsoup4
 pytest -v
 ```
 

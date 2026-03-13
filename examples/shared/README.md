@@ -132,7 +132,7 @@ travel_store = EventStore(db_path="events.db", table_name="travel_events")
 
 5. Wire into your background loop:
    ```python
-   detector = MyEventDetector(llm_model="ollama/llama3.2", significance_threshold=0.5)
+   detector = MyEventDetector(llm_model="vertex_ai/gemini-2.5-flash", significance_threshold=0.5)
    store = EventStore(db_path="events.db", table_name="my_events")
 
    async def detection_loop():

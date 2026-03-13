@@ -4,23 +4,86 @@ Provides a reusable chain/graph that can be customized per assistant type.
 """
 
 import os
-from typing import Any
 from dataclasses import dataclass, field
+from typing import Any
 
-from langchain_core.messages import HumanMessage, SystemMessage
+import litellm
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
+from langchain_core.runnables import RunnableLambda
 
 
 @dataclass
 class LLMConfig:
     """Configuration for LLM client."""
-    model: str = "gpt-4o-mini"
+    model: str = "vertex_ai/gemini-2.5-flash"
     temperature: float = 0.7
-    api_key: str | None = None
-    base_url: str | None = None
+    project: str | None = None
+    location: str | None = None
+
+
+def _configure_vertex_env_defaults(config: LLMConfig) -> None:
+    project = (
+        config.project
+        or os.environ.get("VERTEXAI_PROJECT")
+        or os.environ.get("GOOGLE_CLOUD_PROJECT")
+    )
+    location = (
+        config.location
+        or os.environ.get("VERTEXAI_LOCATION")
+        or os.environ.get("GOOGLE_CLOUD_LOCATION")
+    )
+
+    if project:
+        os.environ.setdefault("VERTEXAI_PROJECT", project)
+    if location:
+        os.environ.setdefault("VERTEXAI_LOCATION", location)
+
+
+def _to_litellm_messages(messages: list[Any]) -> list[dict[str, Any]]:
+    serialized: list[dict[str, Any]] = []
+    for message in messages:
+        role = getattr(message, "type", None) or getattr(message, "role", "user")
+        content = getattr(message, "content", "")
+        if role == "human":
+            role = "user"
+        elif role == "ai":
+            role = "assistant"
+        serialized.append({"role": role, "content": content})
+    return serialized
+
+
+class LiteLLMChatRunnable(RunnableLambda):
+    """Small Runnable wrapper around LiteLLM for Vertex Gemini models."""
+
+    def __init__(self, config: LLMConfig, tools: list[Any] | None = None):
+        self._config = config
+        self._tools = tools or []
+        super().__init__(self._invoke_prompt)
+
+    def _invoke_prompt(self, prompt_value: Any) -> AIMessage:
+        _configure_vertex_env_defaults(self._config)
+
+        messages = (
+            prompt_value.to_messages()
+            if hasattr(prompt_value, "to_messages")
+            else prompt_value
+        )
+        response = litellm.completion(
+            model=self._config.model,
+            temperature=self._config.temperature,
+            messages=_to_litellm_messages(messages),
+        )
+        choice = response.choices[0].message
+        return AIMessage(
+            content=getattr(choice, "content", "") or "",
+            tool_calls=getattr(choice, "tool_calls", None) or [],
+        )
+
+    def bind_tools(self, tools: list[Any]) -> "LiteLLMChatRunnable":
+        return LiteLLMChatRunnable(self._config, tools=tools)
 
 
 @dataclass
@@ -32,25 +95,16 @@ class AssistantState:
     cards: list[dict[str, Any]] = field(default_factory=list)
 
 
-def create_llm(config: LLMConfig | None = None) -> ChatOpenAI:
-    """Create an LLM client with sensible defaults."""
+def create_llm(config: LLMConfig | None = None) -> LiteLLMChatRunnable:
+    """Create a Vertex-backed LiteLLM client with sensible defaults."""
     config = config or LLMConfig()
-    
-    api_key = config.api_key or os.environ.get("OPENAI_API_KEY") or os.environ.get("LITELLM_API_KEY")
-    if not api_key:
-        raise ValueError("No API key provided. Set OPENAI_API_KEY or LITELLM_API_KEY env var.")
-    
-    return ChatOpenAI(
-        model=config.model,
-        temperature=config.temperature,
-        api_key=api_key,
-        base_url=config.base_url,
-    )
+    _configure_vertex_env_defaults(config)
+    return LiteLLMChatRunnable(config)
 
 
 def build_basic_chain(
     system_prompt: str,
-    llm: ChatOpenAI | None = None,
+    llm: Any | None = None,
 ) -> Any:
     """Build a simple LLM chain with system prompt and message history.
     
@@ -69,7 +123,7 @@ def build_basic_chain(
 
 def build_graph(
     system_prompt: str,
-    llm: ChatOpenAI | None = None,
+    llm: Any | None = None,
     tools: list[Any] | None = None,
 ) -> StateGraph:
     """Build a LangGraph for more complex scenarios.
@@ -191,7 +245,7 @@ class AssistantChain:
     with tools, multiple agents, or complex routing.
     """
     
-    def __init__(self, system_prompt: str, llm: ChatOpenAI | None = None):
+    def __init__(self, system_prompt: str, llm: Any | None = None):
         self.chain = build_basic_chain(system_prompt, llm)
         self.messages: list[Any] = []
     
@@ -223,7 +277,7 @@ class AssistantChain:
 class AssistantGraph:
     """Graph-based assistant for complex scenarios."""
     
-    def __init__(self, system_prompt: str, llm: ChatOpenAI | None = None, tools: list[Any] | None = None):
+    def __init__(self, system_prompt: str, llm: Any | None = None, tools: list[Any] | None = None):
         self.graph = build_graph(system_prompt, llm, tools)
         self.llm = llm
     

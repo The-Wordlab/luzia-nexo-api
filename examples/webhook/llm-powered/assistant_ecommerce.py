@@ -12,7 +12,7 @@ Run with:
     pip install -r requirements.txt
     python assistant_ecommerce.py
 
-Set OPENAI_API_KEY or LITELLM_API_KEY to use the LLM.
+Authenticate with Vertex AI ADC before starting the example.
 """
 
 import os
@@ -57,7 +57,6 @@ class EcommerceAssistant(BaseWebhookApp):
         if self._chain is None:
             from langchain_core.prompts import ChatPromptTemplate
             from langchain_core.messages import MessagesPlaceholder
-            from langchain_openai import ChatOpenAI
             
             prompt = ChatPromptTemplate.from_messages([
                 ("system", ECOMMERCE_ASSISTANT_PROMPT),

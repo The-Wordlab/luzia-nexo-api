@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install system dependencies needed by ChromaDB and BeautifulSoup
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -18,10 +18,7 @@ COPY examples/shared/base_event_detector.py examples/shared/base_event_store.py 
 COPY examples/webhook/sports-rag/python/ingest.py examples/webhook/sports-rag/python/server.py examples/webhook/sports-rag/python/worker.py ./
 COPY examples/webhook/sports-rag/python/event_detector.py examples/webhook/sports-rag/python/event_store.py examples/webhook/sports-rag/python/match_state.py ./
 
-# ChromaDB persistence directory (mounted as a volume in production)
-RUN mkdir -p /data/chroma
-ENV CHROMA_PERSIST_DIR=/data/chroma \
-    VECTOR_STORE_BACKEND=pgvector \
+ENV VECTOR_STORE_BACKEND=pgvector \
     VECTOR_STORE_DURABLE=false
 
 # Expose the port Cloud Run will listen on

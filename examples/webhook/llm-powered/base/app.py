@@ -28,7 +28,7 @@ class WebhookConfig(BaseModel):
     """Configuration for the webhook server."""
     webhook_secret: str | None = None
     system_prompt: str | None = None
-    model: str = "gpt-4o-mini"
+    model: str = "vertex_ai/gemini-2.5-flash"
     temperature: float = 0.7
 
 

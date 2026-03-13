@@ -142,7 +142,7 @@ def test_minimal_example_signing_matches_contract() -> None:
 def test_news_rag_example_signing_matches_contract() -> None:
     """News-RAG example uses the same signing algorithm as the contract.
 
-    The news-rag server imports chromadb which may not be installed in the
+    The news-rag server imports optional runtime dependencies which may not be installed in the
     test environment, so we verify the algorithm by replicating it directly
     from the server source rather than importing the whole module.
     """

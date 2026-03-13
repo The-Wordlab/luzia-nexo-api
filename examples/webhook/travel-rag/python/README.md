@@ -11,10 +11,6 @@ pip install -r requirements.txt
 GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> \
 LLM_MODEL=vertex_ai/gemini-2.5-flash EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
 uvicorn server:app --port 8092
-
-# Development override (OpenAI):
-OPENAI_API_KEY=sk-... LLM_MODEL=openai/gpt-4o-mini EMBEDDING_MODEL=text-embedding-3-small \
-uvicorn server:app --port 8092
 ```
 
 On startup the server seeds 12 destination profiles (Paris, Tokyo, Barcelona, NYC, Bali, Rome, London, Sydney, Marrakech, Reykjavik, Cape Town, Kyoto) and crawls travel RSS feeds.
@@ -73,10 +69,9 @@ cd examples && docker compose up travel-rag
 | `WEBHOOK_SECRET` | _(empty)_ | HMAC-SHA256 secret (skip if empty) |
 | `TRAVEL_FEEDS` | _(built-in)_ | Comma-separated RSS URLs |
 | `REFRESH_INTERVAL_MINUTES` | `60` | Background re-crawl interval |
-| `CHROMA_PERSIST_DIR` | `./chroma_data` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma` |
 | `STREAMING_ENABLED` | `false` | Enable SSE streaming |
 | `TOP_K` | `4` | Chunks to retrieve per query |
-| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Only supported vector backend for this example. |
 | `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
-| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used by pgvector storage |
 | `PGVECTOR_SCHEMA` | `rag_travel` | Schema for travel vectors and metadata |

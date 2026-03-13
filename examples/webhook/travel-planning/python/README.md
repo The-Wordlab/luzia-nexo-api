@@ -25,13 +25,6 @@ export GOOGLE_CLOUD_LOCATION=europe-west1
 uvicorn app:app --port 8096
 ```
 
-Optional development override (OpenAI):
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-```
-
 Or with Docker:
 
 ```bash

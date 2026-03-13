@@ -9,7 +9,7 @@ All external calls are mocked — no network, LLM, or database access required.
 
 Run:
     cd /Users/markmacmahon/dev/luzia-nexo-api
-    pip install fastapi httpx pydantic pytest pytest-asyncio anyio chromadb
+    pip install fastapi httpx pydantic pytest pytest-asyncio anyio
     python -m pytest tests/test_webhook_contracts.py -v
 """
 
@@ -30,7 +30,7 @@ from fastapi.testclient import TestClient
 # ---------------------------------------------------------------------------
 # Stub heavy optional dependencies before any example module is imported.
 # This lets the tests run in any Python environment that has fastapi + httpx
-# without requiring litellm, chromadb, etc. to be installed.
+# without requiring Vertex credentials or heavyweight optional packages.
 # ---------------------------------------------------------------------------
 
 import types
@@ -74,6 +74,8 @@ _ensure_litellm_stub()
 
 REPO_ROOT = Path(__file__).parent.parent
 WEBHOOK_ROOT = REPO_ROOT / "examples" / "webhook"
+sys.path.insert(0, str(REPO_ROOT / "examples"))
+from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 ROUTINES_PATH = WEBHOOK_ROOT / "routines" / "python"
 FOOD_PATH = WEBHOOK_ROOT / "food-ordering" / "python"
@@ -246,15 +248,12 @@ class _FoodFixture:
 
 
 class _FootballFixture:
-    """Loads the football-live webhook. Requires chromadb."""
+    """Loads the football-live webhook with an in-memory fake vector store."""
 
     _module_name = "contract_football"
 
     @classmethod
     def load(cls) -> tuple[TestClient, Any]:
-        pytest.importorskip("chromadb", reason="chromadb not installed; skipping football-live")
-        import chromadb
-
         sys.path.insert(0, str(FOOTBALL_PATH))
         try:
             server_mod = _load_module(FOOTBALL_PATH, cls._module_name, "server.py")
@@ -266,11 +265,11 @@ class _FootballFixture:
             sys.modules[f"{cls._module_name}_ingest"] = ingest_mod
             ingest_spec.loader.exec_module(ingest_mod)
 
-            # Use in-memory ChromaDB
-            chroma = chromadb.Client()
-            ingest_mod._chroma_client = chroma
-            ingest_mod.get_chroma_client = lambda *a, **kw: chroma
+            fake_store = FakeVectorStoreRegistry()
+            ingest_mod._pg_collections = {}
+            ingest_mod.get_collection = lambda name: fake_store.get(name)
             ingest_mod.embed_texts = lambda texts: [[0.0] * 1536 for _ in texts]
+            server_mod.get_collection = lambda name: fake_store.get(name)
 
             server_mod.WEBHOOK_SECRET = ""
             server_mod.FOOTBALL_DATA_API_KEY = ""
@@ -297,7 +296,7 @@ class _FootballFixture:
 
     @staticmethod
     def mock_search(mod: Any):
-        """Patch all search functions to return empty results (no ChromaDB query needed)."""
+        """Patch all search functions to return empty results (no vector-store query needed)."""
         return [
             patch.object(mod, "search_matches", return_value=[]),
             patch.object(mod, "search_standings", return_value=[]),

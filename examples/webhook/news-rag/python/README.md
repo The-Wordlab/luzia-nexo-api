@@ -46,11 +46,6 @@ export GOOGLE_CLOUD_LOCATION=<your-region>
 export LLM_MODEL=vertex_ai/gemini-2.5-flash
 export EMBEDDING_MODEL=vertex_ai/text-embedding-004
 
-# Development override (OpenAI)
-# export OPENAI_API_KEY=sk-...
-# export LLM_MODEL=openai/gpt-4o-mini
-# export EMBEDDING_MODEL=text-embedding-3-small
-
 # Optional overrides
 export NEWS_FEEDS="http://feeds.bbci.co.uk/news/rss.xml,https://techcrunch.com/feed/"
 export REFRESH_INTERVAL_MINUTES=30
@@ -92,18 +87,14 @@ http://<your-host>:8080/
 | Use case | `LLM_MODEL` | Notes |
 |---|---|---|
 | Production default | `vertex_ai/gemini-2.5-flash` | Uses ADC (`gcloud auth application-default login`) |
-| OpenAI | `gpt-4o-mini` | Requires `OPENAI_API_KEY` |
-| Local Ollama | `ollama/llama3.2` | Requires [Ollama](https://ollama.com) running |
-| Any litellm provider | see [litellm docs](https://docs.litellm.ai/docs/providers) | Provider-agnostic |
+| Supported runtime | `vertex_ai/gemini-2.5-flash` | Production and local development should both use Vertex AI Gemini |
 
 ## Embedding options
 
 | Use case | `EMBEDDING_MODEL` | Notes |
 |---|---|---|
 | Production default | `vertex_ai/text-embedding-004` | Uses ADC (`gcloud auth application-default login`) |
-| OpenAI | `text-embedding-3-small` | Requires `OPENAI_API_KEY` |
 | Vertex AI | `vertex_ai/text-embedding-004` | Requires GCP auth |
-| Ollama local | `ollama/nomic-embed-text` | Requires Ollama + `ollama pull nomic-embed-text` |
 
 ## Endpoints
 
@@ -185,7 +176,6 @@ no secret configuration.
 | `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
 | `PGVECTOR_SCHEMA` | `rag_news` | Schema for news vectors and metadata |
 | `OLLAMA_API_BASE` | `http://localhost:11434` | Ollama server base URL |
-| `OPENAI_API_KEY` | _(empty)_ | Required for OpenAI embeddings or completions |
 | `TOP_K` | `5` | Number of chunks to retrieve per query |
 | `PORT` | `8080` | HTTP port (used by Dockerfile CMD) |
 
@@ -226,7 +216,6 @@ The included `cloudbuild.yaml` builds and deploys to Cloud Run. Before first dep
    ```bash
    echo -n "your_webhook_secret" | gcloud secrets create webhook-secret --data-file=-
    # Optional only for OpenAI development override:
-   # echo -n "sk-..." | gcloud secrets create OPENAI_API_KEY --data-file=-
    ```
 
 2. Grant the Cloud Run service account access to both secrets.

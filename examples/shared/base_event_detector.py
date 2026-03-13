@@ -89,7 +89,7 @@ class BaseEventDetector(ABC):
 
     def __init__(
         self,
-        llm_model: str = "ollama/llama3.2",
+        llm_model: str = "vertex_ai/gemini-2.5-flash",
         significance_threshold: float = 0.5,
     ) -> None:
         self._llm_model = llm_model

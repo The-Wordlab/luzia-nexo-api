@@ -5,12 +5,18 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import sys
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
+
+sys.path.append(str(Path(__file__).resolve().parents[3]))
+
+from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -36,19 +42,13 @@ def _get_modules():
 
 
 def _make_client(monkeypatch) -> TestClient:
-    """Create a TestClient with ChromaDB pointed at a temp dir."""
+    """Create a TestClient with an explicit in-memory fake vector store."""
     server, ingest, api = _get_modules()
-    monkeypatch.setattr(ingest, "_chroma_client", None)
+    fake_store = FakeVectorStoreRegistry()
     monkeypatch.setattr(server, "WEBHOOK_SECRET", "")
     monkeypatch.setattr(server, "FOOTBALL_DATA_API_KEY", "")
-    monkeypatch.setattr(ingest, "VECTOR_STORE_BACKEND", "chroma")
-    monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "chroma")
-    # Use in-memory chroma for tests
-    import chromadb
-
-    client = chromadb.Client()
-    monkeypatch.setattr(ingest, "_chroma_client", client)
-    monkeypatch.setattr(ingest, "get_chroma_client", lambda *a, **kw: client)
+    monkeypatch.setattr(ingest, "get_collection", fake_store.get)
+    monkeypatch.setattr(server, "get_collection", fake_store.get)
     # Stub embeddings
     monkeypatch.setattr(ingest, "embed_texts", lambda texts: [[0.0] * 1536 for _ in texts])
     return TestClient(server.app, raise_server_exceptions=False)
@@ -821,7 +821,6 @@ class TestHealthEndpoint:
     def test_vector_store_metadata_pgvector_is_durable(self, monkeypatch):
         server, _, _ = _get_modules()
         monkeypatch.setattr(server, "VECTOR_STORE_BACKEND", "pgvector")
-        monkeypatch.setattr(server, "VECTOR_STORE_DURABLE_OVERRIDE", "")
         data = server._vector_store_metadata()
         assert data["backend"] == "pgvector"
         assert data["durable"] is True
@@ -831,7 +830,6 @@ class TestHealthEndpoint:
         monkeypatch.setattr(ingest, "VECTOR_STORE_BACKEND", "pgvector")
         monkeypatch.setattr(ingest, "PGVECTOR_DSN", "")
         monkeypatch.setattr(ingest, "_pg_conn", None)
-        monkeypatch.setattr(ingest, "_chroma_client", None)
         ingest._pg_collections.clear()
 
         collection = ingest.get_collection(ingest.COLLECTION_MATCHES)

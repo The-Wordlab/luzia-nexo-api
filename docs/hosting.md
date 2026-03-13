@@ -260,7 +260,7 @@ GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
 
 For RAG partner APIs:
 - Production default: Gemini on Vertex via ADC (`LLM_MODEL=vertex_ai/...`, `EMBEDDING_MODEL=vertex_ai/...`)
-- Development override: OpenAI by explicitly setting `LLM_MODEL`, `EMBEDDING_MODEL`, and `OPENAI_API_KEY`
+- Development default: Gemini on Vertex via ADC (`LLM_MODEL=vertex_ai/...`, `EMBEDDING_MODEL=vertex_ai/...`)
 
 Cloud Run production path uses service-account ADC, not a Gemini API key.
 
@@ -270,14 +270,6 @@ Local ADC setup:
 gcloud auth application-default login
 export GOOGLE_CLOUD_PROJECT=<your-project-id>
 export GOOGLE_CLOUD_LOCATION=<your-region>
-```
-
-Local OpenAI override example:
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-export EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 ### Optional: dedicated worker jobs (private topology path)
@@ -406,7 +398,5 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | `FOOTBALL_DATA_API_KEY` | football-data.org API key for live match/standings data |
 | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw gateway bearer token for openclaw-bridge |
 | `EXAMPLES_SHARED_API_SECRET` | Optional auth secret for hosted python/typescript examples (not required by default) |
-
-`OPENAI_API_KEY` is optional and only needed when you explicitly run OpenAI models in development or custom deployments.
 
 This deploys sample services only. Your production hosting model is your choice.

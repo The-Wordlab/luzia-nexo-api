@@ -9,7 +9,7 @@ base/
   __init__.py      -- public exports
   app.py           -- BaseWebhookApp (FastAPI scaffold, HMAC verification, profile extraction)
   contract.py      -- WebhookRequest / WebhookResponse Pydantic models
-  llm.py           -- AssistantChain, AssistantGraph, create_llm() (litellm wrapper)
+  llm.py           -- AssistantChain, AssistantGraph, create_llm() (Vertex AI Gemini via LiteLLM)
   prompts.py       -- Canned system prompts (e-commerce, fitness coach)
 
 assistant_ecommerce.py  -- Example: e-commerce support assistant using LangChain
@@ -48,7 +48,10 @@ app = create_app("You are a helpful assistant.", handle)
 ```bash
 cd examples/webhook/llm-powered
 pip install -r requirements.txt
-OPENAI_API_KEY=sk-... python assistant_ecommerce.py
+gcloud auth application-default login
+export GOOGLE_CLOUD_PROJECT=your-gcp-project
+export GOOGLE_CLOUD_LOCATION=europe-west1
+python assistant_ecommerce.py
 ```
 
 ## Tests

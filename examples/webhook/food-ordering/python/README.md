@@ -29,13 +29,6 @@ uvicorn app:app --reload --port 8095
 WEBHOOK_SECRET=my-secret uvicorn app:app --reload --port 8095
 ```
 
-Optional development override (OpenAI):
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-```
-
 ## Running with Docker
 
 ```bash

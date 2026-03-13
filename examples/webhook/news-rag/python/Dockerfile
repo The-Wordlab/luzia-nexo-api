@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install system dependencies (needed by chromadb and lxml/bs4)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libgomp1 \
@@ -15,15 +15,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application source
 COPY server.py ingest.py ./
 
-# ChromaDB persistence directory (mount a volume or use CHROMA_PERSIST_DIR)
-RUN mkdir -p /data/chroma
-
 # Environment defaults — override via Cloud Run env vars or docker run -e
-ENV CHROMA_PERSIST_DIR=/data/chroma \
-    VECTOR_STORE_BACKEND=pgvector \
+ENV VECTOR_STORE_BACKEND=pgvector \
     VECTOR_STORE_DURABLE=false \
-    LLM_MODEL=ollama/llama3.2 \
-    EMBEDDING_MODEL=text-embedding-3-small \
+    LLM_MODEL=vertex_ai/gemini-2.5-flash \
+    EMBEDDING_MODEL=vertex_ai/text-embedding-004 \
     REFRESH_INTERVAL_MINUTES=30 \
     TOP_K=5 \
     PORT=8080

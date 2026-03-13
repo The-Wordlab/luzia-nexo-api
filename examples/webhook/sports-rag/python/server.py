@@ -2,16 +2,16 @@
 
 This FastAPI application demonstrates a retrieval-augmented generation (RAG)
 partner webhook for Nexo. It indexes sports RSS feeds and structured match
-data into ChromaDB, then serves a main webhook endpoint that:
+data into pgvector, then serves a main webhook endpoint that:
 
 1. Verifies the HMAC-SHA256 signature from Nexo.
 2. Detects the user's intent (scores/results, news, standings).
-3. Searches the relevant ChromaDB collection(s).
+3. Searches the relevant pgvector collection(s).
 4. Builds a RAG prompt and calls an LLM via litellm.
 5. Returns a rich Nexo response envelope with text, cards, and actions.
 6. Optionally streams the response as SSE (delta + done events).
 
-Three ChromaDB collections (managed by ingest.py):
+Three pgvector-backed collections (managed by ingest.py):
   - "articles"       RSS feed content (news, previews, analysis)
   - "match_results"  Structured match results as text embeddings
   - "standings"      League table snapshots as text embeddings
@@ -32,7 +32,6 @@ Environment variables:
   FOOTBALL_DATA_API_KEY       football-data.org API key (optional)
   FOOTBALL_DATA_COMPETITION   Comma-separated competition IDs (default: PL)
   REFRESH_INTERVAL_MINUTES    Background refresh cadence (default: 15)
-  CHROMA_PERSIST_DIR          ChromaDB persistence path (default: ./chroma_data)
   STREAMING_ENABLED           Set to "true" to enable SSE streaming (default: false)
 """
 
@@ -108,7 +107,10 @@ TOP_K = 3
 SCHEMA_VERSION = "2026-03-01"
 CAPABILITY_NAME = "sports.rag"
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
-VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
+if VECTOR_STORE_BACKEND != "pgvector":
+    raise RuntimeError(
+        "sports-rag only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
+    )
 
 AGENT_CARD: dict[str, Any] = {
     "name": "nexo-sports-rag",
@@ -131,25 +133,11 @@ AGENT_CARD: dict[str, Any] = {
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "pgvector"
-    if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
-        durable = True
-    elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
-        durable = False
-    else:
-        durable = backend in {"vertex", "vertex-ai", "vertex-vector-search", "pgvector", "alloydb", "cloudsql"}
-
     is_cloud_run = bool(os.environ.get("K_SERVICE"))
-    warning: str | None = None
-    if is_cloud_run and backend == "chroma" and not durable:
-        warning = "ChromaDB on Cloud Run uses instance-local disk. Use a managed vector backend for durable production state."
-
     return {
-        "backend": backend,
-        "durable": durable,
+        "backend": "pgvector",
+        "durable": True,
         "is_cloud_run": is_cloud_run,
-        "chroma_persist_dir": _ingest.CHROMA_PERSIST_DIR if backend == "chroma" else None,
-        "warning": warning,
     }
 
 # ---------------------------------------------------------------------------
@@ -271,7 +259,7 @@ def _build_envelope(
 
 
 # ---------------------------------------------------------------------------
-# ChromaDB retrieval
+# Vector retrieval
 # ---------------------------------------------------------------------------
 
 

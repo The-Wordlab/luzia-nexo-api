@@ -100,7 +100,7 @@ class EventDetector(BaseEventDetector):
 
     def __init__(
         self,
-        llm_model: str = "ollama/llama3.2",
+        llm_model: str = "vertex_ai/gemini-2.5-flash",
         significance_threshold: float = 0.5,
     ) -> None:
         super().__init__(llm_model=llm_model, significance_threshold=significance_threshold)

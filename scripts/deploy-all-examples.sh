@@ -135,42 +135,42 @@ deploy_routines() {
   deploy_source_service \
     "nexo-routines" \
     "${REPO_ROOT}/examples/webhook/routines/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_food_ordering() {
   deploy_source_service \
     "nexo-food-ordering" \
     "${REPO_ROOT}/examples/webhook/food-ordering/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_travel_planning() {
   deploy_source_service \
     "nexo-travel-planning" \
     "${REPO_ROOT}/examples/webhook/travel-planning/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_fitness_coach() {
   deploy_source_service \
     "nexo-fitness-coach" \
     "${REPO_ROOT}/examples/webhook/fitness-coach/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_travel_planner() {
   deploy_source_service \
     "nexo-travel-planner" \
     "${REPO_ROOT}/examples/webhook/travel-planner/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_language_tutor() {
   deploy_source_service \
     "nexo-language-tutor" \
     "${REPO_ROOT}/examples/webhook/language-tutor/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest"
+    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
 deploy_hosted_py() {

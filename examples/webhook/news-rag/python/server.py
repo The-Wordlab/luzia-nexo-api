@@ -2,7 +2,7 @@
 """
 News-feed RAG webhook server.
 
-Crawls RSS feeds, indexes article chunks in ChromaDB, and answers user
+Crawls RSS feeds, indexes article chunks in pgvector, and answers user
 questions by retrieving relevant chunks and calling an LLM via litellm.
 
 Two modes are supported:
@@ -32,9 +32,9 @@ Environment variables:
     EMBEDDING_MODEL          litellm embedding model. Default: vertex_ai/text-embedding-004
     WEBHOOK_SECRET           HMAC-SHA256 signing secret; skipped if empty
     REFRESH_INTERVAL_MINUTES How often the background loop re-crawls. Default: 30
-    CHROMA_PERSIST_DIR       Where ChromaDB stores its files. Default: ./chroma_data
     OLLAMA_API_BASE          Ollama server URL. Default: http://localhost:11434
-    OPENAI_API_KEY           Optional override for development when using OpenAI models
+    GOOGLE_CLOUD_PROJECT     Optional source for Vertex project defaults
+    GOOGLE_CLOUD_LOCATION    Optional source for Vertex region defaults
     VERTEXAI_PROJECT         Optional explicit project for Vertex AI via LiteLLM
     VERTEXAI_LOCATION        Optional explicit location for Vertex AI via LiteLLM
     TOP_K                    Number of chunks to retrieve per query. Default: 5
@@ -53,7 +53,6 @@ import re
 import textwrap
 from typing import Any
 
-import chromadb
 import feedparser
 import litellm
 from bs4 import BeautifulSoup
@@ -62,7 +61,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 try:
     import psycopg
-except ImportError:  # pragma: no cover - optional for local chroma mode
+except ImportError:
     psycopg = None  # type: ignore[assignment]
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
@@ -102,20 +101,18 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
 WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "30"))
-CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
 OLLAMA_API_BASE: str = os.environ.get("OLLAMA_API_BASE", "http://localhost:11434")
 TOP_K: int = int(os.environ.get("TOP_K", "5"))
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
-VECTOR_STORE_DURABLE_OVERRIDE: str = os.environ.get("VECTOR_STORE_DURABLE", "").strip().lower()
+if VECTOR_STORE_BACKEND != "pgvector":
+    raise RuntimeError(
+        "news-rag only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
+    )
 
 _raw_feeds = os.environ.get("NEWS_FEEDS", "")
 NEWS_FEEDS: list[str] = (
     [u.strip() for u in _raw_feeds.split(",") if u.strip()] or DEFAULT_FEEDS
 )
-
-# Configure litellm base URL for Ollama when requested
-if LLM_MODEL.startswith("ollama/"):
-    os.environ.setdefault("OLLAMA_API_BASE", OLLAMA_API_BASE)
 
 CHUNK_SIZE_CHARS: int = 2000   # ~500 tokens at 4 chars/token
 CHUNK_OVERLAP_CHARS: int = 200
@@ -141,13 +138,12 @@ AGENT_CARD: dict[str, Any] = {
 }
 
 # ---------------------------------------------------------------------------
-# Vector store state (Chroma or pgvector)
+# Vector store state (pgvector only)
 # ---------------------------------------------------------------------------
 
 PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_news")
 
-_chroma_client: chromadb.PersistentClient | None = None
 _pg_conn: psycopg.Connection | None = None
 _collection: Any | None = None
 _index_stats: dict[str, Any] = {
@@ -159,25 +155,11 @@ _index_stats: dict[str, Any] = {
 
 def _vector_store_metadata() -> dict[str, Any]:
     """Return runtime vector-store metadata for health/debug endpoints."""
-    backend = VECTOR_STORE_BACKEND or "pgvector"
-    if VECTOR_STORE_DURABLE_OVERRIDE in {"1", "true", "yes"}:
-        durable = True
-    elif VECTOR_STORE_DURABLE_OVERRIDE in {"0", "false", "no"}:
-        durable = False
-    else:
-        durable = backend in {"vertex", "vertex-ai", "vertex-vector-search", "pgvector", "alloydb", "cloudsql"}
-
     is_cloud_run = bool(os.environ.get("K_SERVICE"))
-    warning: str | None = None
-    if is_cloud_run and backend == "chroma" and not durable:
-        warning = "ChromaDB on Cloud Run uses instance-local disk. Use a managed vector backend for durable production state."
-
     return {
-        "backend": backend,
-        "durable": durable,
+        "backend": "pgvector",
+        "durable": True,
         "is_cloud_run": is_cloud_run,
-        "chroma_persist_dir": CHROMA_PERSIST_DIR if backend == "chroma" else None,
-        "warning": warning,
     }
 
 
@@ -358,20 +340,11 @@ class _PgVectorCollection:
 
 
 def get_collection() -> Any:
-    """Return (or lazily create) the shared vector collection."""
-    global _chroma_client, _collection
+    """Return (or lazily create) the shared pgvector collection."""
+    global _collection
     if _collection is not None:
         return _collection
-
-    if VECTOR_STORE_BACKEND == "pgvector":
-        _collection = _PgVectorCollection(COLLECTION_NAME)
-        return _collection
-
-    _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-    _collection = _chroma_client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"},
-    )
+    _collection = _PgVectorCollection(COLLECTION_NAME)
     return _collection
 
 
@@ -402,7 +375,7 @@ def chunk_text(text: str) -> list[str]:
 
 
 def stable_id(text: str) -> str:
-    """Produce a stable, ChromaDB-safe document ID from arbitrary text."""
+    """Produce a stable document ID from arbitrary text."""
     return hashlib.md5(text.encode()).hexdigest()  # noqa: S324
 
 
@@ -423,7 +396,7 @@ async def embed(texts: list[str]) -> list[list[float]]:
 
 
 async def crawl_and_index_feeds() -> dict[str, Any]:
-    """Crawl all configured RSS feeds and upsert chunks into ChromaDB.
+    """Crawl all configured RSS feeds and upsert chunks into pgvector.
 
     Returns a summary dict with num_chunks and last_refresh.
     """
@@ -506,7 +479,7 @@ async def crawl_and_index_feeds() -> dict[str, Any]:
 
 
 async def retrieve(query: str, top_k: int = TOP_K) -> list[dict[str, Any]]:
-    """Embed *query* and return top_k most similar chunks from ChromaDB."""
+    """Embed *query* and return top_k most similar chunks from pgvector."""
     col = get_collection()
     count = col.count()
     if count == 0:
@@ -763,7 +736,7 @@ async def root() -> JSONResponse:
     return JSONResponse(
         {
             "service": "webhook-news-rag-python",
-            "description": "News RAG webhook using RSS ingestion, Chroma retrieval, and source cards.",
+            "description": "News RAG webhook using RSS ingestion, pgvector retrieval, and source cards.",
             "routes": [
                 {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint"},
                 {"path": "/ingest", "method": "POST", "description": "Trigger feed crawl + re-index"},
@@ -793,7 +766,7 @@ async def receive_webhook(request: Request):
     """Main webhook endpoint.
 
     Receives the standard Nexo webhook payload, retrieves relevant news
-    chunks from ChromaDB, prompts the LLM, and returns a rich response
+    chunks from pgvector, prompts the LLM, and returns a rich response
     envelope containing the answer, source cards, and read-more actions.
 
     Nexo sends:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Standalone RSS feed crawler + ChromaDB ingestion script.
+Standalone RSS feed crawler + pgvector ingestion script.
 
 Run this once to pre-populate the vector index before starting the server,
 or invoke it from a cron job / Cloud Scheduler to keep the index fresh.
@@ -11,9 +11,8 @@ Usage:
 All configuration is read from the same environment variables as server.py:
     NEWS_FEEDS               Comma-separated RSS URLs
     EMBEDDING_MODEL          litellm embedding model string
-    CHROMA_PERSIST_DIR       Path for ChromaDB persistence
-    OPENAI_API_KEY           Required for OpenAI embeddings
-    OLLAMA_API_BASE          Ollama URL (for ollama/* embedding models)
+    GOOGLE_CLOUD_PROJECT     Optional source for Vertex project defaults
+    GOOGLE_CLOUD_LOCATION    Optional source for Vertex region defaults
 """
 
 from __future__ import annotations

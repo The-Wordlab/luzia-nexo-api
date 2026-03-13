@@ -1,17 +1,16 @@
-"""Sports feed crawler and ChromaDB ingestion module.
+"""Sports feed crawler and pgvector ingestion module.
 
 Handles:
 - RSS feed crawling (BBC Sport, ESPN FC, Sky Sports)
 - Structured match results from football-data.org or seed data
 - League standings ingestion
-- ChromaDB upsert for three collections: articles, match_results, standings
+- pgvector upsert for three collections: articles, match_results, standings
 
 Environment variables:
     SPORT_FEEDS               Comma-separated RSS feed URLs (default: BBC + ESPN)
     FOOTBALL_DATA_API_KEY     API key for football-data.org (leave empty for seed data)
     FOOTBALL_DATA_COMPETITION Comma-separated competition IDs, e.g. "PL,BL1,PD"
     EMBEDDING_MODEL           litellm embedding model string (default: vertex_ai/text-embedding-004)
-    CHROMA_PERSIST_DIR        Path to ChromaDB persistence directory
 """
 
 from __future__ import annotations
@@ -25,7 +24,6 @@ import textwrap
 from datetime import datetime
 from typing import Any
 
-import chromadb
 import feedparser
 import httpx
 import litellm
@@ -33,7 +31,7 @@ from bs4 import BeautifulSoup
 
 try:
     import psycopg
-except ImportError:  # pragma: no cover - optional for local chroma mode
+except ImportError:
     psycopg = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
@@ -41,9 +39,6 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-
-CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
-
 
 def _configure_vertex_env_defaults() -> None:
     """Map common GCP env vars into LiteLLM Vertex vars when unset."""
@@ -70,6 +65,10 @@ FOOTBALL_DATA_API_KEY: str = os.environ.get("FOOTBALL_DATA_API_KEY", "")
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_sports")
+if VECTOR_STORE_BACKEND != "pgvector":
+    raise RuntimeError(
+        "sports-rag only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
+    )
 FOOTBALL_DATA_BASE_URL = "https://api.football-data.org/v4"
 
 _raw_competition_ids = os.environ.get("FOOTBALL_DATA_COMPETITION", "PL")
@@ -252,10 +251,9 @@ SEED_STANDINGS: list[dict[str, Any]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Vector-store helpers (Chroma or pgvector)
+# Vector-store helpers (pgvector only)
 # ---------------------------------------------------------------------------
 
-_chroma_client: chromadb.ClientAPI | None = None
 _pg_conn: psycopg.Connection | None = None
 _pg_collections: dict[str, "_PgVectorCollection"] = {}
 
@@ -437,32 +435,16 @@ class _PgVectorCollection:
         return result
 
 
-def get_chroma_client(persist_dir: str = CHROMA_PERSIST_DIR) -> chromadb.ClientAPI:
-    """Return (or create) a persistent ChromaDB client."""
-    global _chroma_client
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=persist_dir)
-    return _chroma_client
-
-
 def get_collection(name: str) -> Any:
-    """Get or create a vector collection by name."""
-    if VECTOR_STORE_BACKEND == "pgvector":
-        if name not in _pg_collections:
-            _pg_collections[name] = _PgVectorCollection(name)
-        return _pg_collections[name]
-
-    client = get_chroma_client()
-    return client.get_or_create_collection(
-        name=name,
-        metadata={"hnsw:space": "cosine"},
-    )
+    """Get or create a pgvector-backed collection by name."""
+    if name not in _pg_collections:
+        _pg_collections[name] = _PgVectorCollection(name)
+    return _pg_collections[name]
 
 
 def reset_client() -> None:
     """Reset global vector clients (used in tests)."""
-    global _chroma_client, _pg_conn
-    _chroma_client = None
+    global _pg_conn
     _pg_conn = None
     _pg_collections.clear()
 
@@ -490,7 +472,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def safe_id(text: str) -> str:
-    """Produce a stable, ChromaDB-safe document ID from arbitrary text."""
+    """Produce a stable document ID from arbitrary text."""
     return hashlib.md5(text.encode()).hexdigest()
 
 
@@ -548,7 +530,7 @@ def format_standings_text(standings: list[dict[str, Any]], competition: str) -> 
 
 
 async def crawl_feeds(feeds: list[str] | None = None) -> int:
-    """Crawl RSS feeds and upsert articles into ChromaDB.
+    """Crawl RSS feeds and upsert articles into pgvector.
 
     Returns the total number of article chunks indexed.
     """
@@ -725,12 +707,12 @@ async def fetch_standings(competition_id: str) -> list[dict[str, Any]]:
 
 
 # ---------------------------------------------------------------------------
-# ChromaDB ingestion for matches
+# Match ingestion
 # ---------------------------------------------------------------------------
 
 
 def ingest_matches(matches: list[dict[str, Any]]) -> int:
-    """Upsert match records into the match_results ChromaDB collection.
+    """Upsert match records into the match_results collection.
 
     Returns the number of records upserted.
     """
@@ -758,7 +740,7 @@ def ingest_matches(matches: list[dict[str, Any]]) -> int:
         for m in matches
     ]
     collection.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
-    logger.info("Upserted %d match records into ChromaDB", len(matches))
+    logger.info("Upserted %d match records into pgvector", len(matches))
     return len(matches)
 
 

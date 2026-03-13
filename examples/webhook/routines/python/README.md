@@ -30,20 +30,16 @@ export WEBHOOK_SECRET=your-secret
 uvicorn app:app --reload --port 8094
 ```
 
-Optional development override (OpenAI):
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-```
-
 The service starts at `http://localhost:8094`.
 
 ## Run with Docker
 
 ```bash
 docker build -t routines-webhook .
-docker run -p 8094:8094 -e OPENAI_API_KEY=sk-... routines-webhook
+docker run -p 8094:8094 \
+  -e GOOGLE_CLOUD_PROJECT=your-gcp-project \
+  -e GOOGLE_CLOUD_LOCATION=europe-west1 \
+  routines-webhook
 ```
 
 ## Run tests

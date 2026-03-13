@@ -53,30 +53,11 @@ unreachable, because the match seed data is hardcoded.
 | `FOOTBALL_DATA_API_KEY` | *(empty)* | [football-data.org](https://www.football-data.org/) API key. Leave empty to use seed data. |
 | `FOOTBALL_DATA_COMPETITION` | `PL` | Comma-separated competition codes, e.g. `PL,BL1,PD,SA,FL1`. |
 | `REFRESH_INTERVAL_MINUTES` | `15` | Background refresh cadence (minutes). |
-| `CHROMA_PERSIST_DIR` | `./chroma_data` | Optional local path used only when `VECTOR_STORE_BACKEND=chroma`. |
 | `STREAMING_ENABLED` | `false` | Set to `true` to enable SSE streaming on `POST /`. |
-| `VECTOR_STORE_BACKEND` | `pgvector` | Vector backend label for health reporting (`pgvector`, `vertex`, ...) |
-| `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage |
-| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used when `VECTOR_STORE_BACKEND=pgvector` |
+| `VECTOR_STORE_BACKEND` | `pgvector` | Only supported vector backend for this example. |
+| `VECTOR_STORE_DURABLE` | `true` | Keep `true` when using managed durable storage. |
+| `PGVECTOR_DSN` | _(empty)_ | Postgres DSN used by pgvector storage. |
 | `PGVECTOR_SCHEMA` | `rag_sports` | Schema for sports vectors and metadata |
-
-## Using OpenAI
-
-```bash
-export OPENAI_API_KEY=sk-...
-export LLM_MODEL=openai/gpt-4o-mini
-export EMBEDDING_MODEL=text-embedding-3-small
-```
-
-## Using Ollama (fully local)
-
-```bash
-ollama pull llama3.2
-ollama pull nomic-embed-text
-
-export LLM_MODEL=ollama/llama3.2
-export EMBEDDING_MODEL=ollama/nomic-embed-text
-```
 
 ## Endpoints
 
@@ -225,7 +206,7 @@ cd examples/webhook/sports-rag/python
 pytest test_sports_rag.py -v
 ```
 
-Tests use monkeypatching: no ChromaDB, LLM, or network access required.
+Tests use monkeypatching: no live vector store, LLM, or network access required.
 
 ## Deploying to Cloud Run
 
@@ -247,7 +228,6 @@ gcloud builds submit \
 # Create required secrets first
 echo -n "your-webhook-secret" | gcloud secrets create WEBHOOK_SECRET --data-file=-
 # Optional only for OpenAI override:
-# echo -n "sk-..." | gcloud secrets create OPENAI_API_KEY --data-file=-
 echo -n "your-fd-key" | gcloud secrets create FOOTBALL_DATA_API_KEY --data-file=-
 ```
 

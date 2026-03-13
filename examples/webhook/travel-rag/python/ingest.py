@@ -1,15 +1,14 @@
-"""Travel content crawler and ChromaDB ingestion module.
+"""Travel content crawler and pgvector ingestion module.
 
 Handles:
 - RSS feed crawling (travel blogs, destination guides)
 - Hardcoded destination seed profiles (10+ destinations)
-- Two ChromaDB collections: destinations, articles
-- ChromaDB upsert helpers
+- Two pgvector collections: destinations, articles
+- pgvector upsert helpers
 
 Environment variables:
     TRAVEL_FEEDS               Comma-separated RSS feed URLs (default: Lonely Planet + Nomadic Matt)
     EMBEDDING_MODEL            litellm embedding model string (default: vertex_ai/text-embedding-004)
-    CHROMA_PERSIST_DIR         Path to ChromaDB persistence directory
 """
 
 from __future__ import annotations
@@ -22,14 +21,13 @@ import re
 import textwrap
 from typing import Any
 
-import chromadb
 import feedparser
 import litellm
 from bs4 import BeautifulSoup
 
 try:
     import psycopg
-except ImportError:  # pragma: no cover - optional for local chroma mode
+except ImportError:
     psycopg = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
@@ -37,9 +35,6 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-
-CHROMA_PERSIST_DIR: str = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_data")
-
 
 def _configure_vertex_env_defaults() -> None:
     """Map common GCP env vars into LiteLLM Vertex vars when unset."""
@@ -65,6 +60,10 @@ EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embeddi
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 PGVECTOR_DSN: str = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA: str = os.environ.get("PGVECTOR_SCHEMA", "rag_travel")
+if VECTOR_STORE_BACKEND != "pgvector":
+    raise RuntimeError(
+        "travel-rag only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
+    )
 
 DEFAULT_TRAVEL_FEEDS = [
     "https://www.lonelyplanet.com/news/feed",
@@ -342,10 +341,9 @@ SEED_DESTINATIONS: list[dict[str, Any]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Vector-store helpers (Chroma or pgvector)
+# Vector-store helpers (pgvector only)
 # ---------------------------------------------------------------------------
 
-_chroma_client: chromadb.ClientAPI | None = None
 _pg_conn: psycopg.Connection | None = None
 _pg_collections: dict[str, "_PgVectorCollection"] = {}
 
@@ -527,32 +525,16 @@ class _PgVectorCollection:
         return result
 
 
-def get_chroma_client(persist_dir: str = CHROMA_PERSIST_DIR) -> chromadb.ClientAPI:
-    """Return (or create) a persistent ChromaDB client."""
-    global _chroma_client
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=persist_dir)
-    return _chroma_client
-
-
 def get_collection(name: str) -> Any:
-    """Get or create a vector collection by name."""
-    if VECTOR_STORE_BACKEND == "pgvector":
-        if name not in _pg_collections:
-            _pg_collections[name] = _PgVectorCollection(name)
-        return _pg_collections[name]
-
-    client = get_chroma_client()
-    return client.get_or_create_collection(
-        name=name,
-        metadata={"hnsw:space": "cosine"},
-    )
+    """Get or create a pgvector-backed collection by name."""
+    if name not in _pg_collections:
+        _pg_collections[name] = _PgVectorCollection(name)
+    return _pg_collections[name]
 
 
 def reset_client() -> None:
     """Reset global vector clients (used in tests)."""
-    global _chroma_client, _pg_conn
-    _chroma_client = None
+    global _pg_conn
     _pg_conn = None
     _pg_collections.clear()
 
@@ -580,7 +562,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def safe_id(text: str) -> str:
-    """Produce a stable, ChromaDB-safe document ID from arbitrary text."""
+    """Produce a stable document ID from arbitrary text."""
     return hashlib.md5(text.encode()).hexdigest()  # noqa: S324
 
 
@@ -635,7 +617,7 @@ def format_destination_text(dest: dict[str, Any]) -> str:
 
 
 def ingest_destinations(destinations: list[dict[str, Any]]) -> int:
-    """Upsert destination profiles into the destinations ChromaDB collection."""
+    """Upsert destination profiles into the destinations collection."""
     if not destinations:
         return 0
 
@@ -659,7 +641,7 @@ def ingest_destinations(destinations: list[dict[str, Any]]) -> int:
         for d in destinations
     ]
     collection.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
-    logger.info("Upserted %d destination profiles into ChromaDB", len(destinations))
+    logger.info("Upserted %d destination profiles into pgvector", len(destinations))
     return len(destinations)
 
 
@@ -681,7 +663,7 @@ def seed_destinations() -> None:
 
 
 async def crawl_feeds(feeds: list[str] | None = None) -> int:
-    """Crawl travel RSS feeds and upsert article chunks into ChromaDB.
+    """Crawl travel RSS feeds and upsert article chunks into pgvector.
 
     Returns the total number of article chunks indexed.
     """

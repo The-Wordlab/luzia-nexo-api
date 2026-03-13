@@ -1,4 +1,4 @@
-"""ChromaDB ingest pipeline for football-live webhook.
+"""pgvector ingest pipeline for football-live webhook.
 
 Manages three collections: matches, standings, scorers.
 Includes seed data for demo mode (no API key required).
@@ -14,12 +14,11 @@ import re
 import time
 from typing import Any
 
-import chromadb
 import litellm
 
 try:
     import psycopg
-except ImportError:  # pragma: no cover - optional for local chroma mode
+except ImportError:
     psycopg = None  # type: ignore[assignment]
 
 from football_api import COMPETITIONS, FootballDataClient
@@ -27,10 +26,8 @@ from football_api import COMPETITIONS, FootballDataClient
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# ChromaDB setup
+# Vector-store setup
 # ---------------------------------------------------------------------------
-
-CHROMA_PERSIST_DIR = os.environ.get("CHROMA_PERSIST_DIR", "./chroma_football_live")
 
 
 def _configure_vertex_env_defaults() -> None:
@@ -57,13 +54,16 @@ EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "vertex_ai/text-embedding-00
 VECTOR_STORE_BACKEND = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 PGVECTOR_DSN = os.environ.get("PGVECTOR_DSN", "")
 PGVECTOR_SCHEMA = os.environ.get("PGVECTOR_SCHEMA", "rag_football")
+if VECTOR_STORE_BACKEND != "pgvector":
+    raise RuntimeError(
+        "football-live only supports VECTOR_STORE_BACKEND=pgvector. Remove any legacy vector-store override."
+    )
 
 COLLECTION_MATCHES = "matches"
 COLLECTION_STANDINGS = "standings"
 COLLECTION_SCORERS = "scorers"
 EMBEDDING_MAX_BATCH = 250
 
-_chroma_client: chromadb.ClientAPI | None = None
 _pg_conn: psycopg.Connection | None = None
 _pg_collections: dict[str, "_PgVectorCollection"] = {}
 
@@ -245,21 +245,10 @@ class _PgVectorCollection:
         return result
 
 
-def get_chroma_client(persist_dir: str = CHROMA_PERSIST_DIR) -> chromadb.ClientAPI:
-    global _chroma_client
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=persist_dir)
-    return _chroma_client
-
-
 def get_collection(name: str) -> Any:
-    if VECTOR_STORE_BACKEND == "pgvector":
-        if name not in _pg_collections:
-            _pg_collections[name] = _PgVectorCollection(name)
-        return _pg_collections[name]
-
-    client = get_chroma_client()
-    return client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
+    if name not in _pg_collections:
+        _pg_collections[name] = _PgVectorCollection(name)
+    return _pg_collections[name]
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
@@ -280,7 +269,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 def safe_id(raw: str) -> str:
-    """Sanitise a string for use as a ChromaDB document ID."""
+    """Sanitise a string for use as a document ID."""
     return raw.replace(" ", "-").replace("/", "-").lower()[:128]
 
 
@@ -361,7 +350,7 @@ def ingest_matches(matches: list[dict[str, Any]]) -> int:
         for m in matches
     ]
     collection.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
-    logger.info("Upserted %d matches into ChromaDB", len(matches))
+    logger.info("Upserted %d matches into pgvector", len(matches))
     return len(matches)
 
 
@@ -403,7 +392,7 @@ def ingest_standings(standings: list[dict[str, Any]], competition: str) -> int:
     extra_embeddings = embed_texts(all_texts[1:])
     all_embeddings.extend(extra_embeddings)
     collection.upsert(ids=all_ids, embeddings=all_embeddings, documents=all_texts, metadatas=all_metadatas)
-    logger.info("Upserted standings for %s (%d entries) into ChromaDB", competition, len(standings))
+    logger.info("Upserted standings for %s (%d entries) into pgvector", competition, len(standings))
     return len(standings)
 
 
@@ -428,7 +417,7 @@ def ingest_scorers(scorers: list[dict[str, Any]]) -> int:
         for s in scorers
     ]
     collection.upsert(ids=ids, embeddings=embeddings, documents=texts, metadatas=metadatas)
-    logger.info("Upserted %d scorers into ChromaDB", len(scorers))
+    logger.info("Upserted %d scorers into pgvector", len(scorers))
     return len(scorers)
 
 
