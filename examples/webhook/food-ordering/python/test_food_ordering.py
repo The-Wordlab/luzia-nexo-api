@@ -491,6 +491,8 @@ class TestWebhookMenuBrowse:
         menu_card = next(c for c in resp.json()["cards"] if c["type"] == "menu")
         assert "vegetarian" in menu_card["subtitle"].lower()
         assert resp.json()["metadata"]["personalization"]["used"]["preferences.dietary"] == "vegetarian"
+        assert "dietary preference: vegetarian" in resp.json()["metadata"]["personalization"]["summary"]
+        assert "preferences.dietary" in resp.json()["metadata"]["personalization"]["shared_with_partner"]
 
     def test_uses_cuisine_and_location_context_for_shortlist(self, monkeypatch):
         client = _make_client()
@@ -512,6 +514,7 @@ class TestWebhookMenuBrowse:
         used = resp.json()["metadata"]["personalization"]["used"]
         assert used["preferences.cuisine"] == "italian"
         assert used["location_hint"] == "Madrid"
+        assert "cuisine preference: italian" in resp.json()["metadata"]["personalization"]["summary"]
 
     def test_no_name_no_prefix(self, monkeypatch):
         client = _make_client()
@@ -529,6 +532,8 @@ class TestWebhookMenuBrowse:
         with patch.object(m, "call_llm", return_value="Here is the menu."):
             resp = client.post("/", json=_webhook_payload("show me the menu"))
         assert resp.json()["metadata"]["personalization"]["mode"] == "generic"
+        assert "generic" in resp.json()["metadata"]["personalization"]["summary"].lower()
+        assert "preferences.dietary" in resp.json()["metadata"]["personalization"]["not_shared"]
 
 
 # ---------------------------------------------------------------------------
@@ -631,6 +636,7 @@ class TestWebhookOrderBuild:
         assert notes_field is not None
         assert "budget" in notes_field["value"].lower()
         assert resp.json()["metadata"]["personalization"]["used"]["preferences.budget"] == "low"
+        assert "budget preference: low" in resp.json()["metadata"]["personalization"]["summary"]
 
 
 # ---------------------------------------------------------------------------

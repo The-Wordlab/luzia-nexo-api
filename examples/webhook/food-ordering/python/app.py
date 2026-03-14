@@ -539,21 +539,111 @@ def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
         used["locale"] = locale
     if location_hint:
         used["location_hint"] = location_hint
+    missing_optional = [
+        key
+        for key in [
+            "preferences.dietary",
+            "preferences.budget",
+            "preferences.cuisine",
+            "locale",
+            "location_hint",
+        ]
+        if key not in used
+    ]
+    locale_value = locale or "en"
     return {
         "mode": "profile" if used else "generic",
         "used": used,
-        "missing_optional": [
-            key
-            for key in [
-                "preferences.dietary",
-                "preferences.budget",
-                "preferences.cuisine",
-                "locale",
-                "location_hint",
-            ]
-            if key not in used
-        ],
+        "shared_with_partner": list(used.keys()),
+        "not_shared": missing_optional,
+        "missing_optional": missing_optional,
+        "summary": _build_personalization_summary(used, missing_optional, locale_value),
     }
+
+
+def _friendly_profile_field(field: str) -> str:
+    labels = {
+        "preferences.dietary": "dietary preference",
+        "preferences.budget": "budget preference",
+        "preferences.cuisine": "cuisine preference",
+        "locale": "language / locale",
+        "location_hint": "delivery area",
+    }
+    return labels.get(field, field)
+
+
+def _format_shared_fields(used: dict[str, Any]) -> str:
+    bits: list[str] = []
+    for key in ["preferences.dietary", "preferences.budget", "preferences.cuisine", "location_hint", "locale"]:
+        if key not in used:
+            continue
+        bits.append(f"{_friendly_profile_field(key)}: {used[key]}")
+    return ", ".join(bits)
+
+
+def _format_missing_fields(fields: list[str]) -> str:
+    ordered = [
+        field
+        for field in [
+            "preferences.dietary",
+            "preferences.budget",
+            "preferences.cuisine",
+            "location_hint",
+            "locale",
+        ]
+        if field in fields
+    ]
+    return ", ".join(_friendly_profile_field(field) for field in ordered)
+
+
+def _build_personalization_summary(
+    used: dict[str, Any], missing_optional: list[str], locale: str
+) -> str:
+    shared = _format_shared_fields(used)
+    missing = _format_missing_fields(missing_optional)
+    lowered = locale.lower()
+
+    if lowered.startswith("pt"):
+        if used:
+            summary = f"Contexto compartilhado com o parceiro: {shared}."
+            if missing:
+                summary += f" Nao compartilhado ou indisponivel: {missing}."
+            return summary
+        return "Nenhuma preferencia de perfil foi compartilhada, entao as sugestoes continuam genericas."
+    if lowered.startswith("fr"):
+        if used:
+            summary = f"Contexte partage avec le partenaire : {shared}."
+            if missing:
+                summary += f" Non partage ou indisponible : {missing}."
+            return summary
+        return "Aucune preference de profil n'a ete partagee, donc les suggestions restent generiques."
+    if lowered.startswith("es"):
+        if used:
+            summary = f"Contexto compartido con el partner: {shared}."
+            if missing:
+                summary += f" No compartido o no disponible: {missing}."
+            return summary
+        return "No se compartieron preferencias de perfil, asi que las sugerencias siguen siendo genericas."
+    if lowered.startswith("it"):
+        if used:
+            summary = f"Contesto condiviso con il partner: {shared}."
+            if missing:
+                summary += f" Non condiviso o non disponibile: {missing}."
+            return summary
+        return "Nessuna preferenza del profilo e stata condivisa, quindi i suggerimenti restano generici."
+    if lowered.startswith("ja"):
+        if used:
+            summary = f"Partner to shared context: {shared}."
+            if missing:
+                summary += f" Not shared or unavailable: {missing}."
+            return summary
+        return "No profile preferences were shared, so suggestions stay generic."
+    if used:
+        summary = f"Shared with partner: {shared}."
+        if missing:
+            summary += f" Not shared or unavailable: {missing}."
+        return summary
+    return "No saved profile preferences were shared, so suggestions stay generic."
 
 
 def _extract_dietary_filter(query: str) -> str | None:
