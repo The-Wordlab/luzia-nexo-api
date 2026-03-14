@@ -29,8 +29,8 @@
   "apps": [
     {
       "demo_key": "ifood",
-      "name": "iFood Demo",
-      "description": "Food ordering flow demo - inline consent card, profile scoping",
+      "name": "Consent Demo",
+      "description": "Consent and profile projection demo - generic scope request and context sharing proof",
       "config_json": {
         "demo_key": "ifood",
         "integration_mode": "simulator",
@@ -40,13 +40,13 @@
           "basic",
           "preferences"
         ],
-        "demo_icon": "utensils-crossed",
-        "demo_color": "#EF4444",
+        "demo_icon": "shield-check",
+        "demo_color": "#0EA5E9",
         "demo_order": 1,
         "prompt_suggestions": [
-          "I'm hungry - show me what's nearby for delivery",
-          "Order 2 margherita pizzas and a tiramisu to my address",
-          "I'm gluten-free, what can I order under $20?"
+          "What profile information would you like to use for this request?",
+          "Show me what consented context would be shared with a partner",
+          "How would the answer change if I only allow basic profile access?"
         ]
       },
       "webhook_url": null,
