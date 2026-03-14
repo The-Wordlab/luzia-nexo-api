@@ -396,11 +396,16 @@
           "mode": "webhook"
         },
         "disclaimer": false,
+        "requested_scopes": [
+          "basic",
+          "preferences"
+        ],
+        "demo_default_persona": "sarah",
         "demo_icon": "utensils",
         "demo_color": "#F97316",
         "demo_order": 13,
         "prompt_suggestions": [
-          "I'm hungry - show me nearby vegetarian delivery for tonight",
+          "Show me nearby vegetarian delivery and explain what profile context you would use",
           "Build me a dinner order under EUR 25 and prepare checkout",
           "Track my delivery and suggest a quick reorder"
         ],
