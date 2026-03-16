@@ -51,3 +51,4 @@ nav:
   - Demo Catalog: demos.md
   - Examples Showcase: examples-showcase.md
   - Live Streaming Architecture (Advanced): design-live-streaming.md
+  - Agent Interop (MCP & A2A): agent-interop.md

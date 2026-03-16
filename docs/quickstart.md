@@ -108,6 +108,83 @@ Checklist:
 - Verify timestamp and signature (`X-Timestamp`, `X-Signature`)
 - Return valid JSON or SSE stream
 
+### Signature verification — Python (FastAPI)
+
+```python
+import hmac
+import hashlib
+import time
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+
+WEBHOOK_SECRET = "your_webhook_secret"
+
+def verify_signature(secret: str, timestamp: str, body: bytes, signature: str) -> bool:
+    # Reject requests with a timestamp older than 5 minutes
+    if abs(time.time() - int(timestamp)) > 300:
+        return False
+    payload = f"{timestamp}.{body.decode()}"
+    expected = "sha256=" + hmac.new(
+        secret.encode(), payload.encode(), hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+@app.post("/webhook")
+async def webhook(request: Request):
+    body = await request.body()
+    timestamp = request.headers.get("X-Timestamp", "")
+    signature = request.headers.get("X-Signature", "")
+
+    if not verify_signature(WEBHOOK_SECRET, timestamp, body, signature):
+        raise HTTPException(status_code=401, detail="Invalid signature")
+
+    payload = await request.json()
+    # ... process payload
+```
+
+### Signature verification — TypeScript (Express)
+
+```typescript
+import crypto from "crypto";
+import express, { Request, Response, NextFunction } from "express";
+
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET ?? "";
+
+function verifySignature(
+  secret: string,
+  timestamp: string,
+  body: string,
+  signature: string
+): boolean {
+  // Reject requests with a timestamp older than 5 minutes
+  if (Math.abs(Date.now() / 1000 - parseInt(timestamp)) > 300) return false;
+  const payload = `${timestamp}.${body}`;
+  const expected =
+    "sha256=" +
+    crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signature)
+  );
+}
+
+// Use express.raw to access the raw body for signature verification
+app.post("/webhook", express.raw({ type: "application/json" }), (req: Request, res: Response) => {
+  const timestamp = req.headers["x-timestamp"] as string ?? "";
+  const signature = req.headers["x-signature"] as string ?? "";
+  const body = req.body as Buffer;
+
+  if (!verifySignature(WEBHOOK_SECRET, timestamp, body.toString(), signature)) {
+    res.status(401).json({ error: "Invalid signature" });
+    return;
+  }
+
+  const payload = JSON.parse(body.toString());
+  // ... process payload
+});
+```
+
 ## 4) Test your webhook directly
 
 ```bash
