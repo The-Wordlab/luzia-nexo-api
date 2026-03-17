@@ -1,0 +1,166 @@
+{
+  "id": "sky_diamond",
+  "title": "Sky Diamond",
+  "aliases": ["the sky diamond case", "sky", "diamond"],
+  "hook": "A locked observatory. A vanished jewel. An audience that saw darkness and called it magic.",
+  "objective": "Prove who replaced the real jewel, how it left the sealed observatory, and why the blackout was staged.",
+  "setting": "The Celestial Crown observatory during a rain-soaked private illusion.",
+  "tone": "Luminous noir",
+  "briefing": "At midnight, under the glass dome of the Celestial Crown, the legendary Sky Diamond was unveiled during a private illusion. The room went black for eleven seconds. When the light returned, the jewel was gone and the velvet cradle glittered with blue dust.",
+  "start_text": "The observatory doors seal behind us. Rain whispers across the glass dome, the velvet cradle below is empty, and the city's richest guests are pretending not to tremble. Start with the glass dome, the moon balcony, Iris Bell's testimony, Celeste's dressing suite, or the lens room.",
+  "initial_act": "opening",
+  "act_titles": {
+    "opening": "Act I: The Vanishing",
+    "twist": "Act II: The Eleven Seconds",
+    "finale": "Act III: The False Miracle"
+  },
+  "act_objectives": {
+    "opening": "Prove the audience never saw the real jewel and identify where the blackout mattered.",
+    "twist": "Reconstruct the eleven-second blackout and expose the route the jewel actually travelled.",
+    "finale": "Use the reconstructed timeline to corner the architect and close the case cleanly."
+  },
+  "review_templates": {
+    "opening": "The room still believes in magic. We do not. The winning line is to prove the jewel was gone before the applause and that the blackout was engineered, not suffered.",
+    "twist": "The illusion is dead now. We are no longer asking who panicked in the dark; we are asking who designed the dark to do their work for them.",
+    "finale": "We have the route, the mechanism, and a liar who keeps speaking in stage directions. All that remains is to make the architect stand inside his own timing."
+  },
+  "accusation_threshold": 5,
+  "accusation_requires_flags": ["timeline_reconstructed", "winch_route_found", "bruno_cornered"],
+  "flag_labels": {
+    "timeline_reconstructed": "The blackout sequence has been reconstructed second by second.",
+    "winch_route_found": "The extraction route ran through the catwalk winch, not the audience floor.",
+    "bruno_cornered": "Bruno broke under pressure and exposed the staged emergency cue."
+  },
+  "suspects": {
+    "bruno": "Controls the cues and rigging",
+    "iris": "Sharp witness with a dangerous camera roll",
+    "celeste": "Inside access, but a damaged harness"
+  },
+  "suspect_updates": {
+    "bruno": {
+      "iris_recording": "Seen in the lens room during the blackout",
+      "blackout_cue": "Changed the cue sheet by hand",
+      "bruno_crack": "His story collapsed under a timed reconstruction"
+    },
+    "celeste": {
+      "celeste_alibi": "Harness tear suggests she was sabotaged, not complicit"
+    }
+  },
+  "clue_labels": {
+    "glass_fragments": "The display cradle held sugar-glass shards, not gem dust",
+    "greased_skylight": "A moon-balcony skylight was opened with fresh rigging oil",
+    "iris_recording": "Iris captured Bruno in the lens room during the blackout",
+    "blackout_cue": "The cue sheet hides an eleven-second blackout in Bruno's hand",
+    "celeste_alibi": "Celeste's torn harness proves she was trapped below the catwalk",
+    "timeline_reconstruction": "The blackout was staged around a switch and a delayed extraction",
+    "pulley_fibers": "Blue velvet fibers cling to the catwalk winch above the skylight",
+    "blue_burst_residue": "Fresh prism ash on the dome lamp proves the blue burst was used as a visual blind",
+    "bruno_crack": "Bruno admits the emergency cue was false and meant to clear the floor"
+  },
+  "culprit": "bruno",
+  "solve_text": "Bruno Vale did it. The cradle held a fake before the curtain rose, the blackout cue created the opening, the blue burst blinded the dome, Iris placed him in the lens room, the catwalk winch carried the velvet pouch, and his own staged emergency call cleared the sightlines. He sold a theft as a miracle, mistook choreography for genius, and expected the city to applaud while he escaped into the weather with the real jewel.",
+  "moves": {
+    "inspect_stage": {
+      "label": "Inspect the glass dome",
+      "visit": "glass_dome",
+      "aliases": ["inspect the pedestal", "look at the cradle", "inspect the jewel stand", "look at the dome"],
+      "text": "Beneath the dome, the pedestal for the Sky Diamond is a lie. The velvet cradle is full of blue sugar-glass, not shattered gemstone. Someone switched the real jewel before the curtain rose and left a theatrical corpse in its place.",
+      "repeat_text": "The empty cradle still sparkles like a false constellation. The first truth of Sky Diamond is that the audience never saw the real jewel.",
+      "clue": "glass_fragments"
+    },
+    "inspect_balcony": {
+      "label": "Inspect the moon balcony",
+      "visit": "moon_balcony",
+      "aliases": ["inspect the skylight", "search the balcony", "look at the catwalk skylight"],
+      "text": "On the moon balcony, rain needles the stone. One narrow skylight above the catwalk hangs half-latched, its brass catch slick with fresh rigging oil. The opening is just large enough for a velvet pouch.",
+      "repeat_text": "The skylight still glints with rain and grease. It is the route the jewel took when the room went blind.",
+      "clue": "greased_skylight"
+    },
+    "search_dressing_room": {
+      "label": "Search Celeste's dressing suite",
+      "visit": "dressing_suite",
+      "aliases": ["search celeste's suite", "inspect the dressing suite", "look at the harness", "search the dressing room"],
+      "text": "Celeste's dressing suite smells of ozone, powder, and panic. Her aerial harness lies torn at the shoulder buckle, the leather sliced clean, not worn through. She could not have climbed to the catwalk during the blackout.",
+      "repeat_text": "The torn harness still hangs from the brass stand like a failed pair of wings. Celeste had access, but not freedom of movement.",
+      "clue": "celeste_alibi"
+    },
+    "question_iris": {
+      "label": "Question Iris Bell",
+      "visit": "iris",
+      "aliases": ["speak to iris", "interrogate iris", "question iris bell"],
+      "text": "Iris Bell speaks like every sentence is being typeset for tomorrow's scandal page. She does not trust memory; she trusts recordings. In the reflection of her champagne coupe, Bruno is visible in the lens room at the exact instant he claims he was calming guests below.",
+      "repeat_text": "Iris smiles like a knife and says, with visible delight, that Bruno was not where he swore he was.",
+      "clue": "iris_recording"
+    },
+    "check_projection_booth": {
+      "label": "Check the lens room",
+      "visit": "lens_room",
+      "aliases": ["inspect the booth", "inspect the lens room", "check the cue sheet", "projection booth"],
+      "text": "The lens room is a kingdom of brass gears and old starlight. On the cue sheet, one line is penciled in later, in Bruno's hand: `Blackout: eleven seconds after blue burst.` The room was not dark by accident. It was dark by design.",
+      "repeat_text": "The penciled blackout still reads like a confession written as stage direction.",
+      "clue": "blackout_cue"
+    },
+    "reconstruct_blackout": {
+      "label": "Reconstruct the blackout",
+      "visit": "timeline_table",
+      "aliases": ["reconstruct timeline", "rebuild the eleven seconds", "timeline"],
+      "text": "Luzia lays the cue sheet, Iris's reflection, the false cradle, and the greased skylight into one ruthless line. The jewel was switched before the unveiling, the blackout hid the handoff, and the extraction ran upward while every eye searched the floor.",
+      "repeat_text": "The eleven seconds are mapped now: switch, blackout, lift, skylight, applause.",
+      "clue": "timeline_reconstruction",
+      "min_clues": 3,
+      "unlocks": {
+        "flags": ["timeline_reconstructed"],
+        "act": "twist",
+        "text": "The case changes shape. Someone above the dome used theatre, not speed. For one breath the observatory lights dim again and every guest in the room goes silent, as if the night has remembered the trick."
+      }
+    },
+    "replay_blue_burst": {
+      "label": "Replay the blue burst",
+      "visit": "dome_lamp",
+      "aliases": ["replay the burst", "trigger the blue burst", "test the dome lamp"],
+      "text": "Luzia has the dome lamp primed and the room cleared. When the blue burst flashes across the glass, every reflective surface turns predatory. On the lamp housing, fresh prism ash clings where it should have burned away hours ago. The burst was not decoration. It was the blindfold.",
+      "repeat_text": "The dome still holds the afterimage of the blue burst. Bruno built the audience's blindness into the show.",
+      "clue": "blue_burst_residue",
+      "requires_flags": ["timeline_reconstructed"],
+      "unlocks": {
+        "text": "For a heartbeat the observatory looks haunted by its own applause."
+      }
+    },
+    "inspect_winch": {
+      "label": "Inspect the catwalk winch",
+      "visit": "catwalk_winch",
+      "aliases": ["inspect the winch", "search the catwalk rigging", "look at the pulley"],
+      "text": "Above the skylight, the catwalk winch is threaded with blue velvet fibers and a single bright stone dust smear. The jewel did not leave in a hand. It travelled in a pouch through the rigging.",
+      "repeat_text": "The winch still wears blue fibers like a brag.",
+      "clue": "pulley_fibers",
+      "requires_flags": ["timeline_reconstructed"],
+      "unlocks": {
+        "flags": ["winch_route_found"],
+        "act": "finale",
+        "text": "Now the route is real, not theoretical."
+      }
+    },
+    "confront_bruno": {
+      "label": "Pressure Bruno Vale",
+      "visit": "bruno_confrontation",
+      "aliases": ["question bruno", "confront bruno", "pressure bruno", "interrogate bruno vale"],
+      "text": "Luzia walks Bruno through the eleven seconds one beat at a time while the dome still glows with the memory of the blue burst. He performs denial beautifully for six seconds, then anger for three, and on the last beat he snaps that the emergency cue was necessary to clear the floor. The room hears him say necessary and understands what he has just confessed.",
+      "repeat_text": "Bruno has already cracked. The emergency cue was theatre wearing the mask of panic.",
+      "clue": "bruno_crack",
+      "min_clues": 4,
+      "requires_flags": ["timeline_reconstructed"],
+      "unlocks": {
+        "flags": ["bruno_cornered"],
+        "text": "He is out of stage directions. All that remains is the accusation."
+      }
+    },
+    "question_celeste": {
+      "label": "Question Celeste Rowan",
+      "visit": "celeste",
+      "aliases": ["question celeste", "interrogate celeste", "speak to celeste rowan"],
+      "text": "Celeste Rowan is furious in the expensive, exhausted way that only professionals manage under accusation. She gives us sabotage, bruised pride, and one useful truth: Bruno insisted on rehearsing the emergency cue twice, calling it the heartbeat of the illusion.",
+      "repeat_text": "Celeste has no new lie to give us because she has not been lying. She only keeps describing how much Bruno loved the rhythm of that cue.",
+      "requires_flags": ["timeline_reconstructed"]
+    }
+  }
+}
