@@ -957,14 +957,6 @@ async def webhook(request: Request):
             for artifact in artifacts:
                 yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
 
-            # Only include personalization proof when the user actually
-            # shared meaningful profile data (not just locale).
-            done_meta: dict[str, Any] = {
-                "prompt_suggestions": prompt_suggestions,
-            }
-            meaningful_fields = {k: v for k, v in personalization.get("used", {}).items() if k != "locale"}
-            if meaningful_fields:
-                done_meta["personalization"] = personalization
             done_payload = {
                 "type": "done",
                 **_build_envelope(
@@ -973,7 +965,7 @@ async def webhook(request: Request):
                     cards=cards,
                     actions=actions,
                     artifacts=artifacts,
-                    metadata=done_meta,
+                    metadata={"prompt_suggestions": prompt_suggestions},
                 ),
             }
             yield f"data: {json.dumps(done_payload)}\n\n"
@@ -987,10 +979,6 @@ async def webhook(request: Request):
     if prefix:
         llm_reply = f"{prefix}{llm_reply}"
 
-    sync_meta: dict[str, Any] = {}
-    meaningful_sync = {k: v for k, v in personalization.get("used", {}).items() if k != "locale"}
-    if meaningful_sync:
-        sync_meta["personalization"] = personalization
     return JSONResponse(
         _build_envelope(
             text=llm_reply,
@@ -998,6 +986,6 @@ async def webhook(request: Request):
             cards=cards,
             actions=actions,
             artifacts=artifacts,
-            metadata=sync_meta,
+            metadata={},
         )
     )
