@@ -165,6 +165,7 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
             "Show vegetarian options under $20",
             "What are your top-rated dishes?",
             "Filter to gluten-free items",
+            "Show vegan options",
         ]
     if intent == "order_build":
         return [
@@ -837,8 +838,6 @@ async def webhook(request: Request):
         actions = [
             {"id": "build_order", "type": "primary", "label": "Build My Order", "action": "build_order"},
             {"id": "open_restaurant", "type": "secondary", "label": "Open Restaurant", "action": "open_restaurant"},
-            {"id": "filter_vegan", "type": "secondary", "label": "Vegan Options", "action": "filter_vegan"},
-            {"id": "filter_gluten_free", "type": "secondary", "label": "Gluten-Free Options", "action": "filter_gluten_free"},
         ]
         artifacts = [
             {"type": "application/json", "name": "restaurant_shortlist", "data": _RESTAURANTS[:3]},
