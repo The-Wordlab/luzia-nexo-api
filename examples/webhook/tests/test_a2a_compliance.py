@@ -47,7 +47,6 @@ LIGHTWEIGHT_EXAMPLES = [
     ("travel-planning", "python", "app.py", "a2a_travel_planning"),
     ("fitness-coach", "python", "app.py", "a2a_fitness_coach"),
     ("language-tutor", "python", "app.py", "a2a_language_tutor"),
-    ("travel-planner", "python", "app.py", "a2a_travel_planner"),
 ]
 
 _loaded_modules: dict[str, Any] = {}

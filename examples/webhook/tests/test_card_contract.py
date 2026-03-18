@@ -37,10 +37,9 @@ from httpx import AsyncClient, ASGITransport
 WEBHOOK_BASE = Path(__file__).parent.parent
 
 FITNESS_COACH_PATH = WEBHOOK_BASE / "fitness-coach" / "python"
-TRAVEL_PLANNER_PATH = WEBHOOK_BASE / "travel-planner" / "python"
 LANGUAGE_TUTOR_PATH = WEBHOOK_BASE / "language-tutor" / "python"
 
-for _path in (FITNESS_COACH_PATH, TRAVEL_PLANNER_PATH, LANGUAGE_TUTOR_PATH):
+for _path in (FITNESS_COACH_PATH, LANGUAGE_TUTOR_PATH):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
@@ -57,7 +56,6 @@ def _load_app_module(path: Path, alias: str):
 
 
 fitness_app = _load_app_module(FITNESS_COACH_PATH, "fitness_app")
-travel_app = _load_app_module(TRAVEL_PLANNER_PATH, "travel_app")
 language_app = _load_app_module(LANGUAGE_TUTOR_PATH, "language_app")
 
 # ---------------------------------------------------------------------------
@@ -115,25 +113,6 @@ INTENT_CASES = [
         "What should I eat before and after my workout?",
         "nutrition_guidance",
         id="fitness-nutrition_guidance",
-    ),
-    # Travel planner
-    pytest.param(
-        travel_app,
-        "Can you create a 3 day itinerary for Barcelona?",
-        "itinerary",
-        id="travel-itinerary",
-    ),
-    pytest.param(
-        travel_app,
-        "Compare flights to Paris, what is the cheapest price?",
-        "flight_compare",
-        id="travel-flight_compare",
-    ),
-    pytest.param(
-        travel_app,
-        "Book and reserve a hotel, I want to confirm the booking handoff",
-        "booking_handoff",
-        id="travel-booking_handoff",
     ),
     # Language tutor
     pytest.param(
@@ -300,25 +279,6 @@ def test_fitness_progress_card_structure():
 def test_fitness_nutrition_card_structure():
     card = fitness_app.build_nutrition_card()
     _assert_card_contract(card, "fitness_nutrition_guidance")
-
-
-@pytest.mark.parametrize("destination", ["Barcelona", "Tokyo", "Lisbon"])
-def test_travel_itinerary_card_structure(destination: str):
-    card = travel_app.build_itinerary_card(destination, 3)
-    _assert_card_contract(card, f"travel_itinerary:{destination}")
-
-
-@pytest.mark.parametrize("destination", ["Barcelona", "Paris"])
-def test_travel_flights_card_structure(destination: str):
-    card = travel_app.build_flights_card(destination)
-    _assert_card_contract(card, f"travel_flight_compare:{destination}")
-
-
-@pytest.mark.parametrize("destination", ["Barcelona", "Tokyo"])
-def test_travel_booking_card_structure(destination: str):
-    card = travel_app.build_booking_card(destination)
-    _assert_card_contract(card, f"travel_booking_handoff:{destination}")
-
 
 @pytest.mark.parametrize("language", ["Italian", "Spanish", "Portuguese"])
 def test_language_phrase_card_structure(language: str):

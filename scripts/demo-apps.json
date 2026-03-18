@@ -28,81 +28,6 @@
   },
   "apps": [
     {
-      "demo_key": "ifood",
-      "name": "Consent Demo",
-      "description": "Consent and profile projection demo - generic scope request and context sharing proof",
-      "config_json": {
-        "demo_key": "ifood",
-        "integration_mode": "simulator",
-        "simulator_type": "generic",
-        "disclaimer": false,
-        "requested_scopes": [
-          "basic",
-          "preferences"
-        ],
-        "demo_icon": "shield-check",
-        "demo_color": "#0EA5E9",
-        "demo_order": 1,
-        "prompt_suggestions": [
-          "What profile information would you like to use for this request?",
-          "Show me what consented context would be shared with a partner",
-          "How would the answer change if I only allow basic profile access?"
-        ]
-      },
-      "webhook_url": null,
-      "card_trigger_rules": [
-        {
-          "trigger_type": "partner_skill",
-          "keywords": [
-            "skill",
-            "partner",
-            "integration"
-          ],
-          "priority": 10,
-          "cooldown_seconds": 60
-        }
-      ]
-    },
-    {
-      "demo_key": "privacy",
-      "name": "Privacy Demo",
-      "description": "Profile data scoping demo - all 4 consent scopes",
-      "config_json": {
-        "demo_key": "privacy",
-        "integration_mode": "simulator",
-        "simulator_type": "generic",
-        "disclaimer": false,
-        "requested_scopes": [
-          "basic",
-          "preferences",
-          "memory",
-          "contact"
-        ],
-        "demo_icon": "shield-check",
-        "demo_color": "#8B5CF6",
-        "demo_order": 2,
-        "prompt_suggestions": [
-          "What personal data do you have about me?",
-          "I want to delete all my data",
-          "Show me my consent preferences"
-        ]
-      },
-      "webhook_url": null,
-      "card_trigger_rules": [
-        {
-          "trigger_type": "consent_request",
-          "keywords": [
-            "consent",
-            "permission",
-            "privacy",
-            "data"
-          ],
-          "priority": 30,
-          "cooldown_seconds": 60
-        }
-      ]
-    },
-    {
       "demo_key": "fitness-coach",
       "name": "Fitness Coach",
       "description": "Webhook fitness coach - workout planning, progress reviews, and nutrition guidance",
@@ -121,43 +46,6 @@
       },
       "webhook_url_env": "DEMO_FITNESS_COACH_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-fitness-coach-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": [
-        {
-          "trigger_type": "partner_skill",
-          "keywords": [
-            "skill",
-            "partner",
-            "integration"
-          ],
-          "priority": 10,
-          "cooldown_seconds": 120
-        }
-      ]
-    },
-    {
-      "demo_key": "travel-planner",
-      "name": "Travel Planner",
-      "description": "Secondary compatibility travel demo - flight comparison and booking handoff. Travel Planning is the flagship trip lifecycle example.",
-      "config_json": {
-        "demo_key": "travel-planner",
-        "integration_mode": "webhook",
-        "disclaimer": false,
-        "demo_icon": "plane",
-        "demo_color": "#3B82F6",
-        "demo_order": 4,
-        "prompt_suggestions": [
-          "Compare flights to Lisbon next month",
-          "Prepare booking handoff for my Barcelona trip",
-          "I am ready to book - what details do you need from me?"
-        ],
-        "deprecated": true,
-        "deprecated_reason": "Compatibility slice - prefer Travel Planning for the flagship trip lifecycle flow",
-        "showcase_family": "travel",
-        "showcase_role": "secondary",
-        "superseded_by": "travel-planning"
-      },
-      "webhook_url_env": "DEMO_TRAVEL_PLANNER_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-travel-planner-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": [
         {
           "trigger_type": "partner_skill",
@@ -279,62 +167,6 @@
       "card_trigger_rules": []
     },
     {
-      "demo_key": "chain-demo",
-      "name": "Chain Demo",
-      "description": "Multi-step chained experience: search -> confirm -> execute",
-      "config_json": {
-        "demo_key": "chain-demo",
-        "integration_mode": "simulator",
-        "simulator_type": "generic",
-        "disclaimer": false,
-        "chaining": {
-          "enabled": true,
-          "default_chain_id": "restaurant-chain",
-          "chains": [
-            {
-              "chain_id": "restaurant-chain",
-              "name": "Restaurant Booking",
-              "description": "Search, confirm, and book a restaurant",
-              "steps": [
-                {
-                  "app_id": "search-step",
-                  "input_mapping": {
-                    "query": "initial_input"
-                  },
-                  "timeout_seconds": 15
-                },
-                {
-                  "app_id": "confirm-step",
-                  "input_mapping": {
-                    "selection": "step_0_output"
-                  },
-                  "timeout_seconds": 15
-                },
-                {
-                  "app_id": "execute-step",
-                  "input_mapping": {
-                    "confirmation": "step_1_output"
-                  },
-                  "timeout_seconds": 15
-                }
-              ],
-              "created_at": "2026-01-01T00:00:00Z"
-            }
-          ]
-        },
-        "demo_icon": "link",
-        "demo_color": "#EC4899",
-        "demo_order": 10,
-        "prompt_suggestions": [
-          "Find a sushi restaurant for 2 tonight at 8pm",
-          "Book the best-rated Italian place nearby",
-          "Find family-friendly lunch options within 20 minutes"
-        ]
-      },
-      "webhook_url": null,
-      "card_trigger_rules": []
-    },
-    {
       "demo_key": "football-live",
       "name": "Football Live",
       "description": "Football deep-dive - live scores, standings, and top scorers with structured cards",
@@ -438,11 +270,35 @@
           "What's my trip budget looking like?"
         ],
         "showcase_family": "travel",
-        "showcase_role": "flagship",
-        "supersedes": ["travel-planner"]
+        "showcase_role": "flagship"
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",
+      "card_trigger_rules": []
+    },
+    {
+      "demo_key": "sky-diamond",
+      "name": "Sky Diamond",
+      "description": "Stateful detective game - one premium mystery per thread with cards, prompt suggestions, JSON, and SSE",
+      "config_json": {
+        "demo_key": "sky-diamond",
+        "integration_mode": "webhook",
+        "integration": {
+          "mode": "webhook"
+        },
+        "disclaimer": false,
+        "demo_icon": "sparkles",
+        "demo_color": "#6366F1",
+        "demo_order": 15,
+        "prompt_suggestions": [
+          "Sky Diamond",
+          "Begin the case"
+        ],
+        "showcase_family": "games",
+        "showcase_role": "secondary"
+      },
+      "webhook_url_env": "DEMO_SKY_DIAMOND_WEBHOOK_URL",
+      "webhook_url_default": "https://luzia-sky-diamond-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     }
   ],

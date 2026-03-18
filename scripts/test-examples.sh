@@ -22,7 +22,6 @@ run_pytest "examples/webhook/minimal/python"
 run_pytest "examples/webhook/structured/python"
 run_pytest "examples/webhook/advanced/python"
 run_pytest "examples/webhook/fitness-coach/python"
-run_pytest "examples/webhook/travel-planner/python"
 run_pytest "examples/webhook/language-tutor/python"
 run_pytest "examples/webhook/tests"
 
