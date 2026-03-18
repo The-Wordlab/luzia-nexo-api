@@ -27,8 +27,8 @@
 #   routines
 #   food-ordering
 #   travel-planning
+#   sky-diamond
 #   fitness-coach
-#   travel-planner
 #   language-tutor
 
 set -euo pipefail
@@ -52,7 +52,7 @@ usage() {
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
   echo "  hosted-py | hosted-ts | demo-receiver"
   echo "  news | sports | travel | football | routines | food-ordering | travel-planning"
-  echo "  fitness-coach | travel-planner | language-tutor"
+  echo "  sky-diamond | fitness-coach | language-tutor"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: europe-west1)"
@@ -152,17 +152,15 @@ deploy_travel_planning() {
     "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
+deploy_sky_diamond() {
+  local cmd="cd \"${REPO_ROOT}\" && gcloud builds submit --config examples/webhook/detective-game/python/cloudbuild.yaml --substitutions _PROJECT_ID=${PROJECT_ID},_REGION=${REGION},_SERVICE_NAME=luzia-sky-diamond,_AR_REPO=nexo-examples,_IMAGE_TAG=latest"
+  run_cmd "${cmd}"
+}
+
 deploy_fitness_coach() {
   deploy_source_service \
     "nexo-fitness-coach" \
     "${REPO_ROOT}/examples/webhook/fitness-coach/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
-}
-
-deploy_travel_planner() {
-  deploy_source_service \
-    "nexo-travel-planner" \
-    "${REPO_ROOT}/examples/webhook/travel-planner/python" \
     "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
@@ -208,8 +206,8 @@ run_target() {
       deploy_routines
       deploy_food_ordering
       deploy_travel_planning
+      deploy_sky_diamond
       deploy_fitness_coach
-      deploy_travel_planner
       deploy_language_tutor
       deploy_rag_target all
       ;;
@@ -229,8 +227,8 @@ run_target() {
     routines) deploy_routines ;;
     food-ordering) deploy_food_ordering ;;
     travel-planning) deploy_travel_planning ;;
+    sky-diamond) deploy_sky_diamond ;;
     fitness-coach) deploy_fitness_coach ;;
-    travel-planner) deploy_travel_planner ;;
     language-tutor) deploy_language_tutor ;;
     hosted-py) deploy_hosted_py ;;
     hosted-ts) deploy_hosted_ts ;;

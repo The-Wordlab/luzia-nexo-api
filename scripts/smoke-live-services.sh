@@ -282,8 +282,8 @@ URL_OPENCLAW_BRIDGE="$(service_url nexo-openclaw-bridge)"
 URL_ROUTINES="$(service_url nexo-routines)"
 URL_FOOD_ORDERING="$(service_url nexo-food-ordering)"
 URL_TRAVEL_PLANNING="$(service_url nexo-travel-planning)"
+URL_SKY_DIAMOND="$(service_url luzia-sky-diamond)"
 URL_FITNESS_COACH="$(service_url nexo-fitness-coach)"
-URL_TRAVEL_PLANNER="$(service_url nexo-travel-planner)"
 URL_LANGUAGE_TUTOR="$(service_url nexo-language-tutor)"
 URL_NEWS_RAG="$(service_url nexo-news-rag)"
 URL_SPORTS_RAG="$(service_url nexo-sports-rag)"
@@ -302,8 +302,8 @@ http_get_check "openclaw-bridge root" "${URL_OPENCLAW_BRIDGE}/" "webhook-opencla
 http_get_check "routines health" "${URL_ROUTINES}/health" "status"
 http_get_check "food-ordering health" "${URL_FOOD_ORDERING}/health" "status"
 http_get_check "travel-planning health" "${URL_TRAVEL_PLANNING}/health" "status"
+http_get_check "sky-diamond health" "${URL_SKY_DIAMOND}/health" "status"
 http_get_check "fitness-coach health" "${URL_FITNESS_COACH}/health" "status"
-http_get_check "travel-planner health" "${URL_TRAVEL_PLANNER}/health" "status"
 http_get_check "language-tutor health" "${URL_LANGUAGE_TUTOR}/health" "status"
 http_get_check "news-rag health" "${URL_NEWS_RAG}/health" "status"
 http_get_check "sports-rag health" "${URL_SPORTS_RAG}/health" "status"
@@ -365,14 +365,14 @@ http_post_signed_prompt_suggestions_check \
   '{"event":"message_created","message":{"role":"user","content":"plan 3 days in Lisbon"},"profile":{"display_name":"Mark"}}'
 
 http_post_signed_prompt_suggestions_check \
+  "sky-diamond webhook" \
+  "${URL_SKY_DIAMOND}/webhook" \
+  '{"event":"message_created","thread":{"id":"smoke-sky-diamond"},"message":{"role":"user","content":"Sky Diamond"},"profile":{"display_name":"Mark"}}'
+
+http_post_signed_prompt_suggestions_check \
   "fitness-coach webhook" \
   "${URL_FITNESS_COACH}/" \
   '{"event":"message_created","message":{"role":"user","content":"design a beginner workout plan"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "travel-planner webhook" \
-  "${URL_TRAVEL_PLANNER}/" \
-  '{"event":"message_created","message":{"role":"user","content":"plan a romantic weekend in Barcelona"},"profile":{"display_name":"Mark"}}'
 
 http_post_signed_prompt_suggestions_check \
   "language-tutor webhook" \

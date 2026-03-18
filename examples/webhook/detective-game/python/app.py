@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 try:
     import psycopg
@@ -44,13 +44,13 @@ AGENT_CARD: dict[str, Any] = {
             {
                 "name": CAPABILITY_NAME,
                 "description": "Play a deterministic mystery in chat with persistent per-thread state, clue tracking, and accusation endings.",
-                "supports_streaming": False,
+                "supports_streaming": True,
                 "supports_cancellation": False,
                 "metadata": {
                     "mode": "game",
                     "prompt_suggestions": [
-                        "Sky Diamond",
                         "Begin the case",
+                        "Help",
                     ],
                     "showcase_family": "games",
                     "showcase_role": "prototype",
@@ -61,56 +61,51 @@ AGENT_CARD: dict[str, Any] = {
 }
 
 INTRO_TEXT = (
-    "I am Luzia, and tonight I am not your assistant. I am your detective. "
-    "Welcome to Sky Diamond. Open the silver casebook and begin the case. Each thread carries one active investigation at a time."
+    "Sky Diamond is on the table. Type `begin case` to enter the observatory and start the investigation."
 )
 
 HELP_TEXT = (
     "Use short commands or tap the suggestions. During the case you can inspect locations, "
     "question suspects, review clues, accuse someone, or type `restart`. "
-    "Typed chat works too: try `look at the dome`, `question Bruno`, `accuse Iris`, or `change case`."
+    "Typed chat works too: try `look at the dome`, `question Bruno`, or `accuse Iris`."
 )
 
 _UI_TRANSLATIONS: dict[str, dict[str, str]] = {
     "es": {
-        "select_intro": "Soy Luzia, y esta noche no soy tu asistente. Soy tu detective. Abre el cuaderno plateado y entra en Sky Diamond. Cada hilo puede llevar un caso activo.",
-        "choose_cases": "Caso disponible: Sky Diamond.",
-        "help": "Usa comandos cortos o toca las sugerencias. Puedes inspeccionar lugares, interrogar sospechosos, revisar pistas, acusar a alguien, escribir `restart` o `change case`.",
-        "change_case": "El estante vuelve a abrirse. Elige otra aventura para fijarla a este hilo.",
-        "restart": "Caso reiniciado. El estante esta abierto otra vez. Elige una aventura para fijar una nueva investigacion a este hilo.",
-        "closed_case": "Ese caso esta cerrado. Escribe `restart` para volver al estante, `change case` para elegir otra aventura o `review clues` para ver el resumen.",
-        "invalid_move": "Luzia golpea suavemente el expediente. Ese movimiento no esta en el cuaderno. Prueba un lugar, un sospechoso, `review clues` o `change case`.",
+        "select_intro": "Sky Diamond esta sobre la mesa. Escribe `begin case` para entrar en el observatorio y empezar la investigacion.",
+        "help": "Usa comandos cortos o toca las sugerencias. Puedes inspeccionar lugares, interrogar sospechosos, revisar pistas, acusar a alguien o escribir `restart`.",
+        "restart": "Caso reiniciado. El expediente vuelve al principio. Escribe `begin case` para empezar de nuevo.",
+        "closed_case": "Ese caso esta cerrado. Escribe `restart` para jugarlo otra vez o `review clues` para ver el resumen.",
+        "invalid_move": "Luzia golpea suavemente el expediente. Ese movimiento no esta en el cuaderno. Prueba un lugar, un sospechoso, `review clues` o una acusacion.",
         "too_early": "Demasiado pronto. Luzia cierra el cuaderno plateado con una mano enguantada. Necesitamos mas pruebas antes de acusar a alguien.",
+        "single_case": "Aqui solo hay un caso: Sky Diamond. Escribe `begin case` para empezar o `restart` para volver al principio.",
     },
     "fr": {
-        "select_intro": "Je suis Luzia, et ce soir je ne suis pas votre assistante. Je suis votre detective. Ouvrez le carnet argente et entrez dans Sky Diamond. Chaque fil peut porter une enquete active.",
-        "choose_cases": "Affaire disponible : Sky Diamond.",
-        "help": "Utilisez de courtes commandes ou les suggestions. Vous pouvez inspecter des lieux, interroger des suspects, revoir les indices, accuser quelqu'un, ecrire `restart` ou `change case`.",
-        "change_case": "L'etagere des dossiers s'ouvre de nouveau. Choisissez une autre aventure pour l'epingler a ce fil.",
-        "restart": "Affaire reinitialisee. L'etagere est de nouveau ouverte. Choisissez une aventure pour epingler une nouvelle enquete a ce fil.",
-        "closed_case": "Cette affaire est close. Tapez `restart` pour revenir a l'etagere, `change case` pour choisir une autre aventure, ou `review clues` pour le resume.",
-        "invalid_move": "Luzia tapote le dossier. Ce mouvement n'est pas dans le carnet. Essayez un lieu, un suspect, `review clues` ou `change case`.",
+        "select_intro": "Sky Diamond est sur la table. Ecrivez `begin case` pour entrer dans l'observatoire et commencer l'enquete.",
+        "help": "Utilisez de courtes commandes ou les suggestions. Vous pouvez inspecter des lieux, interroger des suspects, revoir les indices, accuser quelqu'un ou ecrire `restart`.",
+        "restart": "Affaire reinitialisee. Le dossier revient au debut. Ecrivez `begin case` pour recommencer.",
+        "closed_case": "Cette affaire est close. Tapez `restart` pour la rejouer ou `review clues` pour le resume.",
+        "invalid_move": "Luzia tapote le dossier. Ce mouvement n'est pas dans le carnet. Essayez un lieu, un suspect, `review clues` ou une accusation.",
         "too_early": "Trop tot. Luzia referme le carnet argente d'une main gant ee. Il nous faut plus de preuves avant d'accuser quelqu'un.",
+        "single_case": "Il n'y a qu'une seule affaire ici : Sky Diamond. Ecrivez `begin case` pour commencer ou `restart` pour revenir au debut.",
     },
     "pt": {
-        "select_intro": "Sou Luzia, e esta noite nao sou sua assistente. Sou sua detetive. Abra o caderno prateado e entre em Sky Diamond. Cada conversa pode carregar um caso ativo.",
-        "choose_cases": "Caso disponivel: Sky Diamond.",
-        "help": "Use comandos curtos ou toque nas sugestoes. Voce pode inspecionar lugares, interrogar suspeitos, revisar pistas, acusar alguem, digitar `restart` ou `change case`.",
-        "change_case": "A estante de casos esta aberta outra vez. Escolha outra aventura para fixar nesta conversa.",
-        "restart": "Caso reiniciado. A estante esta aberta outra vez. Escolha uma aventura para fixar uma nova investigacao nesta conversa.",
-        "closed_case": "Esse caso esta encerrado. Digite `restart` para voltar a estante, `change case` para escolher outra aventura, ou `review clues` para o resumo.",
-        "invalid_move": "Luzia toca o arquivo com a ponta dos dedos. Esse movimento nao esta no caderno. Tente um lugar, um suspeito, `review clues` ou `change case`.",
+        "select_intro": "Sky Diamond esta sobre a mesa. Digite `begin case` para entrar no observatorio e comecar a investigacao.",
+        "help": "Use comandos curtos ou toque nas sugestoes. Voce pode inspecionar lugares, interrogar suspeitos, revisar pistas, acusar alguem ou digitar `restart`.",
+        "restart": "Caso reiniciado. O arquivo voltou ao comeco. Digite `begin case` para recomecar.",
+        "closed_case": "Esse caso esta encerrado. Digite `restart` para jogar de novo ou `review clues` para ver o resumo.",
+        "invalid_move": "Luzia toca o arquivo com a ponta dos dedos. Esse movimento nao esta no caderno. Tente um lugar, um suspeito, `review clues` ou uma acusacao.",
         "too_early": "Muito cedo. Luzia fecha o caderno prateado com uma mao enluvada. Precisamos de mais provas antes de acusar alguem.",
+        "single_case": "Ha apenas um caso aqui: Sky Diamond. Digite `begin case` para comecar ou `restart` para voltar ao inicio.",
     },
     "it": {
-        "select_intro": "Sono Luzia, e stanotte non sono la tua assistente. Sono la tua detective. Apri il taccuino d'argento ed entra in Sky Diamond. Ogni thread puo contenere un caso attivo.",
-        "choose_cases": "Caso disponibile: Sky Diamond.",
-        "help": "Usa comandi brevi o i suggerimenti. Puoi ispezionare luoghi, interrogare sospetti, rivedere gli indizi, accusare qualcuno, digitare `restart` o `change case`.",
-        "change_case": "Lo scaffale dei casi si riapre. Scegli un'altra avventura da fissare a questo thread.",
-        "restart": "Caso azzerato. Lo scaffale e di nuovo aperto. Scegli un'avventura per fissare una nuova indagine a questo thread.",
-        "closed_case": "Questo caso e chiuso. Scrivi `restart` per tornare allo scaffale, `change case` per scegliere un'altra avventura, oppure `review clues` per il riepilogo.",
-        "invalid_move": "Luzia tocca il fascicolo. Questa mossa non e nel taccuino. Prova un luogo, un sospetto, `review clues` o `change case`.",
+        "select_intro": "Sky Diamond e sul tavolo. Scrivi `begin case` per entrare nell'osservatorio e iniziare l'indagine.",
+        "help": "Usa comandi brevi o i suggerimenti. Puoi ispezionare luoghi, interrogare sospetti, rivedere gli indizi, accusare qualcuno o digitare `restart`.",
+        "restart": "Caso azzerato. Il fascicolo e tornato all'inizio. Scrivi `begin case` per ricominciare.",
+        "closed_case": "Questo caso e chiuso. Scrivi `restart` per giocarlo di nuovo oppure `review clues` per il riepilogo.",
+        "invalid_move": "Luzia tocca il fascicolo. Questa mossa non e nel taccuino. Prova un luogo, un sospetto, `review clues` o un'accusa.",
         "too_early": "Troppo presto. Luzia chiude il taccuino d'argento con una mano guantata. Ci servono piu prove prima di accusare qualcuno.",
+        "single_case": "Qui c'e un solo caso: Sky Diamond. Scrivi `begin case` per iniziare o `restart` per tornare all'inizio.",
     },
 }
 
@@ -290,8 +285,8 @@ def get_store() -> Any:
 
 def new_session_state() -> dict[str, Any]:
     return {
-        "phase": "select_adventure",
-        "act": "",
+        "phase": "briefing",
+        "act": "opening",
         "turn_count": 0,
         "visited": [],
         "clues": [],
@@ -299,7 +294,7 @@ def new_session_state() -> dict[str, Any]:
         "ending": "",
         "accused": "",
         "last_move": "briefing",
-        "adventure_id": "",
+        "adventure_id": "sky_diamond",
         "locale": "",
         "display_name": "",
     }
@@ -407,7 +402,7 @@ def _ordered_adventures() -> list[dict[str, Any]]:
 def _act_title(state: dict[str, Any]) -> str:
     adventure = _current_adventure(state)
     if adventure is None:
-        return "Case Shelf"
+        return "Opening"
     act = state.get("act") or adventure.get("initial_act", "opening")
     return adventure.get("act_titles", {}).get(act, act.replace("_", " ").title())
 
@@ -527,12 +522,12 @@ def parse_command(message: str, state: dict[str, Any] | None = None) -> ParsedCo
 
 def _available_suggestions(state: dict[str, Any]) -> list[str]:
     adventure = _current_adventure(state)
-    if state["phase"] == "select_adventure" or adventure is None:
-        return [case["title"] for case in _ordered_adventures()] + ["Help"]
+    if adventure is None:
+        return ["Begin the case", "Help", "Restart"]
     if state["phase"] == "briefing":
-        return ["Begin the case", "Change case", "Help", "Restart"]
+        return ["Begin the case", "Help", "Restart"]
     if state["phase"] in {"solved", "failed"}:
-        return ["Restart", "Review clues", "Change case", "Begin the case"]
+        return ["Restart", "Review clues", "Begin the case"]
 
     if _accusation_ready(state):
         return [
@@ -540,7 +535,6 @@ def _available_suggestions(state: dict[str, Any]) -> list[str]:
             "Accuse Iris Bell",
             "Accuse Celeste Rowan",
             "Review clues",
-            "Change case",
         ]
 
     move_names = _prioritized_move_names(state, include_repeat=False)
@@ -573,18 +567,17 @@ def _completion_percent(state: dict[str, Any]) -> int:
 
 
 def _selection_card() -> dict[str, Any]:
+    adventure = ADVENTURES["sky_diamond"]
     return {
         "type": "info",
         "title": GAME_TITLE,
-        "subtitle": "One Premium Case",
-        "description": "A stateful detective mystery built for one pinned chat thread.",
+        "subtitle": "A Single Mystery",
+        "description": "A locked-room jewel theft in a rain-soaked observatory.",
         "badges": ["Game", "Detective", "Flagship"],
         "fields": [
-            {
-                "label": adventure["title"],
-                "value": f"{adventure['hook']} Tone: {adventure.get('tone', 'Mystery')}.",
-            }
-            for adventure in _ordered_adventures()
+            {"label": "Case", "value": adventure["title"]},
+            {"label": "Hook", "value": adventure["hook"]},
+            {"label": "Goal", "value": adventure["objective"]},
         ],
         "metadata": {"capability_state": "live"},
     }
@@ -625,10 +618,10 @@ def _objective_card(state: dict[str, Any]) -> dict[str, Any]:
         return {
             "type": "info",
             "title": "How To Play",
-            "subtitle": "One case per thread",
+            "subtitle": "Start the investigation",
             "fields": [
-                {"label": "Open", "value": "Enter Sky Diamond from the case shelf."},
-                {"label": "Pin", "value": "This thread stays on Sky Diamond until `change case`."},
+                {"label": "Start", "value": "Type `begin case` to enter the mystery."},
+                {"label": "Play", "value": "Inspect locations, question suspects, and review clues."},
                 {"label": "Solve", "value": "Collect clues, unlock the reveal, and make the final accusation."},
             ],
             "metadata": {"capability_state": "live"},
@@ -656,10 +649,12 @@ def _suspect_card(state: dict[str, Any]) -> dict[str, Any]:
     if adventure is None:
         return {
             "type": "info",
-            "title": "Pinned Thread",
-            "subtitle": "No case selected yet",
+            "title": "Suspects",
+            "subtitle": "Three people. One impossible theft.",
             "fields": [
-                {"label": "How pinning works", "value": "Once you open Sky Diamond, this thread stays pinned to it until `change case` or a fresh thread."}
+                {"label": "Bruno Vale", "value": "The master illusionist, elegant and evasive."},
+                {"label": "Iris Bell", "value": "The stage manager who controls the blackout cues."},
+                {"label": "Celeste Rowan", "value": "The jeweler who knows every flaw in the stone."},
             ],
             "metadata": {"capability_state": "live"},
         }
@@ -695,10 +690,10 @@ def _evidence_card(state: dict[str, Any]) -> dict[str, Any]:
     if adventure is None:
         return {
             "type": "info",
-            "title": "Case Shelf",
-            "subtitle": "Pinned adventures are easy to switch",
+            "title": "Case Notes",
+            "subtitle": "Simple commands work best",
             "fields": [
-                {"label": "Command", "value": "`change case` returns you here without opening a new thread."}
+                {"label": "Examples", "value": "`inspect the glass dome`, `review clues`, `accuse Bruno Vale`"},
             ],
             "metadata": {"capability_state": "live"},
         }
@@ -788,6 +783,37 @@ def _response(*, text: str, state: dict[str, Any], error: dict[str, Any] | None 
     return payload
 
 
+def _stream_envelope_response(envelope: dict[str, Any]) -> StreamingResponse:
+    """Return a canonical SSE response with task.started, delta, and done."""
+    text = " ".join(
+        part.get("text", "")
+        for part in (envelope.get("content_parts") or [])
+        if isinstance(part, dict) and part.get("type") == "text"
+    ).strip()
+
+    async def stream():
+        task = envelope.get("task") if isinstance(envelope.get("task"), dict) else {}
+        yield (
+            "event: task.started\ndata: "
+            + json.dumps({"task": {"id": task.get("id"), "status": "in_progress"}})
+            + "\n\n"
+        )
+        if text:
+            yield f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+            yield f"event: task.delta\ndata: {json.dumps({'text': text})}\n\n"
+        yield f"event: done\ndata: {json.dumps(envelope)}\n\n"
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 def _mark_turn(state: dict[str, Any], visit_key: str | None = None) -> None:
     state["turn_count"] += 1
     if visit_key:
@@ -845,7 +871,7 @@ def _select_adventure(state: dict[str, Any], adventure_id: str) -> dict[str, Any
     state["accused"] = ""
     state["last_move"] = "briefing"
     return _response(
-        text=f"{adventure['title']}. {adventure['briefing']} Type `begin case` when you are ready, or `change case` to go back.",
+        text=f"{adventure['title']}. {adventure['briefing']} Type `begin case` when you are ready.",
         state=state,
     )
 
@@ -947,35 +973,23 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
             text=_ui_text(
                 next_state,
                 "restart",
-                "Case reset. The shelf is open again. Choose an adventure to pin this thread to a new investigation.",
+                "Case reset. The file is back at the beginning. Type `begin case` to start again.",
             ),
             state=next_state,
         )
 
     if command.name == "change_case":
-        next_state = _fresh_state_from(state)
-        return next_state, _response(
+        return state, _response(
             text=_ui_text(
-                next_state,
-                "change_case",
-                "The case shelf opens again. Choose another adventure to pin to this thread.",
+                state,
+                "single_case",
+                "There is only one case here: Sky Diamond. Type `begin case` to start or `restart` to go back to the beginning.",
             ),
-            state=next_state,
+            state=state,
         )
 
     if command.name == "help":
         return state, _response(text=_ui_text(state, "help", HELP_TEXT), state=state)
-
-    if state["phase"] == "select_adventure":
-        if command.name == "select_adventure" and command.target in ADVENTURES:
-            return state, _select_adventure(state, command.target)
-        return state, _response(
-            text=(
-                f"{_ui_text(state, 'select_intro', INTRO_TEXT)} "
-                f"{_ui_text(state, 'choose_cases', 'Case available: Sky Diamond.')}"
-            ),
-            state=state,
-        )
 
     if state["phase"] == "briefing":
         if command.name == "select_adventure" and command.target in ADVENTURES:
@@ -984,7 +998,10 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
             return state, _begin_case(state, player_name)
         adventure = _current_adventure(state)
         assert adventure is not None
-        return state, _response(text=f"{adventure['briefing']} {HELP_TEXT}", state=state)
+        return state, _response(
+            text=f"{adventure['briefing']} {_ui_text(state, 'select_intro', INTRO_TEXT)}",
+            state=state,
+        )
 
     if state["phase"] in {"solved", "failed"}:
         if command.name == "review_case":
@@ -996,7 +1013,7 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
             text=_ui_text(
                 state,
                 "closed_case",
-                "That case is closed. Type `restart` to reopen the shelf, `change case` to pick another adventure, or `review clues` for the summary.",
+                "That case is closed. Type `restart` to play again or `review clues` for the summary.",
             ),
             state=state,
         )
@@ -1015,7 +1032,7 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
         text=_ui_text(
             state,
             "invalid_move",
-            "Luzia taps the file. That move is not in the casebook. Try a location, question a suspect, review clues, accuse someone, or type `change case`.",
+            "Luzia taps the file. That move is not in the casebook. Try a location, question a suspect, review clues, or accuse someone.",
         ),
         state=state,
     )
@@ -1029,10 +1046,11 @@ async def root() -> JSONResponse:
     return JSONResponse(
         {
             "service": "webhook-detective-game-python",
-            "description": "Stateful detective webhook where Luzia leads a single flagship mystery inside a chat thread.",
+            "description": "Single-case mystery webhook with clue tracking, scene reveals, and accusation endings.",
             "schema_version": SCHEMA_VERSION,
             "routes": [
                 {"path": "/", "method": "POST", "description": "Main webhook endpoint"},
+                {"path": "/webhook", "method": "POST", "description": "Alias webhook endpoint"},
                 {"path": "/health", "method": "GET", "description": "Health check"},
                 {"path": "/.well-known/agent.json", "method": "GET", "description": "Agent metadata"},
             ],
@@ -1040,7 +1058,7 @@ async def root() -> JSONResponse:
                 {
                     "intent": "play_detective_game",
                     "state": "live",
-                    "description": "Persistent thread-based mystery game with clue tracking, pinned state, and accusation endings.",
+                    "description": "Single-case mystery game with clue tracking, scene reveals, and accusation endings.",
                 }
             ],
         }
@@ -1057,8 +1075,7 @@ async def agent_card() -> JSONResponse:
     return JSONResponse(AGENT_CARD)
 
 
-@app.post("/")
-async def webhook(request: Request) -> JSONResponse:
+async def _handle_webhook(request: Request) -> JSONResponse | StreamingResponse:
     raw_body = await request.body()
     _require_signature(request, raw_body)
 
@@ -1072,6 +1089,9 @@ async def webhook(request: Request) -> JSONResponse:
     store = get_store()
     duplicate = store.get_processed_response(thread_id, message_key)
     if duplicate is not None:
+        wants_stream = "text/event-stream" in request.headers.get("accept", "").lower()
+        if wants_stream:
+            return _stream_envelope_response(duplicate)
         return JSONResponse(duplicate)
 
     state = _coerce_state(store.load_session(thread_id))
@@ -1086,4 +1106,17 @@ async def webhook(request: Request) -> JSONResponse:
 
     store.save_session(thread_id, next_state)
     store.save_processed_response(thread_id, message_key, response)
+    wants_stream = "text/event-stream" in request.headers.get("accept", "").lower()
+    if wants_stream:
+        return _stream_envelope_response(response)
     return JSONResponse(response)
+
+
+@app.post("/")
+async def webhook_root(request: Request) -> JSONResponse:
+    return await _handle_webhook(request)
+
+
+@app.post("/webhook")
+async def webhook_alias(request: Request) -> JSONResponse:
+    return await _handle_webhook(request)

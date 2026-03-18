@@ -1,19 +1,22 @@
 # Sky Diamond Webhook
 
-Stateful webhook game where Luzia becomes the detective and each thread is pinned to the Sky Diamond investigation.
+Stateful webhook game for a single mystery: `Sky Diamond`.
+
+This example supports both webhook response modes used across the repository:
+
+- traditional JSON response
+- SSE streaming response when `Accept: text/event-stream` is present
 
 ## Game loop
 
-1. User enters `Sky Diamond`
-2. The thread is pinned to that case
-3. User opens the case with `begin case`
-4. User investigates locations, unlocks deeper story beats, or pressures suspects
-5. The webhook persists clue state, act progression, and revelations by `thread.id`
-6. User accuses a suspect once enough evidence and key reveals are collected
+1. The webhook introduces the case
+2. User opens it with `begin case`
+3. User investigates locations, unlocks deeper story beats, or pressures suspects
+4. The webhook persists clue state, act progression, and revelations by `thread.id`
+5. User accuses a suspect once enough evidence and key reveals are collected
 
 ## Commands
 
-- `sky diamond`
 - `begin case`
 - `inspect the glass dome`
 - `inspect the moon balcony`
@@ -21,7 +24,6 @@ Stateful webhook game where Luzia becomes the detective and each thread is pinne
 - `check the lens room`
 - `review clues`
 - `accuse bruno vale`
-- `change case`
 - `restart`
 
 Run locally:
@@ -41,7 +43,7 @@ Optional environment variables:
 Locale behavior:
 
 - Reads `profile.locale` or `profile.language`
-- Localizes system framing text for supported languages where practical
+- Localizes case-entry and system text for supported languages where practical
 - Continues to accept normal typed chat alongside `metadata.prompt_suggestions`
 
 ## Authoring model

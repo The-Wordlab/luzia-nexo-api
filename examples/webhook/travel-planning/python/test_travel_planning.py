@@ -148,7 +148,7 @@ class TestRoot:
         assert data["name"] == "nexo-travel-planning"
         assert data["capabilities"]["items"][0]["name"] == "travel.planning"
         assert data["capabilities"]["items"][0]["metadata"]["showcase_role"] == "flagship"
-        assert "travel-planner" in data["capabilities"]["items"][0]["metadata"]["supersedes"]
+        assert "supersedes" not in data["capabilities"]["items"][0]["metadata"]
 
 
 # ---------------------------------------------------------------------------

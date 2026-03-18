@@ -244,6 +244,11 @@ class NexoApiClient:
         resp.raise_for_status()
         return resp.json()
 
+    def delete_app(self, app_id: str) -> None:
+        """Delete an existing app."""
+        resp = self.client.delete(f"/api/apps/{app_id}", headers=self._headers())
+        resp.raise_for_status()
+
     def create_trigger_rule(self, app_id: str, trigger_type: str, keywords: list[str], priority: int, cooldown_seconds: int) -> dict:
         """Create a card trigger rule for an app."""
         resp = self.client.post(
@@ -291,11 +296,48 @@ def find_app_by_name(apps: list[dict], name: str) -> dict | None:
     return None
 
 
+def _is_seed_managed_demo_app(app: dict, org_id: str) -> bool:
+    """Return True if the app belongs to the demo org and looks seed-managed."""
+    if app.get("org_id") != org_id:
+        return False
+    config_json = app.get("config_json") or {}
+    return bool(config_json.get("demo_key"))
+
+
+def prune_missing_demo_apps(
+    client: NexoApiClient,
+    existing_apps: list[dict],
+    org_id: str,
+    desired_names: set[str],
+    *,
+    dry_run: bool = False,
+) -> list[str]:
+    """Delete seed-managed demo apps that are no longer present in demo-apps.json."""
+    pruned: list[str] = []
+    candidates = [
+        app for app in existing_apps
+        if _is_seed_managed_demo_app(app, org_id) and app.get("name") not in desired_names
+    ]
+
+    for app in candidates:
+        app_name = app.get("name", "<unknown>")
+        app_id = app.get("id", "")
+        if dry_run:
+            log(f"  [DRY RUN] Would delete removed demo app '{app_name}' ({app_id})")
+        else:
+            client.delete_app(app_id)
+            ok(f"  Deleted removed demo app: {app_name}")
+        pruned.append(app_name)
+
+    return pruned
+
+
 def seed_demo_apps(
     config: dict,
     demo_data: dict,
     dry_run: bool = False,
     ci_safe: bool = False,
+    prune_missing: bool = False,
 ) -> bool:
     """Seed all demo apps via HTTP API. Returns True on success."""
     client = NexoApiClient(config["api_url"])
@@ -332,7 +374,20 @@ def seed_demo_apps(
         # 3. Load existing apps for idempotent upsert
         existing_apps = [] if dry_run else client.get_apps(size=200)
 
-        # 4. Seed each demo app
+        desired_names = {app_def["name"] for app_def in demo_data["apps"]}
+
+        # 4. Optionally prune removed demo apps before upserting current definitions
+        pruned: list[str] = []
+        if prune_missing:
+            pruned = prune_missing_demo_apps(
+                client,
+                existing_apps,
+                org_id,
+                desired_names,
+                dry_run=dry_run,
+            )
+
+        # 5. Seed each demo app
         seeded = []
         skipped = []
         for app_def in demo_data["apps"]:
@@ -407,7 +462,7 @@ def seed_demo_apps(
 
             seeded.append(app_name)
 
-        # 5. Optional Open CLAW app
+        # 6. Optional Open CLAW app
         open_claw = demo_data.get("open_claw")
         if open_claw and os.environ.get("DEMO_OPENCLAW_ENABLED", "").lower() in ("true", "1", "yes"):
             oc_name = os.environ.get(open_claw["name_env"], open_claw["name_default"])
@@ -444,6 +499,8 @@ def seed_demo_apps(
 
         # Summary
         ok(f"Demo apps seeded: {len(seeded)} ({', '.join(seeded)})")
+        if pruned:
+            warn(f"Pruned removed demo apps: {', '.join(pruned)}")
         if skipped:
             warn(f"Skipped (ci-safe): {', '.join(skipped)}")
         return True
@@ -488,6 +545,12 @@ def main() -> None:
         dest="ci_safe",
         help="Skip webhook-mode apps that require external services.",
     )
+    parser.add_argument(
+        "--prune-missing",
+        action="store_true",
+        dest="prune_missing",
+        help="Delete seed-managed demo apps in the demo org that are no longer defined in demo-apps.json.",
+    )
     args = parser.parse_args()
 
     config = load_config(args.env)
@@ -499,12 +562,15 @@ def main() -> None:
         log("Mode: DRY RUN")
     if args.ci_safe:
         log("Mode: CI-SAFE (skipping webhook apps)")
+    if args.prune_missing:
+        log("Mode: PRUNE-MISSING (delete removed demo apps from the demo org)")
 
     success = seed_demo_apps(
         config=config,
         demo_data=demo_data,
         dry_run=args.dry_run,
         ci_safe=args.ci_safe,
+        prune_missing=args.prune_missing,
     )
 
     if success:

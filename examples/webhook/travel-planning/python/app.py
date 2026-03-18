@@ -91,7 +91,6 @@ AGENT_CARD: dict[str, Any] = {
                     ],
                     "showcase_family": "travel",
                     "showcase_role": "flagship",
-                    "supersedes": ["travel-planner"],
                 },
             }
         ]
@@ -677,7 +676,6 @@ async def root():
         "showcase": {
             "family": "travel",
             "role": "flagship",
-            "replaces": ["travel-planner"],
         },
         "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
         "schema_version": SCHEMA_VERSION,

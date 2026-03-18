@@ -23,8 +23,8 @@ class FakeStore:
 
     def load_session(self, thread_id: str) -> dict[str, Any]:
         return json.loads(json.dumps(self.sessions.get(thread_id) or {
-            "phase": "select_adventure",
-            "act": "",
+            "phase": "briefing",
+            "act": "opening",
             "turn_count": 0,
             "visited": [],
             "clues": [],
@@ -32,7 +32,7 @@ class FakeStore:
             "ending": "",
             "accused": "",
             "last_move": "briefing",
-            "adventure_id": "",
+            "adventure_id": "sky_diamond",
             "locale": "",
             "display_name": "",
         }))
@@ -110,24 +110,58 @@ class TestRoot:
         data = client.get("/.well-known/agent.json").json()
         assert data["name"] == "luzia-skydiamond"
         assert data["capabilities"]["items"][0]["name"] == "games.detective"
+        assert data["capabilities"]["items"][0]["supports_streaming"] is True
 
 
 class TestGameLoop:
-    def test_intro_starts_with_case_selection(self, tmp_path):
+    def test_webhook_alias_matches_root_behavior(self, tmp_path):
+        client, _ = _make_client()
+        response = client.post("/webhook", json=_payload("hello detective"))
+        data = response.json()
+        assert response.status_code == 200
+        assert "Sky Diamond" in data["content_parts"][0]["text"]
+
+    def test_sse_returns_done_event_with_envelope(self, tmp_path):
+        client, _ = _make_client()
+        with client.stream(
+            "POST",
+            "/",
+            json=_payload("hello detective"),
+            headers={"Accept": "text/event-stream"},
+        ) as response:
+            body = response.read().decode()
+        assert response.status_code == 200
+        assert "text/event-stream" in response.headers.get("content-type", "")
+        assert "event: task.started" in body
+        assert "event: done" in body
+        done_line = next(line for line in body.splitlines() if line.startswith("event: done"))
+        assert done_line == "event: done"
+        done_data = None
+        lines = body.splitlines()
+        for idx, line in enumerate(lines):
+            if line == "event: done" and idx + 1 < len(lines) and lines[idx + 1].startswith("data: "):
+                done_data = json.loads(lines[idx + 1][len("data: "):])
+                break
+        assert done_data is not None
+        assert done_data["schema_version"] == "2026-03"
+        assert done_data["status"] == "completed"
+        assert len(done_data["content_parts"]) >= 1
+
+    def test_intro_starts_with_case_briefing(self, tmp_path):
         client, _ = _make_client()
         response = client.post("/", json=_payload("hello detective"))
         data = response.json()
         assert response.status_code == 200
-        assert "Luzia" in data["content_parts"][0]["text"]
-        assert "Sky Diamond" in data["metadata"]["prompt_suggestions"]
+        assert "Sky Diamond" in data["content_parts"][0]["text"]
+        assert "begin case" in data["content_parts"][0]["text"].lower()
+        assert data["metadata"]["prompt_suggestions"][0] == "Begin the case"
 
-    def test_select_and_begin_case_opens_investigation(self, tmp_path):
+    def test_begin_case_opens_investigation(self, tmp_path):
         client, _ = _make_client()
-        client.post("/", json=_payload("sky diamond", message_id="msg-1", seq=1))
         response = client.post(
             "/",
             json={
-                **_payload("begin case", message_id="msg-2", seq=2),
+                **_payload("begin case", message_id="msg-1", seq=1),
                 "profile": {"display_name": "Mark"},
             },
         )
@@ -137,26 +171,18 @@ class TestGameLoop:
         assert "Inspect the glass dome" in data["metadata"]["prompt_suggestions"]
         assert "Search Celeste's dressing suite" in data["metadata"]["prompt_suggestions"]
 
-    def test_thread_is_pinned_to_selected_case(self, tmp_path):
+    def test_thread_defaults_to_sky_diamond(self, tmp_path):
         client, app_module = _make_client()
-        thread_id = "thread-pin"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
+        thread_id = "thread-default"
+        client.post("/", json=_payload("hello detective", thread_id=thread_id, message_id="m1", seq=1))
         state = app_module.get_store().load_session(thread_id)
         assert state["adventure_id"] == "sky_diamond"
         assert state["phase"] == "briefing"
 
-    def test_adventure_alias_selects_case(self, tmp_path):
-        client, app_module = _make_client()
-        thread_id = "thread-alias"
-        client.post("/", json=_payload("diamond", thread_id=thread_id, message_id="m1", seq=1))
-        state = app_module.get_store().load_session(thread_id)
-        assert state["adventure_id"] == "sky_diamond"
-
     def test_invalid_move_returns_guidance(self, tmp_path):
         client, _ = _make_client()
-        client.post("/", json=_payload("sky diamond", message_id="msg-1", seq=1))
-        client.post("/", json=_payload("begin case", message_id="msg-2", seq=2))
-        response = client.post("/", json=_payload("sing a song", message_id="msg-3", seq=3))
+        client.post("/", json=_payload("begin case", message_id="msg-1", seq=1))
+        response = client.post("/", json=_payload("sing a song", message_id="msg-2", seq=2))
         data = response.json()
         assert "not in the casebook" in data["content_parts"][0]["text"].lower()
         assert data["status"] == "completed"
@@ -164,15 +190,14 @@ class TestGameLoop:
     def test_sky_diamond_can_be_solved(self, tmp_path):
         client, _ = _make_client()
         thread_id = "thread-solve"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
-        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m4", seq=4))
-        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m5", seq=5))
-        client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m6", seq=6))
-        client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m7", seq=7))
-        client.post("/", json=_payload("pressure bruno", thread_id=thread_id, message_id="m8", seq=8))
-        response = client.post("/", json=_payload("accuse bruno vale", thread_id=thread_id, message_id="m9", seq=9))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
+        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m3", seq=3))
+        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m4", seq=4))
+        client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m5", seq=5))
+        client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m6", seq=6))
+        client.post("/", json=_payload("pressure bruno", thread_id=thread_id, message_id="m7", seq=7))
+        response = client.post("/", json=_payload("accuse bruno vale", thread_id=thread_id, message_id="m8", seq=8))
         data = response.json()
         text = data["content_parts"][0]["text"].lower()
         assert "bruno vale did it" in text or "bruno vale" in text
@@ -183,12 +208,11 @@ class TestGameLoop:
     def test_review_clues_path_stays_playable(self, tmp_path):
         client, _ = _make_client()
         thread_id = "thread-review"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
-        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m4", seq=4))
-        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m5", seq=5))
-        response = client.post("/", json=_payload("review clues", thread_id=thread_id, message_id="m6", seq=6))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
+        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m3", seq=3))
+        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m4", seq=4))
+        response = client.post("/", json=_payload("review clues", thread_id=thread_id, message_id="m5", seq=5))
         data = response.json()
         assert response.status_code == 200
         assert data["status"] == "completed"
@@ -198,13 +222,12 @@ class TestGameLoop:
     def test_sky_diamond_unlocks_twist_and_finale(self, tmp_path):
         client, app_module = _make_client()
         thread_id = "thread-acts"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
-        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m4", seq=4))
-        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m5", seq=5))
-        twist = client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m6", seq=6))
-        finale = client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m7", seq=7))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
+        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m3", seq=3))
+        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m4", seq=4))
+        twist = client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m5", seq=5))
+        finale = client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m6", seq=6))
         state = app_module.get_store().load_session(thread_id)
         assert twist.json()["metadata"]["game"]["act"] == "twist"
         assert finale.json()["metadata"]["game"]["act"] == "finale"
@@ -214,15 +237,14 @@ class TestGameLoop:
     def test_wrong_accusation_fails_case(self, tmp_path):
         client, _ = _make_client()
         thread_id = "thread-fail"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
-        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m4", seq=4))
-        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m5", seq=5))
-        client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m6", seq=6))
-        client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m7", seq=7))
-        client.post("/", json=_payload("pressure bruno", thread_id=thread_id, message_id="m8", seq=8))
-        response = client.post("/", json=_payload("accuse iris bell", thread_id=thread_id, message_id="m9", seq=9))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
+        client.post("/", json=_payload("inspect the moon balcony", thread_id=thread_id, message_id="m3", seq=3))
+        client.post("/", json=_payload("check the lens room", thread_id=thread_id, message_id="m4", seq=4))
+        client.post("/", json=_payload("reconstruct the blackout", thread_id=thread_id, message_id="m5", seq=5))
+        client.post("/", json=_payload("inspect the catwalk winch", thread_id=thread_id, message_id="m6", seq=6))
+        client.post("/", json=_payload("pressure bruno", thread_id=thread_id, message_id="m7", seq=7))
+        response = client.post("/", json=_payload("accuse iris bell", thread_id=thread_id, message_id="m8", seq=8))
         data = response.json()
         assert data["status"] == "error"
         assert data["error"]["code"] == "wrong_accusation"
@@ -230,7 +252,7 @@ class TestGameLoop:
 
     def test_duplicate_delivery_replays_same_response(self, tmp_path):
         client, app_module = _make_client()
-        payload = _payload("sky diamond", thread_id="thread-dup", message_id="dup-1", seq=1)
+        payload = _payload("hello detective", thread_id="thread-dup", message_id="dup-1", seq=1)
         first = client.post("/", json=payload)
         second = client.post("/", json=payload)
         assert first.json() == second.json()
@@ -243,10 +265,9 @@ class TestGameLoop:
         shared_store = FakeStore()
         first_client, _ = _make_client(shared_store)
         thread_id = "thread-persist"
-        first_client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        first_client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
+        first_client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
         second_client, _ = _make_client(shared_store)
-        response = second_client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
+        response = second_client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
         data = response.json()
         assert "pedestal" in data["content_parts"][0]["text"].lower() or "cradle" in data["content_parts"][0]["text"].lower()
         assert data["metadata"]["game"]["clue_count"] == 1
@@ -255,35 +276,32 @@ class TestGameLoop:
     def test_move_alias_from_case_content_is_understood(self, tmp_path):
         client, _ = _make_client()
         thread_id = "thread-move-alias"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        response = client.post("/", json=_payload("look at the cradle", thread_id=thread_id, message_id="m3", seq=3))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        response = client.post("/", json=_payload("look at the cradle", thread_id=thread_id, message_id="m2", seq=2))
         data = response.json()
         assert "sugar-glass" in data["content_parts"][0]["text"].lower()
 
     def test_restart_resets_case(self, tmp_path):
         client, app_module = _make_client()
         thread_id = "thread-restart"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m2", seq=2))
-        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m3", seq=3))
-        response = client.post("/", json=_payload("restart", thread_id=thread_id, message_id="m4", seq=4))
+        client.post("/", json=_payload("begin case", thread_id=thread_id, message_id="m1", seq=1))
+        client.post("/", json=_payload("inspect the glass dome", thread_id=thread_id, message_id="m2", seq=2))
+        response = client.post("/", json=_payload("restart", thread_id=thread_id, message_id="m3", seq=3))
         data = response.json()
         state = app_module.get_store().load_session(thread_id)
-        assert "Case" in data["content_parts"][0]["text"] or "estante" in data["content_parts"][0]["text"].lower()
-        assert state["phase"] == "select_adventure"
+        assert "start again" in data["content_parts"][0]["text"].lower() or "principio" in data["content_parts"][0]["text"].lower()
+        assert state["phase"] == "briefing"
         assert state["clues"] == []
 
-    def test_change_case_returns_to_selector(self, tmp_path):
+    def test_change_case_explains_single_case_model(self, tmp_path):
         client, app_module = _make_client()
         thread_id = "thread-change"
-        client.post("/", json=_payload("sky diamond", thread_id=thread_id, message_id="m1", seq=1))
-        response = client.post("/", json=_payload("change case", thread_id=thread_id, message_id="m2", seq=2))
+        response = client.post("/", json=_payload("change case", thread_id=thread_id, message_id="m1", seq=1))
         data = response.json()
         state = app_module.get_store().load_session(thread_id)
-        assert "adventure" in data["content_parts"][0]["text"].lower() or "caso" in data["content_parts"][0]["text"].lower()
-        assert state["phase"] == "select_adventure"
-        assert state["adventure_id"] == ""
+        assert "only one case" in data["content_parts"][0]["text"].lower() or "solo hay un caso" in data["content_parts"][0]["text"].lower()
+        assert state["phase"] == "briefing"
+        assert state["adventure_id"] == "sky_diamond"
 
     def test_spanish_locale_is_honored_in_system_text(self, tmp_path):
         client, _ = _make_client()
@@ -295,7 +313,8 @@ class TestGameLoop:
             },
         )
         data = response.json()
-        assert "Soy Luzia" in data["content_parts"][0]["text"] or "casos disponibles" in data["content_parts"][0]["text"].lower()
+        assert "Sky Diamond" in data["content_parts"][0]["text"]
+        assert "begin case" in data["content_parts"][0]["text"].lower()
 
 
 class TestSignature:

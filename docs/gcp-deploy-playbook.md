@@ -45,8 +45,8 @@ Available single targets:
 - `routines`
 - `food-ordering`
 - `travel-planning`
+- `sky-diamond`
 - `fitness-coach`
-- `travel-planner`
 - `language-tutor`
 - `demo-receiver`
 - `hosted-py`
