@@ -744,7 +744,13 @@ def _revelation_card(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _response(*, text: str, state: dict[str, Any], error: dict[str, Any] | None = None) -> dict[str, Any]:
+def _response(
+    *,
+    text: str,
+    state: dict[str, Any],
+    error: dict[str, Any] | None = None,
+    cards: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     adventure = _current_adventure(state)
     suggestions = _available_suggestions(state)
     payload: dict[str, Any] = {
@@ -756,13 +762,7 @@ def _response(*, text: str, state: dict[str, Any], error: dict[str, Any] | None 
         },
         "capability": {"name": CAPABILITY_NAME, "version": "1"},
         "content_parts": [{"type": "text", "text": text}],
-        "cards": [
-            _case_card(state),
-            _objective_card(state),
-            _suspect_card(state),
-            _evidence_card(state),
-            _revelation_card(state),
-        ],
+        "cards": cards or [],
         "actions": _actions_for_suggestions(suggestions),
         "metadata": {
             "prompt_suggestions": suggestions,
@@ -844,6 +844,8 @@ def _run_move(state: dict[str, Any], move_name: str) -> dict[str, Any]:
     adventure = _current_adventure(state)
     assert adventure is not None
     move = adventure["moves"][move_name]
+    flags_before = set(state["flags"])
+    act_before = state.get("act")
     _mark_turn(state, move["visit"])
     clue_id = move.get("clue")
     first_discovery = clue_id is not None and clue_id not in state["clues"]
@@ -855,7 +857,12 @@ def _run_move(state: dict[str, Any], move_name: str) -> dict[str, Any]:
     unlock_text = _apply_unlocks(state, move) if first_discovery or not move.get("clue") else ""
     if unlock_text:
         text = f"{text} {unlock_text}"
-    return _response(text=text, state=state)
+    cards: list[dict[str, Any]] = []
+    if set(state["flags"]) != flags_before or state.get("act") != act_before:
+        cards = [_revelation_card(state)]
+    elif first_discovery:
+        cards = [_evidence_card(state)]
+    return _response(text=text, state=state, cards=cards)
 
 
 def _select_adventure(state: dict[str, Any], adventure_id: str) -> dict[str, Any]:
@@ -873,6 +880,7 @@ def _select_adventure(state: dict[str, Any], adventure_id: str) -> dict[str, Any
     return _response(
         text=f"{adventure['title']}. {adventure['briefing']} Type `begin case` when you are ready.",
         state=state,
+        cards=[_case_card(state)],
     )
 
 
@@ -882,7 +890,11 @@ def _begin_case(state: dict[str, Any], player_name: str) -> dict[str, Any]:
     state["phase"] = "investigating"
     _mark_turn(state, "briefing")
     greeting = _localized_prefix(str(state.get("locale") or ""), player_name)
-    return _response(text=f"{greeting}{adventure['start_text']}", state=state)
+    return _response(
+        text=f"{greeting}{adventure['start_text']}",
+        state=state,
+        cards=[_objective_card(state)],
+    )
 
 
 def _review_case(state: dict[str, Any]) -> dict[str, Any]:
@@ -910,7 +922,7 @@ def _review_case(state: dict[str, Any]) -> dict[str, Any]:
         f"{adventure['hook']}{focus_line} Logged evidence: {'; '.join(discovered)}.{reveal_line} "
         f"Next best move: {next_move}."
     )
-    return _response(text=text, state=state)
+    return _response(text=text, state=state, cards=[_evidence_card(state)])
 
 
 def _accuse(state: dict[str, Any], target: str | None) -> dict[str, Any]:
@@ -939,7 +951,7 @@ def _accuse(state: dict[str, Any], target: str | None) -> dict[str, Any]:
         state["phase"] = "solved"
         state["ending"] = "solved"
         text = f"{adventure['solve_text']} Luzia smiles once, closes the casebook, and marks the thread as solved."
-        return _response(text=text, state=state)
+        return _response(text=text, state=state, cards=[_case_card(state)])
 
     state["phase"] = "failed"
     state["ending"] = "failed"
@@ -958,6 +970,7 @@ def _accuse(state: dict[str, Any], target: str | None) -> dict[str, Any]:
     return _response(
         text=text,
         state=state,
+        cards=[_case_card(state)],
         error={
             "code": "wrong_accusation",
             "message": "That accusation does not fit the evidence collected.",
@@ -976,6 +989,7 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
                 "Case reset. The file is back at the beginning. Type `begin case` to start again.",
             ),
             state=next_state,
+            cards=[_case_card(next_state)],
         )
 
     if command.name == "change_case":
@@ -1001,6 +1015,7 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
         return state, _response(
             text=f"{adventure['briefing']} {_ui_text(state, 'select_intro', INTRO_TEXT)}",
             state=state,
+            cards=[_case_card(state)],
         )
 
     if state["phase"] in {"solved", "failed"}:
@@ -1016,6 +1031,7 @@ def process_turn(state: dict[str, Any], command: ParsedCommand, player_name: str
                 "That case is closed. Type `restart` to play again or `review clues` for the summary.",
             ),
             state=state,
+            cards=[_case_card(state)],
         )
 
     if command.name == "review_case":

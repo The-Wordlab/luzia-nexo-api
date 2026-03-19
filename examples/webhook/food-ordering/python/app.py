@@ -159,21 +159,95 @@ def detect_intent(message: str) -> str:
     return "menu_browse"
 
 
-def prompt_suggestions_for_intent(intent: str) -> list[str]:
+def prompt_suggestions_for_intent(
+    intent: str, profile_segment: str = "generic"
+) -> list[str]:
     if intent == "menu_browse":
+        if profile_segment == "healthy_vegetarian":
+            return [
+                "Show vegetarian dinners under EUR 20",
+                "Find a high-protein plant-based option",
+                "Keep it healthy and delivery-friendly",
+            ]
+        if profile_segment == "family_grill":
+            return [
+                "Show family bundles with meat mains",
+                "Find a barbecue-style dinner for four",
+                "Add crowd-pleasing sides for the table",
+            ]
+        if profile_segment == "premium_organic":
+            return [
+                "Show organic chef specials for tonight",
+                "Find a refined dinner with a premium dessert",
+                "Keep it elegant and locally sourced",
+            ]
+        if profile_segment == "quick_budget":
+            return [
+                "Show quick meals under EUR 15",
+                "Find the fastest dinner near me",
+                "Keep it cheap and filling",
+            ]
         return [
-            "Show vegetarian options under $20",
+            "Show vegetarian options under EUR 20",
             "What are your top-rated dishes?",
             "Filter to gluten-free items",
             "Show vegan options",
         ]
     if intent == "order_build":
+        if profile_segment == "healthy_vegetarian":
+            return [
+                "Swap in a lighter side",
+                "Keep this vegetarian and under EUR 20",
+                "Confirm this healthy order",
+            ]
+        if profile_segment == "family_grill":
+            return [
+                "Add a sharing side for the family",
+                "Make this order work for four people",
+                "Confirm this family dinner",
+            ]
+        if profile_segment == "premium_organic":
+            return [
+                "Upgrade with a premium dessert",
+                "Keep this order organic and elevated",
+                "Prepare this refined checkout",
+            ]
+        if profile_segment == "quick_budget":
+            return [
+                "Trim this order below EUR 15",
+                "Keep only the fastest items",
+                "Confirm this budget dinner",
+            ]
         return [
             "Add a dessert to this order",
             "Remove the drink and recalculate",
             "Confirm this order now",
         ]
     if intent == "order_track":
+        if profile_segment == "healthy_vegetarian":
+            return [
+                "Reorder my vegetarian favorite",
+                "Show lighter dinner ideas for tomorrow",
+                "Share the latest courier ETA again",
+            ]
+        if profile_segment == "family_grill":
+            return [
+                "Reorder the family bundle",
+                "Add extra grilled sides next time",
+                "Refresh this delivery status",
+            ]
+        if profile_segment == "premium_organic":
+            return [
+                "Reorder the organic dinner",
+                "Upgrade next time with dessert",
+                "Refresh this delivery status",
+            ]
+        if profile_segment == "quick_budget":
+            return [
+                "Reorder my low-cost quick meal",
+                "Show faster dinners under EUR 15",
+                "Refresh this delivery status",
+            ]
         return [
             "Refresh my delivery status",
             "Contact support about this order",
@@ -191,8 +265,11 @@ def _build_envelope(
     artifacts: list[dict[str, Any]] | None = None,
     task_status: str = "completed",
     metadata: dict[str, Any] | None = None,
+    profile_segment: str = "generic",
 ) -> dict[str, Any]:
-    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    payload_metadata = {
+        "prompt_suggestions": prompt_suggestions_for_intent(intent, profile_segment)
+    }
     if metadata:
         payload_metadata.update(metadata)
     return {
@@ -267,6 +344,51 @@ _MENU_ITEMS: list[dict[str, Any]] = [
         "image_url": "https://placehold.co/400x300?text=Lentil+Soup",
         "category": "Soups",
     },
+    {
+        "id": "garden-salad",
+        "name": "Garden Salad",
+        "price": 9.25,
+        "description": "Crunchy greens, cucumber, herbs, lemon vinaigrette",
+        "dietary": ["vegan", "vegetarian", "gluten-free"],
+        "image_url": "https://placehold.co/400x300?text=Garden+Salad",
+        "category": "Salads",
+    },
+    {
+        "id": "salmon-poke-bowl",
+        "name": "Salmon Poke Bowl",
+        "price": 18.95,
+        "description": "Organic salmon, jasmine rice, pickled vegetables, sesame dressing",
+        "dietary": ["organic", "gluten-free"],
+        "image_url": "https://placehold.co/400x300?text=Salmon+Poke+Bowl",
+        "category": "Bowls",
+    },
+    {
+        "id": "family-grill-platter",
+        "name": "Family Grill Platter",
+        "price": 24.90,
+        "description": "Mixed grilled meats with potatoes, slaw, and chimichurri",
+        "dietary": ["meat"],
+        "image_url": "https://placehold.co/400x300?text=Family+Grill+Platter",
+        "category": "Grill",
+    },
+    {
+        "id": "organic-burrata-salad",
+        "name": "Organic Burrata Salad",
+        "price": 17.40,
+        "description": "Burrata, heirloom tomatoes, basil oil, and seasonal greens",
+        "dietary": ["vegetarian", "organic"],
+        "image_url": "https://placehold.co/400x300?text=Organic+Burrata+Salad",
+        "category": "Starters",
+    },
+    {
+        "id": "sushi-combo",
+        "name": "Express Sushi Combo",
+        "price": 12.40,
+        "description": "Quick sushi set with miso soup and edamame",
+        "dietary": ["any"],
+        "image_url": "https://placehold.co/400x300?text=Express+Sushi+Combo",
+        "category": "Japanese",
+    },
 ]
 
 _RESTAURANTS: list[dict[str, Any]] = [
@@ -276,6 +398,9 @@ _RESTAURANTS: list[dict[str, Any]] = [
         "eta": "20-25 min",
         "delivery_fee": "EUR 1.99",
         "tags": ["vegetarian-friendly", "family bundles"],
+        "dining_styles": ["healthy", "family"],
+        "budget_levels": ["medium"],
+        "dietary_modes": ["vegetarian", "family"],
     },
     {
         "name": "Green Fork",
@@ -283,6 +408,9 @@ _RESTAURANTS: list[dict[str, Any]] = [
         "eta": "15-20 min",
         "delivery_fee": "Free",
         "tags": ["vegan", "gluten-free"],
+        "dining_styles": ["healthy", "quick"],
+        "budget_levels": ["medium", "low"],
+        "dietary_modes": ["vegetarian", "vegan", "gluten-free"],
     },
     {
         "name": "Pizza Porto",
@@ -290,6 +418,39 @@ _RESTAURANTS: list[dict[str, Any]] = [
         "eta": "25-30 min",
         "delivery_fee": "EUR 2.49",
         "tags": ["comfort food", "group order"],
+        "dining_styles": ["family", "quick"],
+        "budget_levels": ["medium", "low"],
+        "dietary_modes": ["family", "meat", "vegetarian"],
+    },
+    {
+        "name": "Casa Brasa",
+        "cuisine": "brazilian grill",
+        "eta": "30-35 min",
+        "delivery_fee": "EUR 3.49",
+        "tags": ["grilled meats", "family platters"],
+        "dining_styles": ["family"],
+        "budget_levels": ["medium", "high"],
+        "dietary_modes": ["meat", "family"],
+    },
+    {
+        "name": "Atelier Organique",
+        "cuisine": "french organic",
+        "eta": "35-40 min",
+        "delivery_fee": "EUR 4.99",
+        "tags": ["organic", "chef specials"],
+        "dining_styles": ["fine_dining"],
+        "budget_levels": ["high"],
+        "dietary_modes": ["organic", "vegetarian"],
+    },
+    {
+        "name": "Tokyo Express",
+        "cuisine": "japanese",
+        "eta": "12-18 min",
+        "delivery_fee": "EUR 0.99",
+        "tags": ["quick meals", "budget combos"],
+        "dining_styles": ["quick"],
+        "budget_levels": ["low"],
+        "dietary_modes": ["any", "quick"],
     },
 ]
 
@@ -338,13 +499,17 @@ def build_restaurant_shortlist_card(
     cuisine: str | None = None,
     location_hint: str | None = None,
     dietary_filter: str | None = None,
+    dining_style: str | None = None,
+    budget_preference: str | None = None,
+    profile_segment: str = "generic",
 ) -> dict[str, Any]:
-    restaurants = _RESTAURANTS
-    if cuisine:
-        cuisine_l = cuisine.lower()
-        matched = [r for r in restaurants if cuisine_l in r["cuisine"] or any(cuisine_l in tag for tag in r["tags"])]
-        if matched:
-            restaurants = matched
+    restaurants = _select_restaurants(
+        cuisine=cuisine,
+        dietary_filter=dietary_filter,
+        dining_style=dining_style,
+        budget_preference=budget_preference,
+        profile_segment=profile_segment,
+    )
     fields: list[dict[str, str]] = []
     for restaurant in restaurants[:3]:
         tags = ", ".join(restaurant["tags"])
@@ -360,6 +525,10 @@ def build_restaurant_shortlist_card(
         subtitle_bits.append(f"Near {location_hint}")
     if dietary_filter:
         subtitle_bits.append(f"Filtered for {dietary_filter}")
+    if dining_style:
+        subtitle_bits.append(f"Matched to {dining_style.replace('_', ' ')} dining")
+    if budget_preference:
+        subtitle_bits.append(f"Budget: {budget_preference}")
     subtitle = " • ".join(subtitle_bits) if subtitle_bits else "Recommended delivery partners"
 
     return {
@@ -475,6 +644,13 @@ def _extract_profile_cuisine(data: dict[str, Any]) -> str | None:
     return str(value).strip().lower()
 
 
+def _extract_profile_dining_style(data: dict[str, Any]) -> str | None:
+    value = _get_preferences(data).get("dining_style")
+    if not value:
+        return None
+    return str(value).strip().lower()
+
+
 def _extract_location_hint(data: dict[str, Any]) -> str | None:
     profile = _get_profile(data)
     for key in ("city", "region", "country"):
@@ -528,6 +704,7 @@ def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
     dietary = _extract_profile_dietary(data)
     budget = _extract_profile_budget(data)
     cuisine = _extract_profile_cuisine(data)
+    dining_style = _extract_profile_dining_style(data)
     locale = _get_locale(data)
     location_hint = _extract_location_hint(data)
     if dietary:
@@ -536,6 +713,8 @@ def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
         used["preferences.budget"] = budget
     if cuisine:
         used["preferences.cuisine"] = cuisine
+    if dining_style:
+        used["preferences.dining_style"] = dining_style
     if locale:
         used["locale"] = locale
     if location_hint:
@@ -546,6 +725,7 @@ def _build_personalization_metadata(data: dict[str, Any]) -> dict[str, Any]:
             "preferences.dietary",
             "preferences.budget",
             "preferences.cuisine",
+            "preferences.dining_style",
             "locale",
             "location_hint",
         ]
@@ -567,6 +747,7 @@ def _friendly_profile_field(field: str) -> str:
         "preferences.dietary": "dietary preference",
         "preferences.budget": "budget preference",
         "preferences.cuisine": "cuisine preference",
+        "preferences.dining_style": "dining style",
         "locale": "language / locale",
         "location_hint": "delivery area",
     }
@@ -575,7 +756,14 @@ def _friendly_profile_field(field: str) -> str:
 
 def _format_shared_fields(used: dict[str, Any]) -> str:
     bits: list[str] = []
-    for key in ["preferences.dietary", "preferences.budget", "preferences.cuisine", "location_hint", "locale"]:
+    for key in [
+        "preferences.dietary",
+        "preferences.budget",
+        "preferences.cuisine",
+        "preferences.dining_style",
+        "location_hint",
+        "locale",
+    ]:
         if key not in used:
             continue
         bits.append(f"{_friendly_profile_field(key)}: {used[key]}")
@@ -589,6 +777,7 @@ def _format_missing_fields(fields: list[str]) -> str:
             "preferences.dietary",
             "preferences.budget",
             "preferences.cuisine",
+            "preferences.dining_style",
             "location_hint",
             "locale",
         ]
@@ -676,6 +865,126 @@ def _build_demo_order_items(budget_preference: str | None = None) -> tuple[list[
             {"name": "Margherita Pizza", "price": 12.99, "qty": 1},
             {"name": "Lentil Soup", "price": 8.50, "qty": 1},
         ]
+    total = sum(i["price"] * i["qty"] for i in items)
+    return items, total
+
+
+def _derive_profile_segment(data: dict[str, Any]) -> str:
+    dietary = _extract_profile_dietary(data)
+    budget = _extract_profile_budget(data)
+    dining_style = _extract_profile_dining_style(data)
+
+    if dining_style == "fine_dining" or budget == "high" or dietary == "organic":
+        return "premium_organic"
+    if dining_style == "family" or dietary == "meat":
+        return "family_grill"
+    if dining_style == "quick" or budget == "low":
+        return "quick_budget"
+    if dining_style == "healthy" or dietary in {"vegetarian", "vegan", "gluten-free"}:
+        return "healthy_vegetarian"
+    return "generic"
+
+
+def _restaurant_score(
+    restaurant: dict[str, Any],
+    *,
+    cuisine: str | None,
+    dietary_filter: str | None,
+    dining_style: str | None,
+    budget_preference: str | None,
+    profile_segment: str,
+) -> int:
+    score = 0
+    haystack = " ".join(
+        [restaurant["cuisine"], *restaurant["tags"], *restaurant.get("dietary_modes", [])]
+    ).lower()
+
+    if cuisine and cuisine.lower() in haystack:
+        score += 5
+    if dietary_filter and dietary_filter.lower() in haystack:
+        score += 4
+    if dining_style and dining_style in restaurant.get("dining_styles", []):
+        score += 4
+    if budget_preference and budget_preference in restaurant.get("budget_levels", []):
+        score += 2
+
+    if profile_segment == "healthy_vegetarian" and any(
+        mode in restaurant.get("dietary_modes", [])
+        for mode in ["vegetarian", "vegan", "gluten-free"]
+    ):
+        score += 3
+        if any(term in haystack for term in ["healthy", "vegan"]):
+            score += 2
+    elif profile_segment == "family_grill" and any(
+        mode in restaurant.get("dietary_modes", []) for mode in ["family", "meat"]
+    ):
+        score += 3
+        if any(term in haystack for term in ["grill", "grilled", "barbecue"]):
+            score += 2
+    elif profile_segment == "premium_organic" and "organic" in restaurant.get(
+        "dietary_modes", []
+    ):
+        score += 3
+        if any(term in haystack for term in ["organic", "chef"]):
+            score += 2
+    elif profile_segment == "quick_budget":
+        if "quick" in restaurant.get("dining_styles", []):
+            score += 3
+        if "low" in restaurant.get("budget_levels", []):
+            score += 2
+
+    return score
+
+
+def _select_restaurants(
+    *,
+    cuisine: str | None,
+    dietary_filter: str | None,
+    dining_style: str | None,
+    budget_preference: str | None,
+    profile_segment: str,
+) -> list[dict[str, Any]]:
+    ranked = sorted(
+        _RESTAURANTS,
+        key=lambda restaurant: (
+            _restaurant_score(
+                restaurant,
+                cuisine=cuisine,
+                dietary_filter=dietary_filter,
+                dining_style=dining_style,
+                budget_preference=budget_preference,
+                profile_segment=profile_segment,
+            ),
+            -len(restaurant.get("tags", [])),
+        ),
+        reverse=True,
+    )
+    return ranked[:3]
+
+
+def _build_profile_order_items(profile_segment: str) -> tuple[list[dict[str, Any]], float]:
+    if profile_segment == "healthy_vegetarian":
+        items = [
+            {"name": "Vegan Mushroom Burger", "price": 14.50, "qty": 1},
+            {"name": "Garden Salad", "price": 9.25, "qty": 1},
+        ]
+    elif profile_segment == "family_grill":
+        items = [
+            {"name": "Family Grill Platter", "price": 24.90, "qty": 1},
+            {"name": "Fish Tacos (x3)", "price": 15.00, "qty": 1},
+        ]
+    elif profile_segment == "premium_organic":
+        items = [
+            {"name": "Organic Burrata Salad", "price": 17.40, "qty": 1},
+            {"name": "Salmon Poke Bowl", "price": 18.95, "qty": 1},
+        ]
+    elif profile_segment == "quick_budget":
+        items = [
+            {"name": "Express Sushi Combo", "price": 12.40, "qty": 1},
+            {"name": "Red Lentil Soup", "price": 8.50, "qty": 1},
+        ]
+    else:
+        return _build_demo_order_items()
     total = sum(i["price"] * i["qty"] for i in items)
     return items, total
 
@@ -799,6 +1108,7 @@ async def webhook(request: Request):
     display_name = _get_display_name(data)
     locale = _get_locale(data)
     personalization = _build_personalization_metadata(data)
+    profile_segment = _derive_profile_segment(data)
 
     cards: list[dict[str, Any]] = []
     actions: list[dict[str, Any]] = []
@@ -808,22 +1118,39 @@ async def webhook(request: Request):
     if intent == "menu_browse":
         dietary_filter = _extract_dietary_filter(query) or _extract_profile_dietary(data)
         cuisine = _extract_profile_cuisine(data)
+        dining_style = _extract_profile_dining_style(data)
+        budget_preference = _extract_profile_budget(data)
         location_hint = _extract_location_hint(data)
+        selected_restaurants = _select_restaurants(
+            cuisine=cuisine,
+            dietary_filter=dietary_filter,
+            dining_style=dining_style,
+            budget_preference=budget_preference,
+            profile_segment=profile_segment,
+        )
         cards.append(
             build_restaurant_shortlist_card(
                 cuisine=cuisine,
                 location_hint=location_hint,
                 dietary_filter=dietary_filter,
+                dining_style=dining_style,
+                budget_preference=budget_preference,
+                profile_segment=profile_segment,
             )
         )
-        cards.append(build_menu_card(dietary_filter))
+        explicit_menu_request = any(
+            token in query.lower()
+            for token in ["menu", "what do you have", "what's available", "dishes"]
+        )
+        if explicit_menu_request or dietary_filter:
+            cards.append(build_menu_card(dietary_filter))
         visible_items = [
             i for i in _MENU_ITEMS
             if not dietary_filter or dietary_filter.lower() in [d.lower() for d in i["dietary"]]
         ]
         context_block = "Available restaurants:\n" + "\n".join(
             f"  - {restaurant['name']} ({restaurant['cuisine']}, {restaurant['eta']}, {restaurant['delivery_fee']})"
-            for restaurant in _RESTAURANTS[:3]
+            for restaurant in selected_restaurants
         )
         context_block += "\n\nAvailable menu items:\n" + "\n".join(
             f"  - {item['name']} (${item['price']:.2f}) [{', '.join(item['dietary'])}]: {item['description']}"
@@ -833,6 +1160,10 @@ async def webhook(request: Request):
             context_block += f"\nSaved dietary preference: {dietary_filter}"
         if cuisine and "preferences.cuisine" in personalization["used"]:
             context_block += f"\nPreferred cuisine: {cuisine}"
+        if dining_style and "preferences.dining_style" in personalization["used"]:
+            context_block += f"\nPreferred dining style: {dining_style}"
+        if budget_preference and "preferences.budget" in personalization["used"]:
+            context_block += f"\nBudget preference: {budget_preference}"
         if location_hint and "location_hint" in personalization["used"]:
             context_block += f"\nDelivery area hint: {location_hint}"
         actions = [
@@ -840,19 +1171,32 @@ async def webhook(request: Request):
             {"id": "open_restaurant", "type": "secondary", "label": "Open Restaurant", "action": "open_restaurant"},
         ]
         artifacts = [
-            {"type": "application/json", "name": "restaurant_shortlist", "data": _RESTAURANTS[:3]},
+            {"type": "application/json", "name": "restaurant_shortlist", "data": selected_restaurants},
             {"type": "application/json", "name": "menu_items", "data": visible_items[:10]},
         ]
 
     elif intent == "order_build":
         budget_preference = _extract_profile_budget(data)
-        order_items, total = _build_demo_order_items(budget_preference=budget_preference)
+        if profile_segment == "generic":
+            order_items, total = _build_demo_order_items(
+                budget_preference=budget_preference
+            )
+        else:
+            order_items, total = _build_profile_order_items(profile_segment)
         # Check for budget constraint
         budget_note = ""
         if "budget" in query.lower():
             budget_note = "Budget-conscious selection chosen"
         elif budget_preference:
             budget_note = f"Adjusted for your {budget_preference} budget preference"
+        elif profile_segment == "healthy_vegetarian":
+            budget_note = "Built around your vegetarian and healthy profile"
+        elif profile_segment == "family_grill":
+            budget_note = "Built around your family-style meat preferences"
+        elif profile_segment == "premium_organic":
+            budget_note = "Built around your premium organic dining profile"
+        elif profile_segment == "quick_budget":
+            budget_note = "Built around your quick and budget-conscious routine"
         cards.append(build_order_summary_card(order_items, total, notes=budget_note))
         context_block = (
             f"Order summary:\n"
@@ -898,10 +1242,7 @@ async def webhook(request: Request):
             {
                 "type": "application/json",
                 "name": "reorder_suggestions",
-                "data": [
-                    {"name": "Margherita Pizza", "price": 12.99},
-                    {"name": "Red Lentil Soup", "price": 8.50},
-                ],
+                "data": _build_profile_order_items(profile_segment)[0][:2],
             },
         ]
 
@@ -920,6 +1261,7 @@ async def webhook(request: Request):
             "\nUse the user's saved preferences when relevant. Applied profile context: "
             + json.dumps(personalization["used"], sort_keys=True)
         )
+    system += f"\nCurrent profile segment: {profile_segment}."
 
     # SSE or JSON
     wants_stream = (
@@ -928,7 +1270,7 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
-        prompt_suggestions = prompt_suggestions_for_intent(intent)
+        prompt_suggestions = prompt_suggestions_for_intent(intent, profile_segment)
 
         async def _event_stream() -> AsyncIterator[str]:
             yield (
@@ -965,7 +1307,11 @@ async def webhook(request: Request):
                     cards=cards,
                     actions=actions,
                     artifacts=artifacts,
-                    metadata={"prompt_suggestions": prompt_suggestions},
+                    metadata={
+                        "prompt_suggestions": prompt_suggestions,
+                        "personalization": personalization,
+                    },
+                    profile_segment=profile_segment,
                 ),
             }
             yield f"data: {json.dumps(done_payload)}\n\n"
@@ -986,6 +1332,12 @@ async def webhook(request: Request):
             cards=cards,
             actions=actions,
             artifacts=artifacts,
-            metadata={},
+            metadata={
+                "prompt_suggestions": prompt_suggestions_for_intent(
+                    intent, profile_segment
+                ),
+                "personalization": personalization,
+            },
+            profile_segment=profile_segment,
         )
     )

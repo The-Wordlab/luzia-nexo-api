@@ -155,6 +155,8 @@ class TestGameLoop:
         assert "Sky Diamond" in data["content_parts"][0]["text"]
         assert "begin case" in data["content_parts"][0]["text"].lower()
         assert data["metadata"]["prompt_suggestions"][0] == "Begin the case"
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["title"] == "Sky Diamond"
 
     def test_begin_case_opens_investigation(self, tmp_path):
         client, _ = _make_client()
@@ -170,6 +172,8 @@ class TestGameLoop:
         assert data["metadata"]["game"]["phase"] == "investigating"
         assert "Inspect the glass dome" in data["metadata"]["prompt_suggestions"]
         assert "Search Celeste's dressing suite" in data["metadata"]["prompt_suggestions"]
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["title"] == "Case Objective"
 
     def test_thread_defaults_to_sky_diamond(self, tmp_path):
         client, app_module = _make_client()
@@ -186,6 +190,7 @@ class TestGameLoop:
         data = response.json()
         assert "not in the casebook" in data["content_parts"][0]["text"].lower()
         assert data["status"] == "completed"
+        assert data["cards"] == []
 
     def test_sky_diamond_can_be_solved(self, tmp_path):
         client, _ = _make_client()
@@ -203,6 +208,7 @@ class TestGameLoop:
         assert "bruno vale did it" in text or "bruno vale" in text
         assert data["metadata"]["game"]["phase"] == "solved"
         assert data["metadata"]["game"]["accusation_ready"] is True
+        assert len(data["cards"]) == 1
         assert data["cards"][0]["subtitle"] == "Case closed"
 
     def test_review_clues_path_stays_playable(self, tmp_path):
@@ -218,6 +224,8 @@ class TestGameLoop:
         assert data["status"] == "completed"
         assert "next best move" in data["content_parts"][0]["text"].lower()
         assert "reconstruct the blackout" in data["content_parts"][0]["text"].lower()
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["title"] == "Evidence Board"
 
     def test_sky_diamond_unlocks_twist_and_finale(self, tmp_path):
         client, app_module = _make_client()
@@ -271,7 +279,8 @@ class TestGameLoop:
         data = response.json()
         assert "pedestal" in data["content_parts"][0]["text"].lower() or "cradle" in data["content_parts"][0]["text"].lower()
         assert data["metadata"]["game"]["clue_count"] == 1
-        assert len(data["cards"]) >= 4
+        assert len(data["cards"]) == 1
+        assert data["cards"][0]["title"] == "Evidence Board"
 
     def test_move_alias_from_case_content_is_understood(self, tmp_path):
         client, _ = _make_client()

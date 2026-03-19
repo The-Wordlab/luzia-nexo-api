@@ -300,6 +300,16 @@ class TestRestaurantShortlistCard:
         assert "Madrid" in card["subtitle"]
         assert "vegetarian" in card["subtitle"].lower()
 
+    def test_family_profile_restaurants_rank_first(self):
+        m = _get_app()
+        card = m.build_restaurant_shortlist_card(
+            dietary_filter="meat",
+            dining_style="family",
+            profile_segment="family_grill",
+        )
+        labels = [field["label"] for field in card["fields"]]
+        assert labels[0].startswith("Casa Brasa")
+
 
 class TestOrderSummaryCard:
     def test_type_is_order_summary(self):
@@ -516,6 +526,54 @@ class TestWebhookMenuBrowse:
         assert used["location_hint"] == "Madrid"
         assert "cuisine preference: italian" in resp.json()["metadata"]["personalization"]["summary"]
 
+    def test_vegetarian_profile_changes_shortlist_and_prompts(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here are your matches."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "find dinner for tonight",
+                    profile={
+                        "preferences": {
+                            "dietary": "vegetarian",
+                            "dining_style": "healthy",
+                            "budget": "medium",
+                        }
+                    },
+                ),
+            )
+        shortlist = next(c for c in resp.json()["cards"] if c["type"] == "restaurant_shortlist")
+        labels = [field["label"] for field in shortlist["fields"]]
+        assert labels[0].startswith("Green Fork")
+        suggestions = resp.json()["metadata"]["prompt_suggestions"]
+        assert any("vegetarian" in suggestion.lower() for suggestion in suggestions)
+
+    def test_family_meat_profile_changes_shortlist_and_prompts(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Here are your matches."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "find dinner for tonight",
+                    profile={
+                        "preferences": {
+                            "dietary": "meat",
+                            "dining_style": "family",
+                            "budget": "medium",
+                        }
+                    },
+                ),
+            )
+        shortlist = next(c for c in resp.json()["cards"] if c["type"] == "restaurant_shortlist")
+        labels = [field["label"] for field in shortlist["fields"]]
+        assert labels[0].startswith("Casa Brasa")
+        suggestions = resp.json()["metadata"]["prompt_suggestions"]
+        assert any("family" in suggestion.lower() or "barbecue" in suggestion.lower() for suggestion in suggestions)
+
     def test_no_name_no_prefix(self, monkeypatch):
         client = _make_client()
         m = _get_app()
@@ -638,6 +696,31 @@ class TestWebhookOrderBuild:
         assert resp.json()["metadata"]["personalization"]["used"]["preferences.budget"] == "low"
         assert "budget preference: low" in resp.json()["metadata"]["personalization"]["summary"]
 
+    def test_premium_profile_changes_order_draft(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Order ready."):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "build my order",
+                    profile={
+                        "preferences": {
+                            "dietary": "organic",
+                            "budget": "high",
+                            "dining_style": "fine_dining",
+                        }
+                    },
+                ),
+            )
+        summary_card = next(c for c in resp.json()["cards"] if c["type"] == "order_summary")
+        field_labels = [f["label"] for f in summary_card["fields"]]
+        assert "Organic Burrata Salad" in field_labels
+        assert "Salmon Poke Bowl" in field_labels
+        suggestions = resp.json()["metadata"]["prompt_suggestions"]
+        assert any("organic" in suggestion.lower() or "premium" in suggestion.lower() for suggestion in suggestions)
+
 
 # ---------------------------------------------------------------------------
 # Webhook endpoint -- order track
@@ -709,6 +792,27 @@ class TestWebhookOrderTrack:
             ))
         text = resp.json()["content_parts"][0]["text"]
         assert "Carlos" in text
+
+    def test_quick_budget_profile_changes_reorder_suggestions(self, monkeypatch):
+        client = _make_client()
+        m = _get_app()
+        monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
+        with patch.object(m, "call_llm", return_value="Your order is on its way!"):
+            resp = client.post(
+                "/",
+                json=_webhook_payload(
+                    "track my order",
+                    profile={
+                        "preferences": {
+                            "budget": "low",
+                            "dining_style": "quick",
+                        }
+                    },
+                ),
+            )
+        artifact = next(a for a in resp.json()["artifacts"] if a["name"] == "reorder_suggestions")
+        names = [item["name"] for item in artifact["data"]]
+        assert names == ["Express Sushi Combo", "Red Lentil Soup"]
 
 
 # ---------------------------------------------------------------------------
