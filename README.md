@@ -1,6 +1,6 @@
 # Luzia Nexo Agent Runtime API
 
-Build conversational partner integrations for Luzia users. The Nexo Agent Runtime provides signed webhook delivery, consented profile context, rich UI payloads, and proactive push events.
+Build conversational partner integrations for Luzia users. The Nexo Agent Runtime provides signed webhook delivery, consent-managed profile context, rich UI payloads, and proactive push events.
 
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
@@ -56,7 +56,7 @@ sequenceDiagram
 
 ## Profile context
 
-Webhook payloads include consented profile attributes such as `locale`, `language`, `location`, `age`, `gender`, `dietary_preferences`, and more. Availability depends on app permissions and user consent. Parse defensively and ignore unknown fields.
+Webhook payloads may include approved profile attributes such as `locale`, `language`, `location`, `age`, `gender`, `dietary_preferences`, and more. Nexo manages consent and scope enforcement before proxying profile data to your webhook. Parse defensively and ignore unknown fields.
 
 ## Secret boundaries
 

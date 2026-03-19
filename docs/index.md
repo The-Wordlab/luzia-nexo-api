@@ -2,12 +2,12 @@
 
 Build conversational experiences that reach millions of Luzia users through a single webhook integration.
 
-The Nexo Agent Runtime handles message routing, delivery, signature verification, and user consent -- so you can focus on your domain logic.
+The Nexo Agent Runtime handles message routing, delivery, signature verification, and consent management -- so you can focus on your domain logic.
 
 Ship your first integration in minutes:
 
 - **Signed webhook delivery** -- every request is HMAC-verified
-- **Consented profile context** -- locale, preferences, and more, with user permission
+- **Approved profile context** -- locale, preferences, and more, released by Nexo after consent
 - **Rich cards and actions** -- structured UI beyond plain text
 - **Streaming responses** -- real-time SSE for responsive experiences
 - **Proactive push events** -- notify users when something happens in your domain
@@ -99,6 +99,15 @@ sequenceDiagram
     Nexo-->>Luzia: Runtime-processed result
     Luzia-->>User: Final reply
 ```
+
+## Consent Boundary
+
+Nexo fully owns consent collection, storage, and scope enforcement.
+
+- The user grants or denies profile access in the Nexo experience.
+- Nexo decides which profile fields may be released for a given app and turn.
+- Your webhook receives only the approved scoped profile data.
+- Your webhook does not implement consent logic and does not need to know how the user granted it.
 
 ## Capabilities
 

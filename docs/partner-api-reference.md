@@ -61,7 +61,7 @@ Your webhook should parse the fields it needs and safely ignore unknown extra fi
 
 ### Profile fields
 
-Webhook payloads include consented profile attributes:
+Webhook payloads may include approved profile attributes:
 
 | Field | Type | Description |
 |---|---|---|
@@ -74,7 +74,7 @@ Webhook payloads include consented profile attributes:
 | `dietary_preferences` | string | Dietary preferences |
 | `preferences` | object | Additional profile facts |
 
-Availability depends on app permissions and user consent. Parse defensively and ignore unknown fields -- the schema is backward-compatible as new attributes are added.
+Availability depends on app permissions and user consent. Nexo manages consent collection and only proxies the approved scoped profile fields to your webhook. Parse defensively and ignore unknown fields -- the schema is backward-compatible as new attributes are added.
 
 ### Signature verification
 
