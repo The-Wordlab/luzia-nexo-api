@@ -44,4 +44,5 @@ examples/webhook/*/python/chroma_*/
 events.db
 chroma_*/
 # Synced copies of shared/ (source of truth: examples/webhook/shared/)
-examples/webhook/*/python/shared/
+# Synced copies of shared/ (run scripts/sync-shared-to-examples.sh to update)
+examples/webhook/*/python/shared/__pycache__/
