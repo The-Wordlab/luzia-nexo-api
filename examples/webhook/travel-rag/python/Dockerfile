@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application source
 COPY server.py ingest.py worker.py ./
+COPY shared/ ./shared/
 
 # Environment defaults - override via Cloud Run env vars or docker run -e
 ENV VECTOR_STORE_BACKEND=pgvector \

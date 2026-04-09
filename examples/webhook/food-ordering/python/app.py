@@ -13,7 +13,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+# Add shared utilities to path (works both locally and in Docker container)
+_here = Path(__file__).resolve().parent
+for _ancestor in [_here.parent.parent, _here]:  # local: ../../shared, container: ./shared
+    if (_ancestor / "shared").is_dir():
+        sys.path.insert(0, str(_ancestor))
+        break
 
 import hashlib
 import hmac as hmac_mod
