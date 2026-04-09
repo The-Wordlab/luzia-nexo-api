@@ -44,13 +44,21 @@ import json
 import logging
 import os
 import re
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Any, AsyncIterator
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import litellm
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope as _shared_build_envelope
+from shared.sessions import SessionStore
+from shared.streaming import stream_response as _stream_response  # noqa: F401 (available for callers)
 
 import ingest as _ingest
 from ingest import (
@@ -103,6 +111,7 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "15"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 LIVE_POLL_INTERVAL_SECONDS: int = int(os.environ.get("LIVE_POLL_INTERVAL_SECONDS", "60"))
+SESSION_DB_URL: str = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 TOP_K = 3
 SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "sports.rag"
@@ -255,17 +264,23 @@ def _build_envelope(
     payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
     if metadata:
         payload_metadata.update(metadata)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": f"task_sports_{intent}", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": payload_metadata,
-    }
+    envelope = _shared_build_envelope(
+        text=text,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        task_id=f"task_sports_{intent}",
+        status=task_status,
+        capability=CAPABILITY_NAME,
+    )
+    # Ensure cards/actions/artifacts always present for backward compatibility
+    envelope.setdefault("cards", [])
+    envelope.setdefault("actions", [])
+    envelope.setdefault("artifacts", [])
+    # Add top-level status (for backward compatibility) and metadata
+    envelope["status"] = "error" if task_status in {"failed", "canceled"} else "completed"
+    envelope["metadata"] = payload_metadata
+    return envelope
 
 
 # ---------------------------------------------------------------------------
@@ -806,9 +821,16 @@ async def _live_monitor_loop() -> None:
 # ---------------------------------------------------------------------------
 
 
+sessions: SessionStore | None = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
-    global _refresh_task, _live_monitor_task
+    global _refresh_task, _live_monitor_task, sessions
+
+    if SESSION_DB_URL:
+        sessions = SessionStore(SESSION_DB_URL)
+        await sessions.init()
 
     logger.info("Sports RAG startup: seeding data...")
     seed_matches()
@@ -835,6 +857,8 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
         _refresh_task.cancel()
     if _live_monitor_task:
         _live_monitor_task.cancel()
+    if sessions:
+        await sessions.close()
 
 
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
@@ -922,7 +946,12 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
 
     message: dict[str, Any] = data.get("message") or {}
     profile: dict[str, Any] = data.get("profile") or {}
+    thread_id: str = data.get("thread_id") or data.get("session_id") or ""
     query: str = message.get("content", "").strip()
+
+    # Load session state (conversation history + favourite teams)
+    session: dict[str, Any] = await sessions.get(thread_id) if (sessions and thread_id) else {}
+    favourite_teams: list[str] = session.get("favourite_teams", [])
 
     # Empty query - provide a helpful prompt
     if not query:
@@ -945,6 +974,16 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
         STREAMING_ENABLED
         and "text/event-stream" in request.headers.get("accept", "")
     )
+
+    # Persist user turn and update favourite teams if mentioned
+    if sessions and thread_id and query:
+        await sessions.add_turn(thread_id, "user", query)
+        # Extract any team mentions to track favourites across turns
+        mentioned = [t for t in ["Arsenal", "Liverpool", "Chelsea", "Man City", "Tottenham", "Barcelona", "Real Madrid"] if t.lower() in query.lower()]
+        if mentioned:
+            updated_teams = list(dict.fromkeys(favourite_teams + mentioned))[:5]
+            if updated_teams != favourite_teams:
+                await sessions.update(thread_id, favourite_teams=updated_teams)
 
     # ---------------------------------------------------------------------------
     # Retrieve relevant context
@@ -1079,6 +1118,14 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
         text = response_body["content_parts"][0]["text"]
         if localized and text.startswith(f"Hey {display_name}! "):
             response_body["content_parts"][0]["text"] = localized + text[len(f"Hey {display_name}! "):]
+
+    # Record assistant turn in session history
+    if sessions and thread_id:
+        reply_text = ""
+        parts = response_body.get("content_parts", [])
+        if parts and parts[0].get("type") == "text":
+            reply_text = parts[0]["text"]
+        await sessions.add_turn(thread_id, "assistant", reply_text)
 
     return JSONResponse(response_body)
 

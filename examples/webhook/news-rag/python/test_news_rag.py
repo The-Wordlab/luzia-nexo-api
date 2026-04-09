@@ -463,10 +463,19 @@ async def test_webhook_streaming_returns_sse(app):
 
     assert response.status_code == 200
     assert "text/event-stream" in response.headers.get("content-type", "")
-    assert "event: delta" in response.text
-    assert "event: task.delta" in response.text
-    assert "event: task.artifact" in response.text
+    # Shared streaming format: plain data: lines then event: done with full envelope
+    assert "data: " in response.text
     assert "event: done" in response.text
+    # The done event carries the full envelope including cards and artifacts
+    done_line = next(
+        line for line in response.text.splitlines()
+        if line.startswith("data:") and "schema_version" in line
+    )
+    done_envelope = json.loads(done_line[len("data:"):].strip())
+    assert done_envelope["schema_version"] == "2026-03"
+    assert done_envelope["task"]["status"] == "completed"
+    assert isinstance(done_envelope.get("cards"), list)
+    assert isinstance(done_envelope.get("artifacts"), list)
 
 
 @pytest.mark.asyncio

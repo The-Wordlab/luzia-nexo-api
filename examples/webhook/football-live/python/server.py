@@ -13,13 +13,21 @@ import json
 import logging
 import os
 import re
+import sys
 import time
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncIterator
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import litellm
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope as _shared_build_envelope
+from shared.sessions import SessionStore
+from shared.streaming import stream_response as _stream_response  # noqa: F401 (available for callers)
 
 import ingest as _ingest_module
 from football_api import COMPETITIONS, FootballDataClient
@@ -44,6 +52,7 @@ logger = logging.getLogger(__name__)
 
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 FOOTBALL_DATA_API_KEY = os.environ.get("FOOTBALL_DATA_API_KEY", "")
+SESSION_DB_URL: str = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 
 
 def _configure_vertex_env_defaults() -> None:
@@ -216,17 +225,23 @@ def _build_envelope(
     payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
     if metadata:
         payload_metadata.update(metadata)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": f"task_football_{intent}", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": payload_metadata,
-    }
+    envelope = _shared_build_envelope(
+        text=text,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        task_id=f"task_football_{intent}",
+        status=task_status,
+        capability=CAPABILITY_NAME,
+    )
+    # Ensure cards/actions/artifacts always present for backward compatibility
+    envelope.setdefault("cards", [])
+    envelope.setdefault("actions", [])
+    envelope.setdefault("artifacts", [])
+    # Add top-level status (for backward compatibility) and metadata
+    envelope["status"] = "error" if task_status in {"failed", "canceled"} else "completed"
+    envelope["metadata"] = payload_metadata
+    return envelope
 
 
 # ---------------------------------------------------------------------------
@@ -536,10 +551,18 @@ async def _background_refresh_loop() -> None:
 # ---------------------------------------------------------------------------
 
 
+sessions: SessionStore | None = None
+
+
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI):
-    global _refresh_task
+    global _refresh_task, sessions
     logger.info("Football Live startup: seeding data...")
+
+    if SESSION_DB_URL:
+        sessions = SessionStore(SESSION_DB_URL)
+        await sessions.init()
+
     seed_matches()
     seed_standings()
     seed_scorers()
@@ -564,6 +587,8 @@ async def lifespan(app_instance: FastAPI):
     yield
     if _refresh_task:
         _refresh_task.cancel()
+    if sessions:
+        await sessions.close()
 
 
 app = FastAPI(title="Football Live Webhook", lifespan=lifespan)
@@ -612,13 +637,27 @@ async def webhook(request: Request):
     data = json.loads(raw_body)
     message = data.get("message", {})
     query = message.get("content", "")
+    thread_id: str = data.get("thread_id") or data.get("session_id") or ""
     if not query:
         return JSONResponse({"error": "Empty message"}, status_code=400)
+
+    # Load session state (conversation history + favourite teams)
+    session: dict[str, Any] = await sessions.get(thread_id) if (sessions and thread_id) else {}
+    favourite_teams: list[str] = session.get("favourite_teams", [])
 
     intent = detect_intent(query)
     prompt_suggestions = prompt_suggestions_for_intent(intent)
     display_name = _get_display_name(data)
     locale = _get_locale(data)
+
+    # Persist user turn and track favourite teams
+    if sessions and thread_id and query:
+        await sessions.add_turn(thread_id, "user", query)
+        mentioned = [t for t in ["Arsenal", "Liverpool", "Chelsea", "Man City", "Barcelona", "Real Madrid", "Flamengo"] if t.lower() in query.lower()]
+        if mentioned:
+            updated_teams = list(dict.fromkeys(favourite_teams + mentioned))[:5]
+            if updated_teams != favourite_teams:
+                await sessions.update(thread_id, favourite_teams=updated_teams)
 
     # Build context and cards based on intent
     context_parts: list[str] = []
@@ -749,16 +788,20 @@ async def webhook(request: Request):
     if prefix:
         llm_reply = f"{prefix}{llm_reply}"
 
-    return JSONResponse(
-        _build_envelope(
-            text=llm_reply,
-            intent=intent,
-            cards=cards,
-            actions=actions,
-            artifacts=artifacts,
-            metadata={"prompt_suggestions": prompt_suggestions},
-        )
+    response_envelope = _build_envelope(
+        text=llm_reply,
+        intent=intent,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        metadata={"prompt_suggestions": prompt_suggestions},
     )
+
+    # Record assistant turn in session history
+    if sessions and thread_id:
+        await sessions.add_turn(thread_id, "assistant", llm_reply)
+
+    return JSONResponse(response_envelope)
 
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,11 @@ Capabilities are simulated (no real travel API required).
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import hashlib
 import hmac as hmac_mod
 import json
@@ -27,6 +32,9 @@ from typing import Any, AsyncIterator
 import litellm
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope
+from shared.sessions import SessionStore
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -58,6 +66,7 @@ _configure_vertex_env_defaults()
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
+SESSION_DB_URL = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 
 SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "travel.planning"
@@ -96,6 +105,29 @@ AGENT_CARD: dict[str, Any] = {
         ]
     },
 }
+
+# ---------------------------------------------------------------------------
+# FastAPI app + session store
+# ---------------------------------------------------------------------------
+
+app = FastAPI(title="Travel Planning Webhook")
+
+sessions: SessionStore | None = None
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    global sessions
+    if SESSION_DB_URL:
+        sessions = SessionStore(SESSION_DB_URL)
+        await sessions.init()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    if sessions:
+        await sessions.close()
+
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -206,32 +238,6 @@ def prompt_suggestions_for_intent(intent: str) -> list[str]:
             "Create a fallback itinerary",
         ]
     return []
-
-
-def _build_envelope(
-    *,
-    text: str,
-    intent: str,
-    cards: list[dict[str, Any]] | None = None,
-    actions: list[dict[str, Any]] | None = None,
-    artifacts: list[dict[str, Any]] | None = None,
-    task_status: str = "completed",
-    metadata: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
-    if metadata:
-        payload_metadata.update(metadata)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": f"task_travel_planning_{intent}", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": payload_metadata,
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -618,7 +624,7 @@ async def call_llm(system_prompt: str, user_message: str) -> str:
 
 
 async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str]:
-    """Stream LLM response tokens as SSE events."""
+    """Stream LLM response tokens as SSE data: lines."""
     try:
         response = await litellm.acompletion(
             model=LLM_MODEL,
@@ -632,20 +638,16 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
         async for chunk in response:
             delta = chunk.choices[0].delta.content or ""
             if delta:
-                payload = json.dumps({"type": "delta", "text": delta})
-                yield f"data: {payload}\n\n"
+                yield f"data: {json.dumps({'type': 'delta', 'text': delta})}\n\n"
     except Exception as exc:
         logger.warning("LLM streaming failed: %s", exc)
         error_text = "I'm having trouble generating a response right now."
-        payload = json.dumps({"type": "delta", "text": error_text})
-        yield f"data: {payload}\n\n"
+        yield f"data: {json.dumps({'type': 'delta', 'text': error_text})}\n\n"
 
 
 # ---------------------------------------------------------------------------
-# FastAPI app
+# FastAPI app routes
 # ---------------------------------------------------------------------------
-
-app = FastAPI(title="Travel Planning Webhook")
 
 
 @app.get("/.well-known/agent.json")
@@ -712,6 +714,9 @@ async def webhook(request: Request):
     query = message.get("content", "")
     if not query:
         return JSONResponse({"error": "Empty message"}, status_code=400)
+
+    thread_id = data.get("thread", {}).get("id", "")
+    session = await sessions.get(thread_id) if sessions else {}
 
     intent = detect_intent(query)
     display_name = _get_display_name(data)
@@ -838,6 +843,12 @@ async def webhook(request: Request):
             + json.dumps(personalization["used"], sort_keys=True)
         )
 
+    prompt_suggestions = prompt_suggestions_for_intent(intent)
+
+    # Record user turn in session history
+    if sessions and thread_id:
+        await sessions.add_turn(thread_id, "user", query)
+
     # SSE or JSON
     wants_stream = (
         STREAMING_ENABLED
@@ -845,7 +856,20 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
-        prompt_suggestions = prompt_suggestions_for_intent(intent)
+        prefix = _localized_prefix(locale, display_name)
+        envelope = build_envelope(
+            cards=cards,
+            actions=actions,
+            artifacts=artifacts,
+            suggestions=prompt_suggestions,
+            task_id=f"task_travel_planning_{intent}",
+            capability=CAPABILITY_NAME,
+        )
+        envelope["status"] = "completed"
+        envelope["metadata"] = {
+            "prompt_suggestions": prompt_suggestions,
+            "personalization": personalization,
+        }
 
         async def _event_stream() -> AsyncIterator[str]:
             yield (
@@ -853,8 +877,9 @@ async def webhook(request: Request):
                 + json.dumps({"task": {"id": f"task_travel_planning_{intent}", "status": "in_progress"}})
                 + "\n\n"
             )
-            prefix = _localized_prefix(locale, display_name)
+            full_text = ""
             if prefix:
+                full_text += prefix
                 yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
@@ -866,28 +891,20 @@ async def webhook(request: Request):
                         yield event
                         continue
                     if payload.get("type") == "delta":
+                        text = payload.get("text", "")
+                        full_text += text
                         yield event
-                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
+                        yield f"event: task.delta\ndata: {json.dumps({'text': text})}\n\n"
                         continue
                 yield event
 
-            for artifact in artifacts:
-                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
+            # Add accumulated text into envelope content_parts
+            content_parts = envelope.get("content_parts", [])
+            if full_text:
+                content_parts.insert(0, {"type": "text", "text": full_text})
+            envelope["content_parts"] = content_parts
 
-            done_payload = {
-                "type": "done",
-                **_build_envelope(
-                    text=prefix.strip(),
-                    intent=intent,
-                    cards=cards,
-                    actions=actions,
-                    artifacts=artifacts,
-                    metadata={
-                        "prompt_suggestions": prompt_suggestions,
-                        "personalization": personalization,
-                    },
-                ),
-            }
+            done_payload = {"type": "done", **envelope}
             yield f"data: {json.dumps(done_payload)}\n\n"
             yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
 
@@ -899,13 +916,23 @@ async def webhook(request: Request):
     if prefix:
         llm_reply = f"{prefix}{llm_reply}"
 
-    return JSONResponse(
-        _build_envelope(
-            text=llm_reply,
-            intent=intent,
-            cards=cards,
-            actions=actions,
-            artifacts=artifacts,
-            metadata={"personalization": personalization},
-        )
+    # Record assistant turn in session history
+    if sessions and thread_id:
+        await sessions.add_turn(thread_id, "assistant", llm_reply)
+
+    envelope = build_envelope(
+        text=llm_reply,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        suggestions=prompt_suggestions,
+        task_id=f"task_travel_planning_{intent}",
+        capability=CAPABILITY_NAME,
     )
+    envelope["status"] = "completed"
+    envelope["metadata"] = {
+        "prompt_suggestions": prompt_suggestions,
+        "personalization": personalization,
+    }
+
+    return JSONResponse(envelope)

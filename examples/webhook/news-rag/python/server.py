@@ -50,14 +50,22 @@ import json
 import logging
 import os
 import re
+import sys
 import textwrap
+from pathlib import Path
 from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import feedparser
 import litellm
 from bs4 import BeautifulSoup
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope as _shared_build_envelope, news_card as _shared_news_card
+from shared.sessions import SessionStore
+from shared.streaming import stream_with_prefix
 
 try:
     import psycopg
@@ -103,6 +111,7 @@ WEBHOOK_SECRET: str = os.environ.get("WEBHOOK_SECRET", "")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "30"))
 OLLAMA_API_BASE: str = os.environ.get("OLLAMA_API_BASE", "http://localhost:11434")
 TOP_K: int = int(os.environ.get("TOP_K", "5"))
+SESSION_DB_URL: str = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
 if VECTOR_STORE_BACKEND != "pgvector":
     raise RuntimeError(
@@ -724,18 +733,24 @@ def _build_envelope(
     metadata: dict[str, Any] | None = None,
     error: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build a canonical Nexo envelope with A2A-aligned fields."""
-    envelope: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": "task_news_search", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": metadata or {},
-    }
+    """Build a canonical Nexo envelope using shared build_envelope."""
+    envelope = _shared_build_envelope(
+        text=text,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        task_id="task_news_search",
+        status=task_status,
+        capability=CAPABILITY_NAME,
+    )
+    # Preserve top-level status for backward compatibility
+    envelope["status"] = "error" if task_status in {"failed", "canceled"} else "completed"
+    # Always include list fields even when empty for contract compliance
+    envelope.setdefault("cards", [])
+    envelope.setdefault("actions", [])
+    envelope.setdefault("artifacts", [])
+    if metadata:
+        envelope["metadata"] = metadata
     if error is not None:
         envelope["error"] = error
     return envelope
@@ -768,6 +783,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# ---------------------------------------------------------------------------
+# Session store
+# ---------------------------------------------------------------------------
+
+sessions: SessionStore | None = None
+
 
 @app.get("/.well-known/agent.json")
 async def agent_card() -> JSONResponse:
@@ -796,9 +817,25 @@ async def root() -> JSONResponse:
 @app.on_event("startup")
 async def _startup() -> None:
     """Start the initial feed crawl and schedule periodic refreshes."""
+    global sessions
+    if SESSION_DB_URL:
+        try:
+            sessions = SessionStore(SESSION_DB_URL)
+            await sessions.init()
+            logger.info("SessionStore initialised")
+        except Exception:
+            logger.warning("SessionStore init failed — session history disabled", exc_info=True)
+            sessions = None
     logger.info("Starting initial feed crawl...")
     asyncio.create_task(crawl_and_index_feeds())
     asyncio.create_task(_refresh_loop())
+
+
+@app.on_event("shutdown")
+async def _shutdown() -> None:
+    """Close session store connection pool on shutdown."""
+    if sessions is not None:
+        await sessions.close()
 
 
 # ---------------------------------------------------------------------------
@@ -832,6 +869,8 @@ async def receive_webhook(request: Request):
         raise HTTPException(status_code=400, detail="Invalid JSON body")
 
     message: dict[str, Any] = data.get("message") or {}
+    thread: dict[str, Any] = data.get("thread") or {}
+    thread_id: str = thread.get("id", "")
     user_text: str = message.get("content", "").strip()
     locale = _get_locale(data)
     display_name = _get_display_name(data)
@@ -844,7 +883,7 @@ async def receive_webhook(request: Request):
             metadata={"prompt_suggestions": prompt_suggestions_for_query("")},
         )
         if wants_stream:
-            return _stream_envelope_response(envelope)
+            return _stream_prebuilt_response(envelope)
         return JSONResponse(envelope)
 
     hits = await retrieve(user_text)
@@ -852,10 +891,24 @@ async def receive_webhook(request: Request):
     if not hits:
         envelope = _empty_index_response()
         if wants_stream:
-            return _stream_envelope_response(envelope)
+            return _stream_prebuilt_response(envelope)
         return JSONResponse(envelope)
 
+    # Fetch conversation history for follow-up context
+    history: list[dict[str, str]] = []
+    if sessions is not None and thread_id:
+        try:
+            history = await sessions.get_history(thread_id, max_turns=10)
+        except Exception:
+            logger.warning("Failed to load session history", exc_info=True)
+
     messages = build_rag_prompt(hits, user_text, locale=locale)
+    # Inject prior conversation turns before the user message when available
+    if history:
+        system_msg = messages[0]
+        user_msg = messages[-1]
+        messages = [system_msg] + history + [user_msg]
+
     try:
         answer = await ask_llm(messages)
     except Exception:
@@ -864,12 +917,19 @@ async def receive_webhook(request: Request):
             "I found relevant news articles but couldn't generate a response right now. "
             "Please try again."
         )
+
+    # Persist conversation turns asynchronously
+    if sessions is not None and thread_id:
+        try:
+            await sessions.add_turn(thread_id, "user", user_text)
+            await sessions.add_turn(thread_id, "assistant", answer)
+        except Exception:
+            logger.warning("Failed to save session turn", exc_info=True)
+
     prefix = _localized_prefix(locale, display_name)
-    if prefix:
-        answer = f"{prefix}{answer}"
 
     envelope = _build_envelope(
-        text=answer,
+        text=f"{prefix}{answer}" if prefix else answer,
         cards=build_source_cards(hits),
         actions=build_read_actions(hits),
         artifacts=[
@@ -889,38 +949,50 @@ async def receive_webhook(request: Request):
         metadata={"prompt_suggestions": prompt_suggestions_for_query(user_text)},
     )
     if wants_stream:
-        return _stream_envelope_response(envelope)
+        # Wrap the pre-computed answer as an async iterator for shared streaming
+        async def _answer_chunks():
+            yield answer
+
+        # Strip text from envelope content_parts so stream_with_prefix can inject it
+        envelope_for_stream = dict(envelope)
+        envelope_for_stream["content_parts"] = [
+            p for p in envelope.get("content_parts", [])
+            if not (isinstance(p, dict) and p.get("type") == "text")
+        ]
+        return StreamingResponse(
+            stream_with_prefix(prefix, _answer_chunks(), envelope_for_stream),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
     return JSONResponse(envelope)
 
 
-def _stream_envelope_response(envelope: dict[str, Any]) -> StreamingResponse:
-    """Return a canonical SSE response with delta + done events."""
+def _stream_prebuilt_response(envelope: dict[str, Any]) -> StreamingResponse:
+    """Stream a pre-built envelope (no LLM streaming) using shared format.
+
+    Extracts any text from content_parts and streams it as a single data: line
+    followed by event: done with the full envelope.
+    """
     text = " ".join(
         p.get("text", "")
         for p in (envelope.get("content_parts") or [])
         if isinstance(p, dict) and p.get("type") == "text"
     ).strip()
 
-    async def stream():
-        task = envelope.get("task") if isinstance(envelope.get("task"), dict) else {}
-        yield (
-            "event: task.started\ndata: "
-            + json.dumps({"task": {"id": task.get("id"), "status": "in_progress"}})
-            + "\n\n"
-        )
+    async def _single_chunk():
         if text:
-            yield f'event: delta\ndata: {json.dumps({"text": text})}\n\n'
-            yield (
-                "event: task.delta\ndata: "
-                + json.dumps({"text": text})
-                + "\n\n"
-            )
-        for artifact in envelope.get("artifacts") or []:
-            yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
-        yield f"event: done\ndata: {json.dumps(envelope)}\n\n"
+            yield text
+
+    # Use an empty content_parts so stream_with_prefix reconstructs it
+    envelope_for_stream = dict(envelope)
+    envelope_for_stream["content_parts"] = []
 
     return StreamingResponse(
-        stream(),
+        stream_with_prefix("", _single_chunk(), envelope_for_stream),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

@@ -48,13 +48,21 @@ import json
 import logging
 import os
 import re
+import sys
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Any, AsyncIterator
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import litellm
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope as _shared_build_envelope
+from shared.sessions import SessionStore
+from shared.streaming import stream_with_prefix
 
 import ingest as _ingest_module
 from ingest import (
@@ -100,6 +108,7 @@ LLM_MODEL: str = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 REFRESH_INTERVAL_MINUTES: int = int(os.environ.get("REFRESH_INTERVAL_MINUTES", "60"))
 STREAMING_ENABLED: bool = os.environ.get("STREAMING_ENABLED", "false").lower() == "true"
 TOP_K: int = int(os.environ.get("TOP_K", "4"))
+SESSION_DB_URL: str = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "travel.rag"
 VECTOR_STORE_BACKEND: str = os.environ.get("VECTOR_STORE_BACKEND", "pgvector").strip().lower()
@@ -253,20 +262,26 @@ def _build_envelope(
     task_status: str = "completed",
     metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    payload_metadata = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
+    payload_metadata: dict[str, Any] = {"prompt_suggestions": prompt_suggestions_for_intent(intent)}
     if metadata:
         payload_metadata.update(metadata)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": f"task_travel_{intent}", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": payload_metadata,
-    }
+    envelope = _shared_build_envelope(
+        text=text,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        task_id=f"task_travel_{intent}",
+        status=task_status,
+        capability=CAPABILITY_NAME,
+    )
+    # Preserve top-level status for backward compatibility
+    envelope["status"] = "error" if task_status in {"failed", "canceled"} else "completed"
+    # Always include list fields even when empty for contract compliance
+    envelope.setdefault("cards", [])
+    envelope.setdefault("actions", [])
+    envelope.setdefault("artifacts", [])
+    envelope["metadata"] = payload_metadata
+    return envelope
 
 
 # ---------------------------------------------------------------------------
@@ -362,12 +377,11 @@ def call_llm(system_prompt: str, user_message: str) -> str:
         return "I'm having trouble generating a response right now. Please try again in a moment."
 
 
-async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str]:
-    """Stream LLM response tokens as SSE events.
+async def stream_llm_chunks(system_prompt: str, user_message: str) -> AsyncIterator[str]:
+    """Stream LLM response as plain text chunks.
 
-    Yields:
-        SSE-formatted lines: ``data: {...}\\n\\n``
-    The final event is ``data: {"type": "done"}\\n\\n``.
+    Yields plain text strings (not SSE-formatted). Callers pass this to
+    ``stream_with_prefix`` from shared.streaming which handles SSE formatting.
     """
     try:
         response = await litellm.acompletion(
@@ -382,15 +396,14 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
         async for chunk in response:
             delta = chunk.choices[0].delta.content or ""
             if delta:
-                payload = json.dumps({"type": "delta", "text": delta})
-                yield f"data: {payload}\n\n"
+                yield delta
     except Exception as exc:
         logger.warning("LLM streaming failed: %s", exc)
-        error_text = "I'm having trouble generating a response right now."
-        payload = json.dumps({"type": "delta", "text": error_text})
-        yield f"data: {payload}\n\n"
+        yield "I'm having trouble generating a response right now."
 
-    yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+# Keep stream_llm as an alias so tests that monkeypatch it still work
+stream_llm = stream_llm_chunks
 
 
 # ---------------------------------------------------------------------------
@@ -750,9 +763,21 @@ async def _background_refresh_loop() -> None:
 # ---------------------------------------------------------------------------
 
 
+sessions: SessionStore | None = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):  # type: ignore[type-arg]
-    global _refresh_task
+    global _refresh_task, sessions
+
+    if SESSION_DB_URL:
+        try:
+            sessions = SessionStore(SESSION_DB_URL)
+            await sessions.init()
+            logger.info("SessionStore initialised")
+        except Exception:
+            logger.warning("SessionStore init failed — session history disabled", exc_info=True)
+            sessions = None
 
     logger.info("Travel RAG startup: seeding destination profiles...")
     seed_destinations()
@@ -774,6 +799,8 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 
     if _refresh_task:
         _refresh_task.cancel()
+    if sessions is not None:
+        await sessions.close()
 
 
 app = FastAPI(title="nexo-travel-rag-webhook", lifespan=lifespan)
@@ -838,6 +865,8 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
 
     message: dict[str, Any] = data.get("message") or {}
     profile: dict[str, Any] = data.get("profile") or {}
+    thread: dict[str, Any] = data.get("thread") or {}
+    thread_id: str = thread.get("id", "")
     query: str = message.get("content", "").strip()
 
     if not query:
@@ -880,104 +909,85 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
         return JSONResponse(response_body)
 
     # ---------------------------------------------------------------------------
+    # Session history for follow-up context
+    # ---------------------------------------------------------------------------
+
+    history: list[dict[str, str]] = []
+    if sessions is not None and thread_id:
+        try:
+            history = await sessions.get_history(thread_id, max_turns=10)
+        except Exception:
+            logger.warning("Failed to load session history", exc_info=True)
+
+    # ---------------------------------------------------------------------------
     # SSE streaming path
     # ---------------------------------------------------------------------------
 
     if wants_stream:
-
-        async def _event_stream() -> AsyncIterator[str]:
-            if intent == "itinerary":
-                system_prompt = _apply_language_instruction(_itinerary_prompt(destinations), locale)
-                days_match = re.search(r"\b(\d+)\s*(?:-?\s*)?days?\b", query, re.IGNORECASE)
-                num_days = min(int(days_match.group(1)), 7) if days_match else 3
-                cards = []
-                if destinations:
-                    cards.append(destination_to_card(destinations[0]))
-                    cards.append(build_itinerary_card(destinations[0], days=num_days))
-                actions = build_destination_actions(destinations)
-            elif intent == "budget":
-                system_prompt = _apply_language_instruction(_budget_prompt(destinations), locale)
-                cards = [destination_to_card(d) for d in destinations[:2]]
-                actions = build_destination_actions(destinations)
-            elif intent == "weather":
-                system_prompt = _apply_language_instruction(_weather_prompt(destinations), locale)
-                cards = [destination_to_card(d) for d in destinations[:2]]
-                actions = build_destination_actions(destinations)
-            else:
-                system_prompt = _apply_language_instruction(_destination_prompt(destinations, articles), locale)
-                cards = [destination_to_card(d) for d in destinations[:3]]
-                actions = build_destination_actions(destinations)
-                if not actions and articles:
-                    actions = build_article_actions(articles)
-            artifacts: list[dict[str, Any]] = []
+        # Build cards, actions, artifacts for the intent
+        if intent == "itinerary":
+            system_prompt = _apply_language_instruction(_itinerary_prompt(destinations), locale)
+            days_match = re.search(r"\b(\d+)\s*(?:-?\s*)?days?\b", query, re.IGNORECASE)
+            num_days = min(int(days_match.group(1)), 7) if days_match else 3
+            stream_cards: list[dict[str, Any]] = []
             if destinations:
-                artifacts.append(
-                    {
-                        "type": "application/json",
-                        "name": "destinations",
-                        "data": destinations[:4],
-                    }
-                )
-            if articles:
-                artifacts.append(
-                    {
-                        "type": "application/json",
-                        "name": "articles",
-                        "data": [
-                            {"title": a.get("title"), "url": a.get("url"), "source": a.get("source")}
-                            for a in articles[:5]
-                        ],
-                    }
-                )
+                stream_cards.append(destination_to_card(destinations[0]))
+                stream_cards.append(build_itinerary_card(destinations[0], days=num_days))
+            stream_actions = build_destination_actions(destinations)
+        elif intent == "budget":
+            system_prompt = _apply_language_instruction(_budget_prompt(destinations), locale)
+            stream_cards = [destination_to_card(d) for d in destinations[:2]]
+            stream_actions = build_destination_actions(destinations)
+        elif intent == "weather":
+            system_prompt = _apply_language_instruction(_weather_prompt(destinations), locale)
+            stream_cards = [destination_to_card(d) for d in destinations[:2]]
+            stream_actions = build_destination_actions(destinations)
+        else:
+            system_prompt = _apply_language_instruction(_destination_prompt(destinations, articles), locale)
+            stream_cards = [destination_to_card(d) for d in destinations[:3]]
+            stream_actions = build_destination_actions(destinations)
+            if not stream_actions and articles:
+                stream_actions = build_article_actions(articles)
 
-            envelope = _build_envelope(
-                text="",
-                intent=intent,
-                cards=cards,
-                actions=actions,
-                artifacts=artifacts,
+        stream_artifacts: list[dict[str, Any]] = []
+        if destinations:
+            stream_artifacts.append(
+                {
+                    "type": "application/json",
+                    "name": "destinations",
+                    "data": destinations[:4],
+                }
             )
-            task = envelope["task"]
-            yield (
-                "event: task.started\ndata: "
-                + json.dumps({"task": {"id": task["id"], "status": "in_progress"}})
-                + "\n\n"
+        if articles:
+            stream_artifacts.append(
+                {
+                    "type": "application/json",
+                    "name": "articles",
+                    "data": [
+                        {"title": a.get("title"), "url": a.get("url"), "source": a.get("source")}
+                        for a in articles[:5]
+                    ],
+                }
             )
 
-            prefix = _localized_prefix(locale, display_name)
-            if prefix:
-                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
-                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
+        envelope = _build_envelope(
+            text="",
+            intent=intent,
+            cards=stream_cards,
+            actions=stream_actions,
+            artifacts=stream_artifacts,
+        )
 
-            async for event in stream_llm(system_prompt, query):
-                if event.startswith("data:"):
-                    try:
-                        payload = json.loads(event[len("data:"):].strip())
-                    except json.JSONDecodeError:
-                        yield event
-                        continue
-                    if payload.get("type") == "delta":
-                        yield event
-                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
-                        continue
-                    if payload.get("type") == "done":
-                        continue
-                yield event
-
-            for artifact in artifacts:
-                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
-
-            done_envelope = _build_envelope(
-                text=prefix.strip(),
-                intent=intent,
-                cards=cards,
-                actions=actions,
-                artifacts=artifacts,
-            )
-            done_payload = {"type": "done", **done_envelope}
-            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
-
-        return StreamingResponse(_event_stream(), media_type="text/event-stream")
+        prefix = _localized_prefix(locale, display_name)
+        return StreamingResponse(
+            stream_with_prefix(prefix, stream_llm_chunks(system_prompt, query), envelope),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     # ---------------------------------------------------------------------------
     # JSON (non-streaming) path
@@ -998,6 +1008,19 @@ async def receive_webhook(request: Request) -> JSONResponse | StreamingResponse:
         text = response_body["content_parts"][0]["text"]
         if localized and text.startswith(f"Hey {display_name}! "):
             response_body["content_parts"][0]["text"] = localized + text[len(f"Hey {display_name}! "):]
+
+    # Persist conversation turns
+    if sessions is not None and thread_id:
+        try:
+            reply_text = " ".join(
+                p.get("text", "")
+                for p in response_body.get("content_parts", [])
+                if isinstance(p, dict) and p.get("type") == "text"
+            )
+            await sessions.add_turn(thread_id, "user", query)
+            await sessions.add_turn(thread_id, "assistant", reply_text)
+        except Exception:
+            logger.warning("Failed to save session turn", exc_info=True)
 
     return JSONResponse(response_body)
 

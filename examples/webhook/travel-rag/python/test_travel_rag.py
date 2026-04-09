@@ -539,13 +539,12 @@ class TestSSEStreaming:
         client = _make_client(monkeypatch)
         monkeypatch.setattr(_server_module, "STREAMING_ENABLED", True)
 
-        async def _fake_stream_llm(_system, _user):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'Paris'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        async def _fake_stream_llm_chunks(_system, _user):
+            yield "Paris"
 
         with patch.object(_server_module, "search_destinations", return_value=[_sample_dest_result()]), \
              patch.object(_server_module, "search_articles", return_value=[]), \
-             patch.object(_server_module, "stream_llm", new=_fake_stream_llm):
+             patch.object(_server_module, "stream_llm_chunks", new=_fake_stream_llm_chunks):
             resp = client.post(
                 "/",
                 json={"message": {"content": "Tell me about Paris"}},
@@ -555,36 +554,32 @@ class TestSSEStreaming:
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers["content-type"]
         assert "Paris" in resp.text
-        assert "event: task.started" in resp.text
-        assert "event: task.delta" in resp.text
+        # Shared streaming format: plain data: lines then event: done with full envelope
+        assert "data: " in resp.text
         assert "event: done" in resp.text
 
     def test_sse_done_event_has_cards_and_actions(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
         monkeypatch.setattr(_server_module, "STREAMING_ENABLED", True)
 
-        async def _fake_stream_llm(_system, _user):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
-            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        async def _fake_stream_llm_chunks(_system, _user):
+            yield "ok"
 
         with patch.object(_server_module, "search_destinations", return_value=[_sample_dest_result()]), \
              patch.object(_server_module, "search_articles", return_value=[]), \
-             patch.object(_server_module, "stream_llm", new=_fake_stream_llm):
+             patch.object(_server_module, "stream_llm_chunks", new=_fake_stream_llm_chunks):
             resp = client.post(
                 "/",
                 json={"message": {"content": "Paris"}},
                 headers={"Accept": "text/event-stream"},
             )
 
-        captured_events = []
-        for line in resp.text.splitlines():
-            if line.startswith("data:"):
-                event = json.loads(line[len("data:"):].strip())
-                captured_events.append(event)
-
-        done_events = [e for e in captured_events if e.get("type") == "done"]
-        assert len(done_events) >= 1
-        done = done_events[-1]
+        # The done event carries the full envelope
+        done_line = next(
+            line for line in resp.text.splitlines()
+            if line.startswith("data:") and "schema_version" in line
+        )
+        done = json.loads(done_line[len("data:"):].strip())
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03"
