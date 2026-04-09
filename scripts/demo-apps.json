@@ -28,70 +28,6 @@
   },
   "apps": [
     {
-      "demo_key": "fitness-coach",
-      "name": "Fitness Coach",
-      "description": "Webhook fitness coach - workout planning, progress reviews, and nutrition guidance",
-      "config_json": {
-        "demo_key": "fitness-coach",
-        "integration_mode": "webhook",
-        "disclaimer": false,
-        "demo_icon": "dumbbell",
-        "demo_color": "#10B981",
-        "demo_order": 3,
-        "prompt_suggestions": [
-          "Design a 4-week beginner workout plan",
-          "I just ran 5km in 28 minutes - how am I doing?",
-          "What should I eat before a morning workout?"
-        ]
-      },
-      "webhook_url_env": "DEMO_FITNESS_COACH_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-fitness-coach-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": [
-        {
-          "trigger_type": "partner_skill",
-          "keywords": [
-            "skill",
-            "partner",
-            "integration"
-          ],
-          "priority": 10,
-          "cooldown_seconds": 120
-        }
-      ]
-    },
-    {
-      "demo_key": "language-tutor",
-      "name": "Language Tutor",
-      "description": "Webhook language tutor - phrase help, conversation quizzes, and lesson plans",
-      "config_json": {
-        "demo_key": "language-tutor",
-        "integration_mode": "webhook",
-        "disclaimer": false,
-        "demo_icon": "book-open",
-        "demo_color": "#F59E0B",
-        "demo_order": 5,
-        "prompt_suggestions": [
-          "Teach me how to order food in Italian",
-          "Give me a quick Spanish conversation quiz",
-          "How do I introduce myself in Portuguese?"
-        ]
-      },
-      "webhook_url_env": "DEMO_LANGUAGE_TUTOR_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-language-tutor-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": [
-        {
-          "trigger_type": "character_transfer",
-          "keywords": [
-            "transfer",
-            "switch character",
-            "talk to"
-          ],
-          "priority": 20,
-          "cooldown_seconds": 120
-        }
-      ]
-    },
-    {
       "demo_key": "news-rag",
       "name": "News RAG",
       "description": "RAG-powered news assistant - crawls RSS feeds, answers questions with source cards",
@@ -136,7 +72,9 @@
         ],
         "showcase_family": "sports",
         "showcase_role": "primary",
-        "deep_dives": ["football-live"]
+        "deep_dives": [
+          "football-live"
+        ]
       },
       "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8091",
@@ -274,31 +212,6 @@
       },
       "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": []
-    },
-    {
-      "demo_key": "sky-diamond",
-      "name": "Sky Diamond",
-      "description": "Stateful detective game - one premium mystery per thread with cards, prompt suggestions, JSON, and SSE",
-      "config_json": {
-        "demo_key": "sky-diamond",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "sparkles",
-        "demo_color": "#6366F1",
-        "demo_order": 15,
-        "prompt_suggestions": [
-          "Sky Diamond",
-          "Begin the case"
-        ],
-        "showcase_family": "games",
-        "showcase_role": "secondary"
-      },
-      "webhook_url_env": "DEMO_SKY_DIAMOND_WEBHOOK_URL",
-      "webhook_url_default": "https://luzia-sky-diamond-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     }
   ],
