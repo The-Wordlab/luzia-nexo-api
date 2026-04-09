@@ -434,7 +434,7 @@ class TestWebhookMenuBrowse:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="menu"):
             resp = client.post("/", json=_webhook_payload("menu"))
-        assert resp.json()["status"] == "completed"
+        assert resp.json()["task"]["status"] == "completed"
 
     def test_has_content_parts(self, monkeypatch):
         client = _make_client()
@@ -759,7 +759,7 @@ class TestWebhookOrderTrack:
         monkeypatch.setattr(m, "WEBHOOK_SECRET", "")
         with patch.object(m, "call_llm", return_value="tracking"):
             resp = client.post("/", json=_webhook_payload("track my order"))
-        assert resp.json()["status"] == "completed"
+        assert resp.json()["task"]["status"] == "completed"
 
     def test_schema_version(self, monkeypatch):
         client = _make_client()
@@ -891,9 +891,9 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'hello'})}\n\n"
+            yield "hello"
 
-        with patch.object(m, "stream_llm", side_effect=_fake_stream):
+        with patch.object(m, "stream_llm_chunks", side_effect=_fake_stream):
             resp = client.post(
                 "/",
                 json=_webhook_payload("show me the menu"),
@@ -901,8 +901,9 @@ class TestSSEStreaming:
             )
         assert resp.status_code == 200
         assert "text/event-stream" in resp.headers.get("content-type", "")
-        assert "event: task.started" in resp.text
-        assert "event: task.delta" in resp.text
+        # New streaming: plain data: lines for chunks, event: done for envelope
+        assert "data:" in resp.text
+        assert "event: done" in resp.text
 
     def test_sse_done_event_has_cards(self, monkeypatch):
         client = _make_client()
@@ -911,23 +912,28 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
+            yield "ok"
 
-        with patch.object(m, "stream_llm", side_effect=_fake_stream):
+        with patch.object(m, "stream_llm_chunks", side_effect=_fake_stream):
             resp = client.post(
                 "/",
                 json=_webhook_payload("menu"),
                 headers={"Accept": "text/event-stream"},
             )
 
-        events = []
-        for line in resp.text.splitlines():
-            if line.startswith("data:"):
-                events.append(json.loads(line[len("data:"):].strip()))
+        # The done event is emitted as: event: done\ndata: <json>\n\n
+        done = None
+        lines = resp.text.splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "event: done":
+                # next non-empty line should be data: <json>
+                for j in range(i + 1, len(lines)):
+                    if lines[j].startswith("data:"):
+                        done = json.loads(lines[j][len("data:"):].strip())
+                        break
+                break
 
-        done_events = [e for e in events if e.get("type") == "done"]
-        assert len(done_events) >= 1
-        done = done_events[-1]
+        assert done is not None
         assert "cards" in done
         assert "actions" in done
         assert done["schema_version"] == "2026-03"
@@ -942,23 +948,29 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
+            yield "ok"
 
-        with patch.object(m, "stream_llm", side_effect=_fake_stream):
+        with patch.object(m, "stream_llm_chunks", side_effect=_fake_stream):
             resp = client.post(
                 "/",
                 json=_webhook_payload("menu"),
                 headers={"Accept": "text/event-stream"},
             )
 
-        events = [
-            json.loads(line[len("data:"):].strip())
-            for line in resp.text.splitlines()
-            if line.startswith("data:")
-        ]
-        done = next((e for e in events if e.get("type") == "done"), None)
+        # Parse done envelope from event: done / data: <json> block
+        done = None
+        lines = resp.text.splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "event: done":
+                for j in range(i + 1, len(lines)):
+                    if lines[j].startswith("data:"):
+                        done = json.loads(lines[j][len("data:"):].strip())
+                        break
+                break
+
         assert done is not None
-        assert done["status"] == "completed"
+        # status lives under task.status per canonical envelope format
+        assert done["task"]["status"] == "completed"
 
     def test_json_fallback_when_no_accept(self, monkeypatch):
         client = _make_client()
@@ -989,22 +1001,29 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'menu here'})}\n\n"
+            yield "menu here"
 
-        with patch.object(m, "stream_llm", side_effect=_fake_stream):
+        with patch.object(m, "stream_llm_chunks", side_effect=_fake_stream):
             resp = client.post(
                 "/",
                 json=_webhook_payload("show me the menu", profile={"display_name": "Elena"}),
                 headers={"Accept": "text/event-stream"},
             )
 
-        events = [
-            json.loads(line[len("data:"):].strip())
+        # New streaming: plain data: lines for text chunks (including personalization prefix)
+        data_lines = [
+            line[len("data:"):].strip()
             for line in resp.text.splitlines()
             if line.startswith("data:")
         ]
-        delta_texts = [e.get("text", "") for e in events if e.get("type") == "delta"]
-        full_text = "".join(delta_texts)
+        # Skip JSON lines (the done envelope data)
+        plain_chunks = []
+        for chunk in data_lines:
+            try:
+                json.loads(chunk)
+            except (json.JSONDecodeError, ValueError):
+                plain_chunks.append(chunk)
+        full_text = "".join(plain_chunks)
         assert "Elena" in full_text
 
 

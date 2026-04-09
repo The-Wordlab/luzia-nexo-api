@@ -10,6 +10,11 @@ Capabilities are simulated (no real restaurant API required).
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
 import hashlib
 import hmac as hmac_mod
 import json
@@ -21,6 +26,10 @@ from typing import Any, AsyncIterator
 import litellm
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+
+from shared.envelope import build_envelope, product_card, status_card, action, artifact
+from shared.streaming import stream_with_prefix
+from shared.sessions import SessionStore
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -52,6 +61,7 @@ _configure_vertex_env_defaults()
 WEBHOOK_SECRET = os.environ.get("WEBHOOK_SECRET", "")
 LLM_MODEL = os.environ.get("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
 STREAMING_ENABLED = os.environ.get("STREAMING_ENABLED", "true").lower() == "true"
+SESSION_DB_URL = os.environ.get("SESSION_DB_URL", os.environ.get("DATABASE_URL", ""))
 
 SCHEMA_VERSION = "2026-03"
 CAPABILITY_NAME = "food.ordering"
@@ -82,6 +92,29 @@ AGENT_CARD: dict[str, Any] = {
         ]
     },
 }
+
+# ---------------------------------------------------------------------------
+# FastAPI app + session store
+# ---------------------------------------------------------------------------
+
+app = FastAPI(title="Food Ordering Webhook")
+
+sessions: SessionStore | None = None
+
+
+@app.on_event("startup")
+async def startup() -> None:
+    global sessions
+    if SESSION_DB_URL:
+        sessions = SessionStore(SESSION_DB_URL)
+        await sessions.init()
+
+
+@app.on_event("shutdown")
+async def shutdown() -> None:
+    if sessions:
+        await sessions.close()
+
 
 # ---------------------------------------------------------------------------
 # HMAC signature verification
@@ -254,35 +287,6 @@ def prompt_suggestions_for_intent(
             "Share courier ETA again",
         ]
     return []
-
-
-def _build_envelope(
-    *,
-    text: str,
-    intent: str,
-    cards: list[dict[str, Any]] | None = None,
-    actions: list[dict[str, Any]] | None = None,
-    artifacts: list[dict[str, Any]] | None = None,
-    task_status: str = "completed",
-    metadata: dict[str, Any] | None = None,
-    profile_segment: str = "generic",
-) -> dict[str, Any]:
-    payload_metadata = {
-        "prompt_suggestions": prompt_suggestions_for_intent(intent, profile_segment)
-    }
-    if metadata:
-        payload_metadata.update(metadata)
-    return {
-        "schema_version": SCHEMA_VERSION,
-        "status": "error" if task_status in {"failed", "canceled"} else "completed",
-        "task": {"id": f"task_food_{intent}", "status": task_status},
-        "capability": {"name": CAPABILITY_NAME, "version": "1"},
-        "content_parts": [{"type": "text", "text": text}],
-        "cards": cards or [],
-        "actions": actions or [],
-        "artifacts": artifacts or [],
-        "metadata": payload_metadata,
-    }
 
 
 # ---------------------------------------------------------------------------
@@ -1013,8 +1017,8 @@ async def call_llm(system_prompt: str, user_message: str) -> str:
         return "I'm having trouble generating a response right now."
 
 
-async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str]:
-    """Stream LLM response tokens as SSE events."""
+async def stream_llm_chunks(system_prompt: str, user_message: str) -> AsyncIterator[str]:
+    """Stream LLM response as plain text chunks (no SSE formatting)."""
     try:
         response = await litellm.acompletion(
             model=LLM_MODEL,
@@ -1028,20 +1032,15 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
         async for chunk in response:
             delta = chunk.choices[0].delta.content or ""
             if delta:
-                payload = json.dumps({"type": "delta", "text": delta})
-                yield f"data: {payload}\n\n"
+                yield delta
     except Exception as exc:
         logger.warning("LLM streaming failed: %s", exc)
-        error_text = "I'm having trouble generating a response right now."
-        payload = json.dumps({"type": "delta", "text": error_text})
-        yield f"data: {payload}\n\n"
+        yield "I'm having trouble generating a response right now."
 
 
 # ---------------------------------------------------------------------------
-# FastAPI app
+# Routes
 # ---------------------------------------------------------------------------
-
-app = FastAPI(title="Food Ordering Webhook")
 
 
 @app.get("/.well-known/agent.json")
@@ -1055,7 +1054,6 @@ async def root():
     """Service discovery endpoint."""
     return {
         "service": "webhook-food-ordering-python",
-        "description": "Food Ordering webhook -- menu browsing, order building, order tracking.",
         "description": "Food commerce webhook -- restaurant discovery, basket building, checkout approval, delivery tracking, and reorder.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
@@ -1104,6 +1102,9 @@ async def webhook(request: Request):
     if not query:
         return JSONResponse({"error": "Empty message"}, status_code=400)
 
+    thread_id = data.get("thread", {}).get("id", "")
+    session = await sessions.get(thread_id) if sessions else {}
+
     intent = detect_intent(query)
     display_name = _get_display_name(data)
     locale = _get_locale(data)
@@ -1114,6 +1115,10 @@ async def webhook(request: Request):
     actions: list[dict[str, Any]] = []
     artifacts: list[dict[str, Any]] = []
     context_block = ""
+
+    # Load persisted cart/preferences from session if available
+    session_cart: list[dict[str, Any]] = session.get("cart", [])
+    session_prefs: dict[str, Any] = session.get("preferences", {})
 
     if intent == "menu_browse":
         dietary_filter = _extract_dietary_filter(query) or _extract_profile_dietary(data)
@@ -1167,13 +1172,17 @@ async def webhook(request: Request):
         if location_hint and "location_hint" in personalization["used"]:
             context_block += f"\nDelivery area hint: {location_hint}"
         actions = [
-            {"id": "build_order", "type": "primary", "label": "Build My Order", "action": "build_order"},
-            {"id": "open_restaurant", "type": "secondary", "label": "Open Restaurant", "action": "open_restaurant"},
+            action("build_order", "Build My Order"),
+            action("open_restaurant", "Open Restaurant"),
         ]
         artifacts = [
-            {"type": "application/json", "name": "restaurant_shortlist", "data": selected_restaurants},
-            {"type": "application/json", "name": "menu_items", "data": visible_items[:10]},
+            artifact("application/json", "restaurant_shortlist", selected_restaurants),
+            artifact("application/json", "menu_items", visible_items[:10]),
         ]
+        # Persist dietary preference to session
+        if sessions and dietary_filter:
+            session_prefs = {**session_prefs, "dietary": dietary_filter}
+            await sessions.update(thread_id, preferences=session_prefs)
 
     elif intent == "order_build":
         budget_preference = _extract_profile_budget(data)
@@ -1206,22 +1215,25 @@ async def webhook(request: Request):
         if budget_note:
             context_block += f"\n  Personalization: {budget_note}"
         actions = [
-            {"id": "approve_checkout", "type": "primary", "label": "Approve Checkout", "action": "approve_checkout"},
-            {"id": "modify_order", "type": "secondary", "label": "Modify Order", "action": "modify_order"},
-            {"id": "save_favorite", "type": "secondary", "label": "Save As Favorite", "action": "save_favorite"},
+            action("approve_checkout", "Approve Checkout"),
+            action("modify_order", "Modify Order"),
+            action("save_favorite", "Save As Favorite"),
         ]
         artifacts = [
-            {
-                "type": "application/json",
-                "name": "checkout_package",
-                "data": {
+            artifact(
+                "application/json",
+                "checkout_package",
+                {
                     "items": order_items,
                     "total": total,
                     "notes": budget_note,
                     "approval_required": True,
                 },
-            }
+            )
         ]
+        # Persist cart to session
+        if sessions:
+            await sessions.update(thread_id, cart=order_items)
 
     elif intent == "order_track":
         # Cycle through statuses for demo - always start at "preparing"
@@ -1233,17 +1245,17 @@ async def webhook(request: Request):
             "Restaurant: Nexo Kitchen (Simulated)"
         )
         actions = [
-            {"id": "refresh_status", "type": "primary", "label": "Refresh Status", "action": "refresh_status"},
-            {"id": "reorder_favorites", "type": "secondary", "label": "Reorder Favorites", "action": "reorder_favorites"},
-            {"id": "contact_support", "type": "secondary", "label": "Contact Support", "action": "contact_support"},
+            action("refresh_status", "Refresh Status"),
+            action("reorder_favorites", "Reorder Favorites"),
+            action("contact_support", "Contact Support"),
         ]
         artifacts = [
-            {"type": "application/json", "name": "order_status", "data": _ORDER_STATUSES[0]},
-            {
-                "type": "application/json",
-                "name": "reorder_suggestions",
-                "data": _build_profile_order_items(profile_segment)[0][:2],
-            },
+            artifact("application/json", "order_status", _ORDER_STATUSES[0]),
+            artifact(
+                "application/json",
+                "reorder_suggestions",
+                _build_profile_order_items(profile_segment)[0][:2],
+            ),
         ]
 
     # Build LLM prompt
@@ -1263,6 +1275,12 @@ async def webhook(request: Request):
         )
     system += f"\nCurrent profile segment: {profile_segment}."
 
+    prompt_suggestions = prompt_suggestions_for_intent(intent, profile_segment)
+
+    # Record user turn in session history
+    if sessions and thread_id:
+        await sessions.add_turn(thread_id, "user", query)
+
     # SSE or JSON
     wants_stream = (
         STREAMING_ENABLED
@@ -1270,54 +1288,25 @@ async def webhook(request: Request):
     )
 
     if wants_stream:
-        prompt_suggestions = prompt_suggestions_for_intent(intent, profile_segment)
+        prefix = _localized_prefix(locale, display_name)
+        envelope = build_envelope(
+            cards=cards,
+            actions=actions,
+            artifacts=artifacts,
+            suggestions=prompt_suggestions,
+            task_id=f"task_food_{intent}",
+            capability=CAPABILITY_NAME,
+        )
+        # Add personalization and prompt suggestions to envelope metadata
+        envelope["metadata"] = {
+            "personalization": personalization,
+            "prompt_suggestions": prompt_suggestions,
+        }
 
-        async def _event_stream() -> AsyncIterator[str]:
-            yield (
-                "event: task.started\ndata: "
-                + json.dumps({"task": {"id": f"task_food_{intent}", "status": "in_progress"}})
-                + "\n\n"
-            )
-            prefix = _localized_prefix(locale, display_name)
-            if prefix:
-                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
-                yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
-
-            async for event in stream_llm(system, llm_prompt):
-                if event.startswith("data:"):
-                    try:
-                        payload = json.loads(event[len("data:"):].strip())
-                    except json.JSONDecodeError:
-                        yield event
-                        continue
-                    if payload.get("type") == "delta":
-                        yield event
-                        yield f"event: task.delta\ndata: {json.dumps({'text': payload.get('text', '')})}\n\n"
-                        continue
-                yield event
-
-            for artifact in artifacts:
-                yield f"event: task.artifact\ndata: {json.dumps(artifact)}\n\n"
-
-            done_payload = {
-                "type": "done",
-                **_build_envelope(
-                    text=prefix.strip(),
-                    intent=intent,
-                    cards=cards,
-                    actions=actions,
-                    artifacts=artifacts,
-                    metadata={
-                        "prompt_suggestions": prompt_suggestions,
-                        "personalization": personalization,
-                    },
-                    profile_segment=profile_segment,
-                ),
-            }
-            yield f"data: {json.dumps(done_payload)}\n\n"
-            yield "event: done\ndata: " + json.dumps(done_payload) + "\n\n"
-
-        return StreamingResponse(_event_stream(), media_type="text/event-stream")
+        return StreamingResponse(
+            stream_with_prefix(prefix, stream_llm_chunks(system, llm_prompt), envelope),
+            media_type="text/event-stream",
+        )
 
     # Non-streaming JSON
     llm_reply = await call_llm(system, llm_prompt)
@@ -1325,19 +1314,22 @@ async def webhook(request: Request):
     if prefix:
         llm_reply = f"{prefix}{llm_reply}"
 
-    return JSONResponse(
-        _build_envelope(
-            text=llm_reply,
-            intent=intent,
-            cards=cards,
-            actions=actions,
-            artifacts=artifacts,
-            metadata={
-                "prompt_suggestions": prompt_suggestions_for_intent(
-                    intent, profile_segment
-                ),
-                "personalization": personalization,
-            },
-            profile_segment=profile_segment,
-        )
+    # Record assistant turn in session history
+    if sessions and thread_id:
+        await sessions.add_turn(thread_id, "assistant", llm_reply)
+
+    envelope = build_envelope(
+        text=llm_reply,
+        cards=cards,
+        actions=actions,
+        artifacts=artifacts,
+        suggestions=prompt_suggestions,
+        task_id=f"task_food_{intent}",
+        capability=CAPABILITY_NAME,
     )
+    envelope["metadata"] = {
+        "personalization": personalization,
+        "prompt_suggestions": prompt_suggestions,
+    }
+
+    return JSONResponse(envelope)
