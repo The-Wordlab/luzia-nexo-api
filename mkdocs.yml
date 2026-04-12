@@ -46,6 +46,8 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
+  - Micro Apps API: micro-apps-api.md
+  - Internal Apps: internal-apps.md
   - GCP Deploy Playbook: gcp-deploy-playbook.md
   - Hosting (Optional): hosting.md
   - Demo Catalog: demos.md

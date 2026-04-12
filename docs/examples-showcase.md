@@ -60,7 +60,7 @@ User asks: **"What's happening with Arsenal?"**
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{
     "type": "text",
     "text": "Arsenal are currently 2nd in the Premier League after their 3-1 win over [1]. Manager Mikel Arteta praised the team's pressing intensity, particularly from Saka and Martinelli [2]."

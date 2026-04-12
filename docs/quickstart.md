@@ -21,7 +21,7 @@ Your webhook receives a request from Nexo and returns a response envelope.
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{ "type": "text", "text": "Your assistant response" }]
 }
 ```
@@ -59,7 +59,7 @@ def webhook(payload: Payload):
     hints = [h for h in [f"locale={locale}" if locale else None, f"dietary={dietary}" if dietary else None] if h]
     return {
       "schema_version": "2026-03",
-      "status": "completed",
+      "task": {"id": "tsk_1", "status": "completed"},
       "content_parts": [{"type": "text", "text": f"{text} ({', '.join(hints)})" if hints else text}],
     }
 ```
@@ -85,7 +85,7 @@ app.post("/webhook", (req, res) => {
   if (hints.length) text = `${text} (${hints.join(", ")})`;
   res.json({
     schema_version: "2026-03",
-    status: "completed",
+    task: { id: "tsk_1", status: "completed" },
     content_parts: [{ type: "text", text }],
   });
 });
@@ -198,7 +198,7 @@ Expected response:
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{ "type": "text", "text": "Your assistant response" }]
 }
 ```
@@ -237,7 +237,7 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{ "type": "text", "text": "Here are today's top stories." }],
   "cards": [
     {

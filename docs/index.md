@@ -34,7 +34,7 @@ Improve first-message UX by returning `metadata.prompt_suggestions` in your webh
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{ "type": "text", "text": "I can help with that." }],
   "metadata": {
     "prompt_suggestions": [
@@ -73,7 +73,9 @@ For the full catalog, see [Demo Catalog](demos.md).
 2. [Demo Catalog](demos.md) -- browse all examples and live services.
 3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
 4. [API Reference](partner-api-reference.md) -- full contract details.
-5. [Hosting](hosting.md) -- deploy to Cloud Run.
+5. [Micro Apps API](micro-apps-api.md) -- create and manage Micro Apps from CLI or MCP.
+6. [Internal Apps](internal-apps.md) -- build first-party apps inside Nexo.
+7. [Hosting](hosting.md) -- deploy to Cloud Run.
 
 ## Integration Architecture
 

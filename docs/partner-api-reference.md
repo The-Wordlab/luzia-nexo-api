@@ -43,15 +43,28 @@ Example body:
   "profile": {
     "display_name": "María",
     "locale": "es-MX",
-    "language": "es",
-    "location": "Mexico City",
-    "age": 32,
-    "gender": "female",
-    "dietary_preferences": "vegetarian",
+    "country": "MX",
+    "email": "maria@example.com",
     "preferences": {
       "cuisine": "Italian"
-    }
+    },
+    "facts": [
+      { "key": "dietary", "value": "vegetarian" }
+    ]
   },
+  "locale": "es-MX",
+  "locale_source": "profile",
+  "tools": [
+    { "name": "websearch", "enabled": true }
+  ],
+  "connectors": [
+    {
+      "type": "google_calendar",
+      "status": "active",
+      "scopes": ["read", "write"],
+      "token_endpoint": "https://oauth2.googleapis.com/token"
+    }
+  ],
   "metadata": {},
   "timestamp": "2026-03-04T12:00:00Z"
 }
@@ -59,22 +72,51 @@ Example body:
 
 Your webhook should parse the fields it needs and safely ignore unknown extra fields.
 
+### Request fields reference
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `event` | string | yes | Always `"message_received"` for user messages. |
+| `app` | object | yes | `{ "id": "...", "name": "..." }` - the app receiving the message. |
+| `thread` | object | yes | `{ "id": "...", "customer_id": "..." }` - conversation thread. |
+| `message` | object | yes | The user message. See below. |
+| `history_tail` | array | no | Up to 10 recent messages for context. |
+| `profile` | object | no | Approved profile attributes (requires user consent). |
+| `locale` | string | no | Resolved locale for this turn (e.g. `es-MX`). |
+| `locale_source` | string | no | How the locale was resolved (`profile`, `browser`, `default`). |
+| `tools` | array | no | Tool configurations enabled for this app. |
+| `attachments` | array | no | Uploaded media references (`media_id`, `type`, `url`). |
+| `connectors` | array | no | Active connector grants the user has linked. |
+| `metadata` | object | no | Arbitrary key-value pairs from the runtime. |
+| `timestamp` | string | yes | ISO 8601 timestamp. |
+
 ### Profile fields
 
-Webhook payloads may include approved profile attributes:
+Webhook payloads may include approved profile attributes inside the `profile` object:
 
 | Field | Type | Description |
 |---|---|---|
-| `locale` | string | User's locale (e.g. `es-MX`) |
-| `language` | string | User's language (e.g. `es`) |
-| `location` | string | City or country |
-| `age` | int | Age or age range |
-| `date_of_birth` | string | Date of birth |
-| `gender` | string | Gender |
-| `dietary_preferences` | string | Dietary preferences |
-| `preferences` | object | Additional profile facts |
+| `display_name` | string | User's display name. |
+| `locale` | string | User's locale (e.g. `es-MX`). |
+| `country` | string | Country code (e.g. `MX`). |
+| `email` | string | User's email address. |
+| `preferences` | object | Key-value preferences (e.g. `{"cuisine": "Italian"}`). |
+| `facts` | array | Structured facts as `[{"key": "...", "value": "..."}]`. |
 
-Availability depends on app permissions and user consent. Nexo manages consent collection and only proxies the approved scoped profile fields to your webhook. Parse defensively and ignore unknown fields -- the schema is backward-compatible as new attributes are added.
+The profile model accepts extra fields transparently (e.g. provenance metadata), so your webhook may receive additional attributes beyond those listed here. Parse defensively and ignore unknown fields - the schema is backward-compatible as new attributes are added.
+
+Availability depends on app permissions and user consent. Nexo manages consent collection and only proxies the approved scoped profile fields to your webhook.
+
+### Connectors
+
+When the user has linked external services, the `connectors` array provides grant details:
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | Connector type (e.g. `google_calendar`). |
+| `status` | string | Grant status (`active`, `expired`, `revoked`). |
+| `scopes` | array | Granted scopes. |
+| `token_endpoint` | string | OAuth token endpoint URL (when available). |
 
 ### Signature verification
 
@@ -92,7 +134,7 @@ Return HTTP `200`:
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": { "id": "tsk_1", "status": "completed" },
   "content_parts": [{ "type": "text", "text": "Sure - I can help with that." }],
   "cards": [],
   "actions": [],
@@ -102,11 +144,107 @@ Return HTTP `200`:
 }
 ```
 
-`content_parts` must include at least one item. `cards` and `actions` are optional arrays for structured UI elements (buttons, rich cards). `metadata.prompt_suggestions` is optional and can provide contextual next-prompt chips (up to 5 strings).
+**Required fields:**
+
+- `schema_version` - contract version string (currently `"2026-03"`).
+- `task` - A2A-aligned lifecycle metadata with `id` and `status`. See [Task lifecycle](#task-lifecycle) below.
+- At least one non-empty array among `content_parts`, `cards`, `actions`, or `artifacts`.
+
+**Optional fields:**
+
+- `cards` - structured UI elements rendered inline in the chat thread.
+- `actions` - buttons rendered below the card block.
+- `artifacts` - transport-neutral output payloads (files, structured data).
+- `capability` - metadata about the producing agent (`name`, `version`).
+- `error` - structured error payload (required when `task.status` is `"failed"`).
+- `metadata` - arbitrary key-value pairs. `metadata.prompt_suggestions` provides contextual next-prompt chips (up to 5 strings).
+- `locale` - BCP-47 locale of the response content.
+- `extensions` - partner-specific data passed through transparently.
 
 For demo discovery and onboarding, hosted examples should also publish starter
 prompt chips from `GET /.well-known/agent.json` under
 `capabilities.items[].metadata.prompt_suggestions`.
+
+#### Task lifecycle
+
+The `task` object carries A2A-aligned lifecycle metadata:
+
+```json
+{
+  "task": {
+    "id": "tsk_1",
+    "status": "completed",
+    "can_retry": false,
+    "can_cancel": false,
+    "message": "Booking confirmed"
+  }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | Stable task identifier. |
+| `status` | string | Lifecycle state (see values below). |
+| `can_retry` | boolean | Whether the client can retry on failure. |
+| `can_cancel` | boolean | Whether the client can cancel the task. |
+| `message` | string | Human-readable status message. |
+
+**Status values:**
+
+| Value | Meaning |
+|---|---|
+| `queued` | Task accepted, not yet started. |
+| `in_progress` | Task is actively processing. |
+| `requires_input` | Task is waiting for additional user input. |
+| `completed` | Task finished successfully. |
+| `failed` | Task failed. Include an `error` object. |
+| `canceled` | Task was canceled. |
+
+!!! warning "Legacy `status` field"
+    The top-level `status` field is no longer accepted without `task.status`. Always use the canonical `task` object. Responses with only a top-level `status` will be rejected by the validator.
+
+#### Capability metadata
+
+Declare what produced the response:
+
+```json
+{
+  "capability": {
+    "name": "news.search",
+    "version": "2.1"
+  }
+}
+```
+
+#### Artifacts
+
+Return structured output payloads alongside text:
+
+```json
+{
+  "artifacts": [
+    {
+      "type": "application/json",
+      "name": "booking_details",
+      "data": { "booking_id": "BKG-20483", "status": "confirmed" }
+    },
+    {
+      "type": "image/png",
+      "name": "receipt",
+      "url": "https://example.com/receipts/BKG-20483.png",
+      "mime_type": "image/png"
+    }
+  ]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `type` | string | Content type or MIME type. |
+| `name` | string | Human-readable name for the artifact. |
+| `mime_type` | string | MIME type when `type` alone is ambiguous. |
+| `data` | any | Inline structured data. |
+| `url` | string | URL to fetch the artifact content. |
 
 #### SSE streaming
 
@@ -117,11 +255,11 @@ data: {"type":"delta","text":"Sure - "}
 
 data: {"type":"delta","text":"I can help with that."}
 
-data: {"type":"done","schema_version":"2026-03","status":"completed","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
+data: {"type":"done","schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"metadata":{"prompt_suggestions":["Show me options","Track status"]}}
 ```
 
-The `done` event is required and must include `schema_version` and `status`.
-It may also include `cards` and `actions` arrays (same shape as the JSON response).
+The `done` event is required and must include `schema_version` and `task.status`.
+It may also include `cards`, `actions`, `artifacts`, and `capability` (same shape as the JSON response).
 
 #### Streaming behavior details
 
@@ -136,7 +274,7 @@ It may also include `cards` and `actions` arrays (same shape as the JSON respons
 
 #### Error event format
 
-If your webhook needs to signal an error during streaming:
+If your webhook needs to signal an error during streaming, emit a `done` event with `task.status: "failed"` and an `error` object:
 
 ```text
 data: {"type":"done","schema_version":"2026-03","task":{"id":"tsk_err","status":"failed"},"error":{"code":"upstream_timeout","message":"Could not reach booking system","retryable":true}}
@@ -348,7 +486,7 @@ Nexo treats a webhook call as failed when any of the following occur:
 
 - Your endpoint returns a non-2xx HTTP status.
 - The response body is not valid JSON (for non-SSE responses).
-- Required fields are missing (`schema_version`, `task.status`, and at least one of `content_parts`, `cards`, `actions`, or `artifacts`).
+- Required fields are missing (`schema_version`, `task` object with `status`, and at least one non-empty array among `content_parts`, `cards`, `actions`, or `artifacts`).
 - The response takes longer than **8 seconds** to begin.
 
 #### Retry policy
@@ -390,6 +528,41 @@ When your webhook cannot fulfil a request, return a structured `error` object al
 | `error.details` | object | Optional. Additional structured context for debugging. |
 
 `task.status` must be `"failed"` when returning an `error` object. The `content_parts` message is what the user sees.
+
+### Full response schema reference
+
+The complete response envelope with all optional fields:
+
+```json
+{
+  "schema_version": "2026-03",
+  "task": {
+    "id": "tsk_1",
+    "status": "completed",
+    "can_retry": false,
+    "can_cancel": false,
+    "message": "Done"
+  },
+  "content_parts": [
+    { "type": "text", "text": "Here is your result." }
+  ],
+  "cards": [],
+  "actions": [],
+  "artifacts": [
+    { "type": "application/json", "name": "result", "data": {} }
+  ],
+  "capability": {
+    "name": "restaurant.booking",
+    "version": "1.0"
+  },
+  "error": null,
+  "metadata": {
+    "prompt_suggestions": ["Show me options"]
+  },
+  "locale": "es-MX",
+  "extensions": {}
+}
+```
 
 ## Partner API (optional proactive path)
 
