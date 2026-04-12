@@ -61,8 +61,6 @@ Clone a starter example, customize it for your domain, and deploy:
 | Food-commerce: discovery, checkout, tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | Travel: flights, budget, handoff, replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
 | Stateful detective game with streamed scene reveals | [Sky Diamond](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/detective-game/python) | <https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/> |
-| Fitness coaching plans and check-ins | [Fitness Coach](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python) | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
-| Language tutoring with quizzes | [Language Tutor](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python) | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
 | News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
 | Sports coverage with live match data | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
 | OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
@@ -134,8 +132,6 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
 | luzia-sky-diamond | <https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/> |
-| nexo-fitness-coach | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
-| nexo-language-tutor | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |

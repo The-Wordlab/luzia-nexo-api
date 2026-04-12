@@ -27,16 +27,12 @@ These examples demonstrate end-to-end orchestration flows -- multi-step experien
 | Food Ordering | Restaurant discovery, basket building, checkout approval, and delivery tracking | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | Travel Planning | Itinerary generation, flight comparison, booking handoff, budget framing, and disruption replanning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
 | Sky Diamond | Stateful detective gameplay in a single thread with cards, prompt suggestions, JSON, and SSE | <https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/> |
-| Fitness Coach | Workout plans, progress checks, nutrition guidance | <https://nexo-fitness-coach-v3me5awkta-ew.a.run.app/> |
-| Language Tutor | Phrase coaching, quiz drills, lesson plans | <https://nexo-language-tutor-v3me5awkta-ew.a.run.app/> |
 
 Source:
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python>
 - <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/detective-game/python>
-- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/fitness-coach/python>
-- <https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/language-tutor/python>
 
 ---
 
