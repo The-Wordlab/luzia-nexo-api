@@ -163,20 +163,51 @@ class NexoAction(BaseModel):
         return v
 
 
+class NexoTask(BaseModel):
+    """A2A-aligned task lifecycle metadata (canonical P-1e format).
+
+    Preferred over the top-level ``status`` field. When ``task`` is present,
+    ``status`` is read from ``task.status``.
+    """
+
+    id: str = Field(description="Opaque task identifier")
+    status: str = Field(description="'completed' or 'error'")
+
+    model_config = {"extra": "allow"}
+
+    @field_validator("status")
+    @classmethod
+    def status_must_be_valid(cls, v: str) -> str:
+        if v not in VALID_STATUSES:
+            raise ValueError(
+                f"task.status must be one of {VALID_STATUSES}, got {v!r}"
+            )
+        return v
+
+
 class NexoWebhookResponse(BaseModel):
     """Canonical response that partner webhooks must return.
 
     Required fields:
-        schema_version - must be '2026-03'
-        status         - must be 'completed' or 'error'
-        content_parts  - non-empty list; at least one text part expected
+        schema_version      - must be '2026-03'
+        status OR task      - canonical format uses ``task: {id, status}``;
+                              top-level ``status`` is accepted for backward
+                              compatibility with pre-P1e examples
+        content_parts       - non-empty list; at least one text part expected
 
     Optional fields:
         cards, actions, metadata - may be omitted or empty lists
     """
 
     schema_version: str = Field(description="Schema version, must be '2026-03'")
-    status: str = Field(description="'completed' or 'error'")
+    status: str | None = Field(
+        default=None,
+        description="'completed' or 'error' (legacy; prefer task.status)",
+    )
+    task: NexoTask | None = Field(
+        default=None,
+        description="Canonical P-1e task object containing id and status",
+    )
     content_parts: list[NexoContentPart] = Field(
         description="Non-empty list of content parts"
     )
@@ -197,12 +228,20 @@ class NexoWebhookResponse(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def status_must_be_valid(cls, v: str) -> str:
-        if v not in VALID_STATUSES:
+    def status_must_be_valid(cls, v: str | None) -> str | None:
+        if v is not None and v not in VALID_STATUSES:
             raise ValueError(
                 f"status must be one of {VALID_STATUSES}, got {v!r}"
             )
         return v
+
+    @model_validator(mode="after")
+    def validate_status_present(self) -> "NexoWebhookResponse":
+        if self.task is None and self.status is None:
+            raise ValueError(
+                "Response must include either 'task' (canonical) or 'status' (legacy)"
+            )
+        return self
 
     @model_validator(mode="after")
     def content_parts_must_not_be_empty(self) -> "NexoWebhookResponse":

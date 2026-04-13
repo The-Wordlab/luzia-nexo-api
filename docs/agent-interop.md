@@ -10,7 +10,7 @@ Both integrations are **feature-gated** and disabled by default. Enable them on 
 
 **When to use:** You are building an LLM agent or orchestrator (e.g., LangChain, LangGraph, Claude) and want Nexo's capabilities available as callable tools alongside your own tools.
 
-Nexo implements the [Model Context Protocol](https://modelcontextprotocol.io/) Streamable HTTP transport at `/mcp`. Every active webhook-backed app registered in Nexo automatically appears as a discoverable MCP tool. The tool name is the app's UUID; its description comes from the app's name, description, and declared capabilities.
+Nexo implements the [Model Context Protocol](https://modelcontextprotocol.io/) Streamable HTTP transport at `/mcp`. Every active Partner Integration registered in Nexo automatically appears as a discoverable MCP tool, and Personalized Apps management tools are exposed alongside it. The tool name is the app's UUID; its description comes from the app's name, description, and declared capabilities.
 
 ### Endpoint
 
@@ -22,13 +22,13 @@ This single endpoint handles all MCP protocol traffic — tool listing and tool 
 
 ### Authentication
 
-Pass your API key in the `X-Api-Key` header on every request:
+Pass your **developer key** in the `X-Api-Key` header on every request:
 
 ```
-X-Api-Key: <mcp_api_key>
+X-Api-Key: <developer_key>
 ```
 
-If `MCP_SERVER_API_KEY` is not set on the server, the endpoint is open (no key required). In production it will always be set.
+`MCP_SERVER_API_KEY` is an optional operator-level perimeter gate for controlled deployments. It is not the normal customer credential model. If your deployment operator has enabled it, follow that environment's specific instructions.
 
 ### Tool schema
 
@@ -69,7 +69,7 @@ client = MultiServerMCPClient(
         "nexo": {
             "transport": "streamable_http",
             "url": "https://nexo.luzia.com/mcp",
-            "headers": {"X-Api-Key": "<mcp_api_key>"},
+            "headers": {"X-Api-Key": "<developer_key>"},
         }
     }
 )
@@ -95,7 +95,7 @@ agent = create_react_agent(
 ```bash
 # Discover available tools
 curl -X POST "https://nexo.luzia.com/mcp" \
-  -H "X-Api-Key: YOUR_MCP_API_KEY" \
+  -H "X-Api-Key: YOUR_DEVELOPER_KEY" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
@@ -105,7 +105,7 @@ curl -X POST "https://nexo.luzia.com/mcp" \
 ```bash
 # Call a tool by its app UUID
 curl -X POST "https://nexo.luzia.com/mcp" \
-  -H "X-Api-Key: YOUR_MCP_API_KEY" \
+  -H "X-Api-Key: YOUR_DEVELOPER_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -189,6 +189,7 @@ A2A tasks move through the following states:
 
 | Status | Meaning |
 |---|---|
+| `submitted` | Task has been received and queued |
 | `working` | Task has been accepted and is being processed |
 | `completed` | Task finished successfully |
 | `failed` | Task encountered an error |
@@ -351,7 +352,7 @@ Both protocols are disabled by default. Set these environment variables to enabl
 | Variable | Default | Description |
 |---|---|---|
 | `MCP_SERVER_ENABLED` | `false` | Set to `true` to enable the MCP server at `/mcp` |
-| `MCP_SERVER_API_KEY` | `""` | API key required in `X-Api-Key` header. Leave empty for open access (not recommended in production) |
+| `MCP_SERVER_API_KEY` | `""` | Optional operator-level perimeter gate for controlled deployments. Not the standard customer credential. |
 | `A2A_SERVER_ENABLED` | `false` | Set to `true` to enable A2A endpoints at `/a2a/*` |
 | `A2A_SERVER_API_KEY` | `""` | API key required in `X-Api-Key` header for A2A message/task endpoints |
 

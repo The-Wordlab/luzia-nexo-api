@@ -29,9 +29,14 @@ class ContentPartOut(BaseModel):
     text: str
 
 
+class TaskOut(BaseModel):
+    id: str
+    status: str
+
+
 class WebhookResponseOut(BaseModel):
     schema_version: str
-    status: str
+    task: TaskOut
     content_parts: list[ContentPartOut]
     metadata: dict | None = None
 
@@ -131,7 +136,7 @@ async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookR
     content = payload.message.content if payload.message else ""
     return WebhookResponseOut(
         schema_version="2026-03",
-        status="completed",
+        task=TaskOut(id="task-1", status="completed"),
         content_parts=[
             ContentPartOut(
                 type="text",

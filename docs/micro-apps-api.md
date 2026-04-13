@@ -1,10 +1,14 @@
-# Micro Apps API
+# Personalized Apps API
 
-Micro Apps is a first-party structured app runtime inside Nexo. This guide covers the REST API and MCP access for developers who want to create, manage, and query Micro Apps from the command line or an AI coding assistant.
+Internally, Nexo still uses the technical term **micro apps**. In customer-facing product language, these are **Personalized Apps**.
+
+For the product model and runtime architecture, see the [Micro Apps Guide](https://github.com/The-Wordlab/luzia-nexo/blob/main/docs/guides/micro-apps.md).
+
+Personalized Apps are a first-party structured app runtime inside Nexo. This guide covers the REST API and MCP access for developers who want to create, manage, and query them from the command line or an AI coding assistant.
 
 ## Authentication
 
-All Micro Apps endpoints require a user-scoped JWT. Obtain one by posting your email and password to the token endpoint.
+REST endpoints currently require a user-scoped JWT. Obtain one by posting your email and password to the token endpoint.
 
 ### POST /api/auth/token
 
@@ -38,7 +42,7 @@ export TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
 ### GET /api/micro-apps
 
-Returns all Micro Apps owned by the authenticated user.
+Returns all Personalized Apps owned by the authenticated user.
 
 ```bash
 curl "https://nexo.luzia.com/api/micro-apps" \
@@ -207,7 +211,7 @@ curl "https://nexo.luzia.com/api/micro-apps/$APP_ID/surface?surface=chat_card" \
 
 ## MCP access
 
-Nexo's MCP server at `/mcp` exposes Micro Apps as discoverable tools when `MCP_SERVER_ENABLED=true`. Any MCP-compatible client (Claude Code, LangChain, etc.) can discover and call these tools.
+Nexo's MCP server at `/mcp` exposes Personalized Apps as discoverable tools when `MCP_SERVER_ENABLED=true`. Any MCP-compatible client (Claude Code, LangChain, etc.) can discover and call these tools.
 
 ### Connect
 
@@ -216,12 +220,14 @@ Nexo's MCP server at `/mcp` exposes Micro Apps as discoverable tools when `MCP_S
 claude mcp add nexo-server \
   --transport streamable-http \
   --url "https://nexo.luzia.com/mcp" \
-  --header "X-Api-Key: YOUR_MCP_API_KEY"
+  --header "X-Api-Key: YOUR_DEVELOPER_KEY"
 ```
+
+Use your **developer key** for MCP. App runtime secrets are for Partner Integration runtime calls, not for MCP.
 
 ### Available tools
 
-When connected, `list_tools` returns tools for each active webhook app plus Micro Apps management tools. Tool names are app UUIDs; descriptions include the app's name and capabilities.
+When connected, `list_tools` returns tools for each active Partner Integration plus Personalized Apps management tools. Tool names are app UUIDs; descriptions include the app's name and capabilities.
 
 ### Tool invocation
 
@@ -238,6 +244,8 @@ When connected, `list_tools` returns tools for each active webhook app plus Micr
 For full MCP and A2A protocol details, see [Agent Interop](agent-interop.md).
 
 ## Quick reference
+
+The quick reference below covers the AI-assisted workflow. For the full CRUD API (tables, fields, records, views, forms, settings), see the OpenAPI specification at `/docs` on your Nexo instance.
 
 | Operation | Method | Endpoint |
 |---|---|---|

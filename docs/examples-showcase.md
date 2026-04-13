@@ -1,6 +1,8 @@
 # What You Can Build
 
-Production-ready partner integrations built on Nexo. Each example is a complete webhook server you can clone, run locally, and deploy to Cloud Run.
+Production-ready Partner Integrations built on Nexo. Each example is a complete webhook server you can clone, run locally, and deploy to Cloud Run.
+
+This page is intentionally focused on the external webhook lane. For headless first-party structured apps, use the [Personalized Apps API](micro-apps-api.md).
 
 The RAG examples share a common pattern:
 
@@ -237,7 +239,7 @@ curl -X POST "https://nexo-sports-rag-v3me5awkta-ew.a.run.app/" \
 data: {"type":"delta","text":"Rice opened"}
 data: {"type":"delta","text":" the scoring in the 34th"}
 data: {"type":"delta","text":" minute..."}
-data: {"type":"done","schema_version":"2026-03","status":"completed","cards":[...],"actions":[...]}
+data: {"type":"done","schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"cards":[...],"actions":[...]}
 ```
 
 ### Live event detection
@@ -494,4 +496,4 @@ These examples demonstrate the Nexo pattern. To build your own integration:
 3. **Add push events** if your domain has time-sensitive data — call `POST /api/apps/{id}/events` whenever something worth notifying happens
 4. **Configure in the partner portal** — set your webhook URL and secret, test, submit for review
 
-Full API contract: [API Reference](partner-api-reference.md)
+Full API contract: [Partner API Reference](partner-api-reference.md)

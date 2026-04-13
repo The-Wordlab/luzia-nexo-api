@@ -26,17 +26,16 @@ def test_build_reply() -> None:
 def test_webhook_echo() -> None:
     resp = client.post("/webhook", json={"message": {"content": "hi"}})
     assert resp.status_code == 200
-    assert resp.json() == {
-        "schema_version": "2026-03",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": "Echo: hi"}],
-        "metadata": {
-            "prompt_suggestions": [
-                "Help me plan dinner",
-                "Track my order status",
-                "Show options under $20",
-            ]
-        },
+    data = resp.json()
+    assert data["schema_version"] == "2026-03"
+    assert data["task"]["status"] == "completed"
+    assert data["content_parts"] == [{"type": "text", "text": "Echo: hi"}]
+    assert data["metadata"] == {
+        "prompt_suggestions": [
+            "Help me plan dinner",
+            "Track my order status",
+            "Show options under $20",
+        ]
     }
 
 
@@ -54,22 +53,21 @@ def test_webhook_profile_context() -> None:
         },
     )
     assert resp.status_code == 200
-    assert resp.json() == {
-        "schema_version": "2026-03",
-        "status": "completed",
-        "content_parts": [
-            {
-                "type": "text",
-                "text": "Mia, you said: recommend dinner (locale=en, dietary=vegan)",
-            }
-        ],
-        "metadata": {
-            "prompt_suggestions": [
-                "Help me plan dinner",
-                "Track my order status",
-                "Show options under $20",
-            ]
-        },
+    data = resp.json()
+    assert data["schema_version"] == "2026-03"
+    assert data["task"]["status"] == "completed"
+    assert data["content_parts"] == [
+        {
+            "type": "text",
+            "text": "Mia, you said: recommend dinner (locale=en, dietary=vegan)",
+        }
+    ]
+    assert data["metadata"] == {
+        "prompt_suggestions": [
+            "Help me plan dinner",
+            "Track my order status",
+            "Show options under $20",
+        ]
     }
 
 
@@ -86,17 +84,16 @@ def test_webhook_with_valid_signature(monkeypatch) -> None:
     sig = _sign("test-secret", ts, body)
     resp = client.post("/webhook", data=body, headers={"X-Timestamp": ts, "X-Signature": sig})
     assert resp.status_code == 200
-    assert resp.json() == {
-        "schema_version": "2026-03",
-        "status": "completed",
-        "content_parts": [{"type": "text", "text": "Echo: hi"}],
-        "metadata": {
-            "prompt_suggestions": [
-                "Help me plan dinner",
-                "Track my order status",
-                "Show options under $20",
-            ]
-        },
+    data = resp.json()
+    assert data["schema_version"] == "2026-03"
+    assert data["task"]["status"] == "completed"
+    assert data["content_parts"] == [{"type": "text", "text": "Echo: hi"}]
+    assert data["metadata"] == {
+        "prompt_suggestions": [
+            "Help me plan dinner",
+            "Track my order status",
+            "Show options under $20",
+        ]
     }
 
 

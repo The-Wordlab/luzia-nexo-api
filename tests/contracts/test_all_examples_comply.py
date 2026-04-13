@@ -288,8 +288,14 @@ async def test_example_response_has_required_fields(example, monkeypatch, tmp_pa
         assert "schema_version" in data, (
             f"Example '{example['id']}': missing required field 'schema_version'"
         )
-        assert "status" in data, (
-            f"Example '{example['id']}': missing required field 'status'"
+        # Status may be top-level (legacy) or nested under 'task' (canonical P-1e format)
+        has_top_level_status = "status" in data
+        has_task_status = (
+            isinstance(data.get("task"), dict) and "status" in data["task"]
+        )
+        assert has_top_level_status or has_task_status, (
+            f"Example '{example['id']}': response must include either 'status' "
+            f"(legacy) or 'task.status' (canonical)"
         )
         assert "content_parts" in data, (
             f"Example '{example['id']}': missing required field 'content_parts'"
@@ -304,9 +310,12 @@ async def test_example_response_has_required_fields(example, monkeypatch, tmp_pa
             f"Example '{example['id']}': schema_version must be '2026-03', "
             f"got {data['schema_version']!r}"
         )
-        assert data["status"] in {"completed", "error"}, (
+        effective_status = (
+            data.get("task", {}).get("status") if has_task_status else data.get("status")
+        )
+        assert effective_status in {"completed", "error"}, (
             f"Example '{example['id']}': status must be 'completed' or 'error', "
-            f"got {data['status']!r}"
+            f"got {effective_status!r}"
         )
     finally:
         _cleanup_example(example)
