@@ -63,4 +63,4 @@ CLI tooling for pushing events through the Partner API:
 2. [Demo Catalog](demos.md) -- pick the capability pattern you want.
 3. [Examples Deep Dive](examples-showcase.md) -- inspect architecture and payloads.
 4. [Hosting](hosting.md) -- deploy to Cloud Run.
-5. [API Reference](partner-api-reference.md) -- full contract details.
+5. [Partner API Reference](partner-api-reference.md) -- full contract details.

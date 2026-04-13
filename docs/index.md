@@ -1,6 +1,6 @@
 # Luzia Nexo API
 
-Build conversational integrations and structured apps for Luzia users.
+Build apps for Luzia users.
 
 The Nexo Agent Runtime handles message routing, delivery, signature verification, and consent management -- so you can focus on your domain logic.
 
@@ -20,21 +20,21 @@ Ship your first integration in minutes:
 
 ## 5-minute path
 
-**Webhook partner lane:**
+**Partner Integration lane (primary external path):**
 
 1. Implement one `POST /webhook` endpoint in your backend.
 2. Return a valid JSON (or SSE) response envelope.
 3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
 4. Send a test message from the dashboard.
 
-**Micro App from CLI lane:**
+**Personalized Apps lane (headless and developer-driven):**
 
 1. Authenticate: `curl -X POST .../api/auth/token`
 2. Plan a template: `curl -X POST .../api/micro-apps/template-plan`
 3. Provision: `curl -X POST .../api/micro-apps/provision-from-template`
 4. Or connect via MCP: `claude mcp add --transport http nexo-mcp http://localhost:8001/mcp`
 
-Start here: [Quickstart](quickstart.md) | [Micro Apps API](micro-apps-api.md) | [MCP Server](mcp.md)
+Start here: [Quickstart](quickstart.md) | [Personalized Apps API](micro-apps-api.md) | [MCP Server](mcp.md)
 
 ### Prompt chips
 
@@ -57,7 +57,7 @@ Improve first-message UX by returning `metadata.prompt_suggestions` in your webh
 
 ### Required vs optional
 
-- **Required** for live integration: `webhook_url` + `WEBHOOK_SECRET`
+- **Required** for live Partner Integrations: `webhook_url` + `WEBHOOK_SECRET`
 - **Optional** for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
 
 ## What You Can Build
@@ -77,13 +77,13 @@ For the full catalog, see [Demo Catalog](demos.md).
 
 ## Start Here
 
-1. [Quickstart](quickstart.md) -- get a webhook live in minutes.
+1. [Quickstart](quickstart.md) -- get a Partner Integration live in minutes.
 2. [Demo Catalog](demos.md) -- browse all examples and live services.
 3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
-4. [API Reference](partner-api-reference.md) -- full contract details.
-5. [Micro Apps API](micro-apps-api.md) -- create and manage Micro Apps from CLI or MCP.
+4. [Partner API Reference](partner-api-reference.md) -- full webhook/runtime contract details.
+5. [Personalized Apps API](micro-apps-api.md) -- create and manage personalized apps from CLI or MCP.
 6. [MCP Server](mcp.md) -- connect AI coding assistants to Nexo tools.
-7. [Internal Apps](internal-apps.md) -- build first-party apps inside Nexo.
+7. [Internal Apps](internal-apps.md) -- first-party Nexo-only implementation pattern.
 8. [Hosting](hosting.md) -- deploy to Cloud Run.
 
 ## Integration Architecture
@@ -122,15 +122,15 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 
 | Capability | Description | Example |
 |---|---|---|
-| Webhook contract | Deterministic request and response schema | `webhook/minimal` |
+| Webhook contract | Deterministic request and response schema for Partner Integrations | `webhook/minimal` |
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
 | Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
 | Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
 | Vertical orchestration | End-to-end partner flows: routines, food ordering, travel planning | `routines`, `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
 | Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
-| Micro Apps API | Create and manage structured apps via REST | [micro-apps-api](micro-apps-api.md) |
-| MCP server | Expose webhook and Micro Apps tools to AI coding assistants | [mcp](mcp.md) |
+| Personalized Apps API | Create and manage structured apps via REST | [micro-apps-api](micro-apps-api.md) |
+| MCP server | Expose Partner Integration and Personalized Apps tools to AI coding assistants | [mcp](mcp.md) |
 
 ## Live Examples
 
@@ -157,3 +157,9 @@ For source links and what each demo does, see [Demo Catalog](demos.md).
 - **Deployable by default:** All server examples are production-ready.
 - **Privacy is structural:** Consent and profile boundaries are part of the runtime contract.
 - **Safe configuration:** No secrets hardcoded in code or docs.
+
+## Product language
+
+- In customer-facing product surfaces, Nexo uses **Personalized Apps**.
+- Internally and in code, you may still see the technical term **micro apps**.
+- **Partner Integrations** remain the external webhook-backed app family.

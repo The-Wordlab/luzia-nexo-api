@@ -1,10 +1,19 @@
-# Luzia Nexo Agent Runtime API
+# Luzia Nexo API
 
-Build conversational partner integrations for Luzia users. The Nexo Agent Runtime provides signed webhook delivery, consent-managed profile context, rich UI payloads, and proactive push events.
+Build apps for Luzia users.
+
+This repository documents two developer lanes:
+
+- **Partner Integrations** - external webhook-backed apps that run on your infrastructure.
+- **Personalized Apps** - headless, user-scoped app creation and management through the Nexo API, MCP, and developer tooling.
+
+The Nexo runtime handles routing, consent-managed profile context, rich UI payloads, and proactive delivery.
 
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
+
+**Partner Integrations**
 
 1. Implement a `POST /webhook` endpoint
 2. Return a valid JSON or SSE response envelope
@@ -19,7 +28,11 @@ Build conversational partner integrations for Luzia users. The Nexo Agent Runtim
 }
 ```
 
-See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quickstart/) for full details.
+See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quickstart/) for the webhook lane.
+
+**Personalized Apps**
+
+Use the Nexo dashboard plus the headless API/MCP path to create and evolve first-party structured apps for a user. Start with the [Personalized Apps API](https://the-wordlab.github.io/luzia-nexo-api/micro-apps-api/) guide.
 
 ## Integration architecture
 
@@ -44,11 +57,13 @@ sequenceDiagram
     Luzia-->>User: Final reply
 ```
 
+This webhook flow is the **primary external integration path**. Personalized Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and tools instead of partner webhooks.
+
 ## What's in this repository
 
 | Path | Description |
 |---|---|
-| [`examples/webhook/`](examples/webhook/) | Webhook integration examples (Python + TypeScript) |
+| [`examples/webhook/`](examples/webhook/) | Partner Integration examples (Python + TypeScript) |
 | [`examples/hosted/`](examples/hosted/) | Reference API services for Cloud Run |
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |

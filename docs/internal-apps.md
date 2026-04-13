@@ -1,5 +1,7 @@
 # Internal Apps
 
+This page describes a **Nexo implementation pattern**, not the standard customer integration path.
+
 Internal apps are first-party apps that live inside Nexo and call Nexo's own APIs instead of dispatching to an external webhook URL. They use the same request/response envelope as partner webhook apps - same payload, same card rendering, same SSE streaming - but the handler runs in-process as a Python function.
 
 ## When to use internal apps
@@ -12,7 +14,8 @@ Use the internal app pattern when:
 
 Examples: the Micro App Builder (creates and manages Micro Apps through conversation), an analytics assistant, an admin tool.
 
-For partner integrations that run on external infrastructure, use the [webhook contract](partner-api-reference.md) instead.
+For external customer integrations, use the [Partner API Reference](partner-api-reference.md) instead.
+For headless first-party structured apps, use the [Personalized Apps API](micro-apps-api.md) instead.
 
 ## Architecture
 

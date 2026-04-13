@@ -1,6 +1,8 @@
 # Quickstart
 
-Ship your first Nexo integration in minutes, then expand to richer experiences.
+Ship your first Nexo Partner Integration in minutes, then expand to richer experiences.
+
+This page covers the **webhook-backed Partner Integration lane**. If you want to create first-party structured apps for a user through the Nexo API or MCP, use the [Personalized Apps API](micro-apps-api.md) guide instead.
 
 ## What you need
 
@@ -96,7 +98,7 @@ app.post("/webhook", (req, res) => {
 This step connects Nexo to your webhook in production. For local-only testing, skip to step 4.
 
 1. Go to [nexo.luzia.com](https://nexo.luzia.com)
-2. Create or open your app
+2. Create or open your Partner Integration
 3. Set your webhook URL and `WEBHOOK_SECRET`
 4. Send a test message and verify logs on your backend
 
@@ -205,18 +207,18 @@ Expected response:
 
 ## 5) Submit your app for review
 
-Once your webhook is working and configured in the partner portal, submit your app for review:
+Once your webhook is working and configured in the partner portal, submit your Partner Integration for review:
 
 1. Go to your app in [nexo.luzia.com](https://nexo.luzia.com)
 2. Click **Submit for review**
 3. The Nexo team will approve or provide feedback
 4. Once approved, your app appears in the public catalog
 
-See [API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for the full workflow.
+See [Partner API Reference - App lifecycle](partner-api-reference.md#app-lifecycle) for the full workflow.
 
 ## Next steps
 
-- Full contract and examples: [API Reference](partner-api-reference.md)
+- Full contract and examples: [Partner API Reference](partner-api-reference.md)
 - TypeScript SDK: [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript)
 - Examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - OpenClaw Bridge example: [examples/webhook/openclaw-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge)
@@ -305,4 +307,4 @@ curl -X POST "https://nexo.luzia.com/api/apps/YOUR_APP_ID/events" \
   }'
 ```
 
-Full reference: [API Reference - Push Events API](partner-api-reference.md#push-events-api-partner-initiated)
+Full reference: [Partner API Reference - Push Events API](partner-api-reference.md#push-events-api-partner-initiated)

@@ -1,4 +1,8 @@
-# API Reference
+# Partner API Reference
+
+This page documents the **Partner Integration** contract: external webhook-backed apps that run on your infrastructure.
+
+If you are building first-party structured apps through Nexo itself, use the [Personalized Apps API](micro-apps-api.md) guide instead.
 
 ## Webhooks (primary integration path)
 
