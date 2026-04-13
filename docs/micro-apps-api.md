@@ -211,7 +211,7 @@ curl "https://nexo.luzia.com/api/micro-apps/$APP_ID/surface?surface=chat_card" \
 
 ## MCP access
 
-Nexo's MCP server at `/mcp` exposes Personalized Apps as discoverable tools when `MCP_SERVER_ENABLED=true`. Any MCP-compatible client (Claude Code, LangChain, etc.) can discover and call these tools.
+Nexo's MCP server at `/mcp` exposes Personalized Apps as discoverable tools. Any MCP-compatible client (Claude Code, LangChain, etc.) can discover and call these tools. Auth via your developer key in the `X-Api-Key` header.
 
 ### Connect
 

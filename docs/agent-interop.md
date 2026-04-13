@@ -28,7 +28,7 @@ Pass your **developer key** in the `X-Api-Key` header on every request:
 X-Api-Key: <developer_key>
 ```
 
-`MCP_SERVER_API_KEY` is an optional operator-level perimeter gate for controlled deployments. It is not the normal customer credential model. If your deployment operator has enabled it, follow that environment's specific instructions.
+Your developer key is the only credential needed. Get it from the Nexo dashboard under Profile.
 
 ### Tool schema
 
@@ -347,22 +347,20 @@ curl -X POST "https://nexo.luzia.com/a2a/message/send" \
 
 ## Configuration
 
-Both protocols are disabled by default. Set these environment variables to enable them:
+MCP is always enabled. A2A is opt-in:
 
 | Variable | Default | Description |
 |---|---|---|
-| `MCP_SERVER_ENABLED` | `false` | Set to `true` to enable the MCP server at `/mcp` |
-| `MCP_SERVER_API_KEY` | `""` | Optional operator-level perimeter gate for controlled deployments. Not the standard customer credential. |
 | `A2A_SERVER_ENABLED` | `false` | Set to `true` to enable A2A endpoints at `/a2a/*` |
 | `A2A_SERVER_API_KEY` | `""` | API key required in `X-Api-Key` header for A2A message/task endpoints |
 
 The agent card at `/.well-known/agent.json` is always public once `A2A_SERVER_ENABLED=true`, regardless of the API key setting. Discovery must be unauthenticated per the A2A specification.
 
-### Example: enabling on a Cloud Run deployment
+### Example: enabling A2A on a Cloud Run deployment
 
 ```bash
 gcloud run services update nexo-backend \
-  --set-env-vars MCP_SERVER_ENABLED=true,MCP_SERVER_API_KEY=your-mcp-key,A2A_SERVER_ENABLED=true,A2A_SERVER_API_KEY=your-a2a-key
+  --set-env-vars A2A_SERVER_ENABLED=true,A2A_SERVER_API_KEY=your-a2a-key
 ```
 
 ---

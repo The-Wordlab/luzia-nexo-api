@@ -21,15 +21,9 @@ Claude Code will prompt for the API key on first use, or you can set it in your 
 
 ## Authentication
 
-The standard customer-facing MCP credential is your **developer key**. Send it in the `X-Api-Key` header.
+Send your **developer key** in the `X-Api-Key` header. That's it - one key, one credential.
 
-`MCP_SERVER_API_KEY` is an operator-level perimeter gate for controlled deployments. It is not the normal customer credential model and should not replace developer-key auth in product documentation. If your deployment operator has enabled it, follow that environment's specific instructions.
-
-Enable the server in your environment:
-
-```bash
-MCP_SERVER_ENABLED=true
-```
+Get your developer key from the Nexo dashboard under Profile. The MCP server is always enabled.
 
 ## Available tools
 
@@ -115,8 +109,7 @@ This opens a UI where you can browse available tools, call them with custom argu
 
 | Variable | Default | Description |
 |---|---|---|
-| `MCP_SERVER_ENABLED` | `false` | Enable the MCP endpoint at `/mcp` |
-| `MCP_SERVER_API_KEY` | -- | Optional operator-level perimeter gate for controlled deployments. Not the standard customer credential. |
+| -- | -- | MCP is always enabled. No feature flag needed. |
 
 ## Related docs
 
