@@ -28,7 +28,6 @@ Both are deployable and production-ready.
 | Daily Routines | Webhook | Morning briefings, schedule actions, follow-up nudges | [nexo-routines](https://nexo-routines-v3me5awkta-ew.a.run.app/) | [routines/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) |
 | Food Ordering | Webhook | Discovery, basket, checkout, tracking, reorder | [nexo-food-ordering](https://nexo-food-ordering-v3me5awkta-ew.a.run.app/) | [food-ordering/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) |
 | Travel Planning | Webhook | Itinerary, flights, booking handoff, budget, disruption handling | [nexo-travel-planning](https://nexo-travel-planning-v3me5awkta-ew.a.run.app/) | [travel-planning/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) |
-| Sky Diamond | Webhook | Stateful detective game with rich cards, prompt suggestions, JSON, and SSE | [luzia-sky-diamond](https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/) | [detective-game/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/detective-game/python) |
 | OpenClaw Bridge | Webhook | Nexo webhook to OpenClaw `/v1/responses` adapter | [nexo-openclaw-bridge](https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/) | [openclaw-bridge/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) |
 | Hosted Python API | Reference API | Minimal authenticated reference API | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
 | Hosted TypeScript API | Reference API | Minimal authenticated reference API | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
@@ -49,7 +48,6 @@ Both are deployable and production-ready.
 | `webhook/routines` | Python | Morning briefings, schedule actions, and follow-up nudges |
 | `webhook/food-ordering` | Python | Menu search, order composition, and checkout flow |
 | `webhook/travel-planning` | Python | Multi-step itinerary, budget, and disruption replanning |
-| `webhook/detective-game` | Python | Stateful game runtime with pinned thread progress, cards, and SSE |
 
 ## Partner API proactive scripts
 

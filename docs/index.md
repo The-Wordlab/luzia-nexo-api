@@ -1,6 +1,6 @@
 # Luzia Nexo API
 
-Build conversational experiences that reach millions of Luzia users through a single webhook integration.
+Build conversational integrations and structured apps for Luzia users.
 
 The Nexo Agent Runtime handles message routing, delivery, signature verification, and consent management -- so you can focus on your domain logic.
 
@@ -20,12 +20,21 @@ Ship your first integration in minutes:
 
 ## 5-minute path
 
+**Webhook partner lane:**
+
 1. Implement one `POST /webhook` endpoint in your backend.
 2. Return a valid JSON (or SSE) response envelope.
 3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
 4. Send a test message from the dashboard.
 
-Start here: [Quickstart](quickstart.md)
+**Micro App from CLI lane:**
+
+1. Authenticate: `curl -X POST .../api/auth/token`
+2. Plan a template: `curl -X POST .../api/micro-apps/template-plan`
+3. Provision: `curl -X POST .../api/micro-apps/provision-from-template`
+4. Or connect via MCP: `claude mcp add --transport http nexo-mcp http://localhost:8001/mcp`
+
+Start here: [Quickstart](quickstart.md) | [Micro Apps API](micro-apps-api.md) | [MCP Server](mcp.md)
 
 ### Prompt chips
 
@@ -60,7 +69,6 @@ Clone a starter example, customize it for your domain, and deploy:
 | Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
 | Food-commerce: discovery, checkout, tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | Travel: flights, budget, handoff, replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
-| Stateful detective game with streamed scene reveals | [Sky Diamond](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/detective-game/python) | <https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/> |
 | News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
 | Sports coverage with live match data | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
 | OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
@@ -74,8 +82,9 @@ For the full catalog, see [Demo Catalog](demos.md).
 3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
 4. [API Reference](partner-api-reference.md) -- full contract details.
 5. [Micro Apps API](micro-apps-api.md) -- create and manage Micro Apps from CLI or MCP.
-6. [Internal Apps](internal-apps.md) -- build first-party apps inside Nexo.
-7. [Hosting](hosting.md) -- deploy to Cloud Run.
+6. [MCP Server](mcp.md) -- connect AI coding assistants to Nexo tools.
+7. [Internal Apps](internal-apps.md) -- build first-party apps inside Nexo.
+8. [Hosting](hosting.md) -- deploy to Cloud Run.
 
 ## Integration Architecture
 
@@ -120,6 +129,8 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | Vertical orchestration | End-to-end partner flows: routines, food ordering, travel planning | `routines`, `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
 | Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
+| Micro Apps API | Create and manage structured apps via REST | [micro-apps-api](micro-apps-api.md) |
+| MCP server | Expose webhook and Micro Apps tools to AI coding assistants | [mcp](mcp.md) |
 
 ## Live Examples
 
@@ -133,7 +144,6 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | nexo-routines | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
 | nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
-| luzia-sky-diamond | <https://luzia-sky-diamond-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |
