@@ -32,7 +32,24 @@ See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quicksta
 
 **Personalized Apps**
 
-Use the Nexo dashboard plus the headless API/MCP path to create and evolve first-party structured apps for a user. Start with the [Personalized Apps API](https://the-wordlab.github.io/luzia-nexo-api/micro-apps-api/) guide.
+Create structured apps from the terminal via MCP:
+
+```bash
+# Get your developer key from the dashboard (Profile → Developer Access)
+export NEXO_DEVELOPER_KEY=nexo_uak_...
+export NEXO_BASE_URL=https://nexo.luzia.com
+
+# Connect MCP
+claude mcp add --transport http nexo-mcp \
+  "${NEXO_BASE_URL}/mcp" \
+  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
+
+# Open Claude Code and ask:
+# "Create an expense tracker for shared household bills"
+```
+
+See the [Personalized Apps API](https://the-wordlab.github.io/luzia-nexo-api/micro-apps-api/)
+and [MCP Server](https://the-wordlab.github.io/luzia-nexo-api/mcp/) guides.
 
 ## Integration architecture
 

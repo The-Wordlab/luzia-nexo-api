@@ -1,55 +1,212 @@
 # MCP Server
 
-Nexo exposes an MCP (Model Context Protocol) server at `/mcp` that lets AI coding assistants discover and call Nexo tools over Streamable HTTP. When enabled, the server publishes two categories of tools:
+Nexo exposes an MCP server at `/mcp` (Streamable HTTP). Connect any MCP client to
+create and manage Personalized Apps through natural conversation, or invoke Partner
+Integration tools programmatically.
 
-- **Partner Integration tools** -- one tool per active webhook-backed app, letting an MCP client send messages through the same pipeline that powers the chat UI.
-- **Personalized Apps tools** -- CRUD operations for creating, querying, and managing structured apps.
+## Quick start
 
-## Connecting from Claude Code
+Get productive in under 2 minutes:
+
+### 1. Get your developer key
+
+Open the Nexo dashboard → Profile → Developer Access → Create key.
+Your key looks like `nexo_uak_...`. This is the only credential you need.
+
+### 2. Set your environment
 
 ```bash
-claude mcp add --transport http nexo-mcp http://localhost:8001/mcp
+export NEXO_DEVELOPER_KEY=nexo_uak_...
+export NEXO_BASE_URL=https://nexo.luzia.com
 ```
 
-For a remote Nexo instance:
+### 3. Connect MCP
 
 ```bash
-claude mcp add --transport http nexo-mcp https://nexo.luzia.com/mcp
+claude mcp add --transport http nexo-mcp \
+  "${NEXO_BASE_URL}/mcp" \
+  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
-Claude Code will prompt for the API key on first use, or you can set it in your MCP config file.
+Or run: `bash scripts/connect-mcp.sh`
+
+### 4. Start building
+
+Open Claude Code and say:
+
+> "Create an expense tracker for shared household bills"
+
+The agent calls `plan_app` to generate a template, then `provision_app` to create
+the app with tables, fields, views, and seed data.
+
+> "Add a record: $45 dinner, paid by Alice"
+
+> "Add a category field with options: food, transport, housing, utilities"
+
+> "Show me everything I have"
 
 ## Authentication
 
-Send your **developer key** in the `X-Api-Key` header. That's it - one key, one credential.
+Send your **developer key** in the `X-Api-Key` header. One key, one credential.
 
-Get your developer key from the Nexo dashboard under Profile. The MCP server is always enabled.
+Developer keys identify **you** (the person). They are not app-scoped.
+Get yours from the Nexo dashboard under Profile → Developer Access.
+
+Your developer key is specific to the Nexo instance where you created it — a staging key does not work on production and vice versa.
+
+Do not confuse with app runtime secrets (`X-App-Secret`) — those are for Partner
+Integration webhook auth and are never used with MCP.
 
 ## Available tools
+
+### Personalized Apps tools
+
+| Tool | Description | Key parameters |
+|---|---|---|
+| `micro_apps__list_apps` | List all Personalized Apps owned by the authenticated user | -- |
+| `micro_apps__create_app` | Create an empty app shell (use when you already know the exact structure) | `name`, `description`, `locale` |
+| `micro_apps__show_app` | Get app with full schema: tables, fields, views, record counts | `app_id` |
+| `micro_apps__add_record` | Add a record to a table | `app_id`, `table_key`, `values` |
+| `micro_apps__query_app` | Query records with filters and sorting | `app_id`, `table_key`, `filters`, `sort`, `limit` |
+| `micro_apps__modify_app` | Update an app's name or description | `app_id`, `name`, `description` |
+| `micro_apps__plan_app` | Plan an app from a natural-language prompt (returns template, does not create) | `prompt`, `locale`, `archetype_hint` |
+| `micro_apps__provision_app` | Create an app from a template plan (the "make it real" step) | `template` |
+| `micro_apps__plan_operation` | Plan a schema change from a prompt (add field, create view, etc.) | `prompt`, `app_id`, `table_key` |
+| `micro_apps__apply_operation` | Execute a planned operation against the database | `operation` |
+| `micro_apps__get_context` | Get a compact markdown summary of all your apps, schemas, and recent records | -- |
+
+**Two creation paths:**
+
+- **Prompt-driven:** `plan_app` → `provision_app` — describe what you want in natural language, get a complete app with tables, fields, views, and seed data.
+- **Manual:** `create_app` → `plan_operation` + `apply_operation` — create an empty shell, then add structure incrementally.
 
 ### Partner Integration tools
 
 Each active Partner Integration is exposed as a tool named by its UUID. The tool description includes the app's name and capabilities. Calling the tool sends a message through the webhook pipeline and returns the response.
 
-### Personalized Apps tools
+## Walkthrough: Create an app from a prompt
 
-| Tool | Description |
-|---|---|
-| `micro_apps__list_apps` | List all Personalized Apps owned by the authenticated user |
-| `micro_apps__create_app` | Create a new Personalized App from a natural-language prompt |
-| `micro_apps__show_app` | Show an app's schema, records, and surface card |
-| `micro_apps__add_record` | Add a record to an app's table |
-| `micro_apps__query_app` | Answer a question using an app's structured data |
-| `micro_apps__modify_app` | Modify an app's schema or settings |
+This walkthrough shows the exact tool calls an agent makes when you say "Create an expense tracker for a shared apartment."
+
+### 1. Plan the app
+
+The agent calls `micro_apps__plan_app`:
+
+```json
+{
+  "prompt": "expense tracker for a shared apartment with rent, utilities, and groceries"
+}
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "source": "template_engine",
+  "template": {
+    "name": "Shared Apartment Expenses",
+    "archetype": "shared_expenses",
+    "tables": [
+      {
+        "key": "expenses",
+        "label": "Expenses",
+        "fields": [
+          { "key": "description", "label": "Description", "type": "text", "required": true },
+          { "key": "amount", "label": "Amount", "type": "number", "required": true },
+          { "key": "category", "label": "Category", "type": "select", "options": ["rent", "utilities", "groceries", "other"] },
+          { "key": "paid_by", "label": "Paid by", "type": "text", "required": true },
+          { "key": "date", "label": "Date", "type": "date", "required": true }
+        ]
+      }
+    ],
+    "views": [
+      { "key": "all_expenses", "type": "list", "table_key": "expenses" },
+      { "key": "summary", "type": "summary", "table_key": "expenses" }
+    ],
+    "seed_records": [
+      { "table_key": "expenses", "values": { "description": "April rent", "amount": 1200, "category": "rent", "paid_by": "Alice", "date": "2026-04-01" } }
+    ]
+  }
+}
+```
+
+### 2. Provision the app
+
+The agent calls `micro_apps__provision_app` with the template:
+
+```json
+{
+  "status": "ok",
+  "app": { "id": "a1b2c3d4-...", "name": "Shared Apartment Expenses" },
+  "tables_created": 1,
+  "fields_created": 5,
+  "views_created": 2,
+  "records_created": 1
+}
+```
+
+### 3. Inspect the app
+
+The agent calls `micro_apps__show_app` to see the full schema:
+
+```json
+{
+  "status": "ok",
+  "app": {
+    "id": "a1b2c3d4-...",
+    "name": "Shared Apartment Expenses",
+    "tables": [
+      {
+        "id": "tbl-uuid",
+        "key": "expenses",
+        "name": "Expenses",
+        "record_count": 1,
+        "fields": [
+          { "key": "description", "label": "Description", "field_type": "text", "is_required": true },
+          { "key": "amount", "label": "Amount", "field_type": "number", "is_required": true },
+          { "key": "category", "label": "Category", "field_type": "select", "is_required": false },
+          { "key": "paid_by", "label": "Paid by", "field_type": "text", "is_required": true },
+          { "key": "date", "label": "Date", "field_type": "date", "is_required": true }
+        ],
+        "views": [
+          { "name": "All Expenses", "view_type": "list" },
+          { "name": "Summary", "view_type": "summary" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 4. Add a record
+
+```json
+{
+  "status": "ok",
+  "record": {
+    "id": "rec-uuid",
+    "values": { "description": "Groceries", "amount": 85, "category": "groceries", "paid_by": "Bob", "date": "2026-04-12" }
+  }
+}
+```
+
+### 5. Evolve the schema
+
+The agent calls `micro_apps__plan_operation` with `"prompt": "add a settled checkbox"`, then `micro_apps__apply_operation` with the returned operation. A new boolean field appears on the expenses table.
+
+### 6. Get context
+
+The agent calls `micro_apps__get_context` and receives a compact markdown summary of all apps, tables, fields, and recent records — ready for LLM context injection.
 
 ## curl examples
 
 ### List available tools
 
 ```bash
-curl -X POST http://localhost:8001/mcp \
+curl -X POST https://nexo.luzia.com/mcp \
   -H "Content-Type: application/json" \
-  -H "X-Api-Key: your-developer-key" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
     "jsonrpc": "2.0",
     "id": 1,
@@ -58,12 +215,12 @@ curl -X POST http://localhost:8001/mcp \
   }'
 ```
 
-### Call a tool
+### List your apps
 
 ```bash
-curl -X POST http://localhost:8001/mcp \
+curl -X POST https://nexo.luzia.com/mcp \
   -H "Content-Type: application/json" \
-  -H "X-Api-Key: your-developer-key" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
     "jsonrpc": "2.0",
     "id": 2,
@@ -75,18 +232,18 @@ curl -X POST http://localhost:8001/mcp \
   }'
 ```
 
-### Create an app via MCP
+### Plan an app from a prompt
 
 ```bash
-curl -X POST http://localhost:8001/mcp \
+curl -X POST https://nexo.luzia.com/mcp \
   -H "Content-Type: application/json" \
-  -H "X-Api-Key: your-developer-key" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
     "jsonrpc": "2.0",
     "id": 3,
     "method": "tools/call",
     "params": {
-      "name": "micro_apps__create_app",
+      "name": "micro_apps__plan_app",
       "arguments": {
         "prompt": "Track my weekly grocery spending",
         "locale": "en"
@@ -95,23 +252,208 @@ curl -X POST http://localhost:8001/mcp \
   }'
 ```
 
+### Provision an app from a template
+
+```bash
+curl -X POST https://nexo.luzia.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "micro_apps__provision_app",
+      "arguments": {
+        "template": { "...template object from plan_app response..." }
+      }
+    }
+  }'
+```
+
+### Plan and apply an operation
+
+```bash
+# Plan
+curl -X POST https://nexo.luzia.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "tools/call",
+    "params": {
+      "name": "micro_apps__plan_operation",
+      "arguments": {
+        "prompt": "Add a store name field to the expenses table",
+        "app_id": "your-app-uuid"
+      }
+    }
+  }'
+
+# Apply (pass the operation from the plan response)
+curl -X POST https://nexo.luzia.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 6,
+    "method": "tools/call",
+    "params": {
+      "name": "micro_apps__apply_operation",
+      "arguments": {
+        "operation": { "...operation object from plan_operation response..." }
+      }
+    }
+  }'
+```
+
+### Get context summary
+
+```bash
+curl -X POST https://nexo.luzia.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "X-Api-Key: nexo_uak_your_key_here" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 7,
+    "method": "tools/call",
+    "params": {
+      "name": "micro_apps__get_context",
+      "arguments": {}
+    }
+  }'
+```
+
+## Connecting other clients
+
+### Claude Code (CLI)
+
+**Option A: Command line (quick, local scope)**
+
+```bash
+claude mcp add --transport http --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
+  nexo-mcp "${NEXO_BASE_URL}/mcp"
+```
+
+Verify:
+
+```bash
+claude mcp list          # shows nexo-mcp with status
+claude mcp get nexo-mcp  # shows URL and tool count
+```
+
+Inside Claude Code, run `/mcp` to see server status and available tools.
+
+To remove: `claude mcp remove nexo-mcp`
+
+**Option B: Project config (shared with team via git)**
+
+Add `.mcp.json` to your repo root:
+
+```json
+{
+  "mcpServers": {
+    "nexo-mcp": {
+      "type": "http",
+      "url": "${NEXO_BASE_URL:-https://nexo.luzia.com}/mcp",
+      "headers": {
+        "X-Api-Key": "${NEXO_DEVELOPER_KEY}"
+      }
+    }
+  }
+}
+```
+
+Team members who clone the repo get the MCP connection automatically. Each developer sets their own `NEXO_DEVELOPER_KEY` in their shell. `NEXO_BASE_URL` defaults to production if not set.
+
+**Option C: User config (all projects, private)**
+
+```bash
+claude mcp add --transport http --scope user \
+  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
+  nexo-mcp "${NEXO_BASE_URL}/mcp"
+```
+
+### Claude Desktop (macOS / Windows)
+
+Edit the config file:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "nexo-mcp": {
+      "type": "http",
+      "url": "https://nexo.luzia.com/mcp",
+      "headers": {
+        "X-Api-Key": "nexo_uak_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Restart Claude Desktop after editing. The Nexo tools appear in the tool picker.
+
+Note: Claude Desktop does not support `${VAR}` env var expansion — use the literal key value.
+
+### Cursor
+
+1. Open Settings → MCP
+2. Click "Add MCP Server"
+3. Set:
+    - Name: `nexo-mcp`
+    - Transport: HTTP
+    - URL: `https://nexo.luzia.com/mcp`
+    - Headers: `X-Api-Key: nexo_uak_your_key_here`
+
+No restart needed — Cursor picks up the change immediately.
+
+### Windsurf
+
+1. Open Settings → search "MCP"
+2. Click "Manage plugins" under Plugins (MCP Servers)
+3. Add server with the same URL and headers as above
+
+### Any MCP client (generic)
+
+The Nexo MCP server is a standard Streamable HTTP endpoint. Any client that supports MCP can connect with:
+
+- **URL:** `https://nexo.luzia.com/mcp`
+- **Transport:** Streamable HTTP (JSON-RPC over HTTP POST)
+- **Auth:** `X-Api-Key: nexo_uak_...` header on every request
+- **No session required** — each request is independently authenticated
+
+### Switching environments
+
+```bash
+# Production (default)
+export NEXO_BASE_URL=https://nexo.luzia.com
+
+# Staging
+export NEXO_BASE_URL=https://staging.nexo.luzia.com
+
+# Local development
+export NEXO_BASE_URL=http://localhost:8000
+```
+
+Developer keys are per-environment — a key created on staging does not work on production.
+
 ## Debugging with MCP Inspector
 
 The MCP Inspector is a browser-based tool for exploring and testing MCP servers interactively:
 
 ```bash
-npx @modelcontextprotocol/inspector http http://localhost:8001/mcp
+npx @modelcontextprotocol/inspector http "${NEXO_BASE_URL}/mcp"
 ```
 
-This opens a UI where you can browse available tools, call them with custom arguments, and inspect the JSON-RPC responses. Add your developer key in the Inspector's headers configuration panel.
-
-## Configuration reference
-
-| Variable | Default | Description |
-|---|---|---|
-| -- | -- | MCP is always enabled. No feature flag needed. |
+Add your developer key in the Inspector's headers configuration panel (`X-Api-Key: nexo_uak_...`). This is useful for testing tool schemas and responses without an AI assistant.
 
 ## Related docs
 
-- [Personalized Apps API](micro-apps-api.md) -- REST API for structured first-party apps (same operations, HTTP interface)
-- [Agent Interop](agent-interop.md) -- full MCP and A2A protocol details
+- [Personalized Apps API](micro-apps-api.md) -- same operations via REST
+- [Tutorial: Create an app from the terminal](tutorial-create-app-from-terminal.md) -- full walkthrough
+- [Agent Interop](agent-interop.md) -- MCP and A2A protocol details

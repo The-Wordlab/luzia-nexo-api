@@ -27,12 +27,14 @@ Ship your first integration in minutes:
 3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
 4. Send a test message from the dashboard.
 
-**Personalized Apps lane (headless and developer-driven):**
+**Personalized Apps lane (developer-driven):**
 
-1. Authenticate: `curl -X POST .../api/auth/token`
-2. Plan a template: `curl -X POST .../api/micro-apps/template-plan`
-3. Provision: `curl -X POST .../api/micro-apps/provision-from-template`
-4. Or connect via MCP: `claude mcp add --transport http nexo-mcp http://localhost:8001/mcp`
+1. Get a developer key from the dashboard (Profile → Developer Access)
+2. `export NEXO_DEVELOPER_KEY=nexo_uak_...`
+3. `claude mcp add --transport http nexo-mcp https://nexo.luzia.com/mcp --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"`
+4. Ask: "Create an expense tracker for shared household bills"
+
+Or use the REST API directly: [Personalized Apps API](micro-apps-api.md)
 
 Start here: [Quickstart](quickstart.md) | [Personalized Apps API](micro-apps-api.md) | [MCP Server](mcp.md)
 
@@ -83,7 +85,7 @@ For the full catalog, see [Demo Catalog](demos.md).
 4. [Partner API Reference](partner-api-reference.md) -- full webhook/runtime contract details.
 5. [Personalized Apps API](micro-apps-api.md) -- create and manage personalized apps from CLI or MCP.
 6. [MCP Server](mcp.md) -- connect AI coding assistants to Nexo tools.
-7. [Internal Apps](internal-apps.md) -- first-party Nexo-only implementation pattern.
+7. [Internal Apps](internal-apps.md) -- boundary note pointing back to the Nexo-owned implementation docs.
 8. [Hosting](hosting.md) -- deploy to Cloud Run.
 
 ## Integration Architecture

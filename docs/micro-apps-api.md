@@ -6,9 +6,27 @@ For the product model and runtime architecture, see the [Micro Apps Guide](https
 
 Personalized Apps are a first-party structured app runtime inside Nexo. This guide covers the REST API and MCP access for developers who want to create, manage, and query them from the command line or an AI coding assistant.
 
+!!! tip "MCP access"
+    All operations on this page are also available as MCP tools.
+    Connect an AI coding assistant and build apps through conversation.
+    See [MCP Server](mcp.md) for setup.
+
 ## Authentication
 
-REST endpoints currently require a user-scoped JWT. Obtain one by posting your email and password to the token endpoint.
+### Developer key (recommended for CLI, MCP, and automation)
+
+Send your developer key in the `X-Api-Key` header:
+
+```bash
+curl -H "X-Api-Key: nexo_uak_..." https://nexo.luzia.com/api/micro-apps
+```
+
+Get your key from the Nexo dashboard → Profile → Developer Access.
+Your developer key identifies you (the person) and works across all Personalized Apps endpoints.
+
+### JWT session (dashboard and browser)
+
+For browser-based access, obtain a user-scoped JWT by posting your email and password to the token endpoint.
 
 ### POST /api/auth/token
 

@@ -47,6 +47,8 @@ nav:
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
   - Micro Apps API: micro-apps-api.md
+  - MCP Server: mcp.md
+  - "Tutorial: Create App from Terminal": tutorial-create-app-from-terminal.md
   - Internal Apps: internal-apps.md
   - GCP Deploy Playbook: gcp-deploy-playbook.md
   - Hosting (Optional): hosting.md
