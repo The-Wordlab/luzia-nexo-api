@@ -15,10 +15,20 @@ Nexo implements the [Model Context Protocol](https://modelcontextprotocol.io/) S
 ### Endpoint
 
 ```
-POST https://nexo.luzia.com/mcp
+POST ${NEXO_BASE_URL}/mcp
 ```
 
 This single endpoint handles all MCP protocol traffic — tool listing and tool invocation — using Streamable HTTP transport.
+
+Use `NEXO_BASE_URL` as the backend MCP base URL for the environment:
+
+- local: `http://localhost:8000`
+- staging: `https://nexo-cdn-alb.staging.thewordlab.net`
+- production: `https://luzia-nexo.thewordlab.net`
+
+Dashboard hosts are still used for sign-in and developer-key provisioning, but
+they are not the authoritative MCP health-check target while vanity `/mcp`
+routing is being corrected.
 
 ### Authentication
 
@@ -62,13 +72,15 @@ Tool results are returned as structured JSON text containing the assistant reply
 ### Connecting from LangChain / LangGraph
 
 ```python
+import os
+
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 client = MultiServerMCPClient(
     {
         "nexo": {
             "transport": "streamable_http",
-            "url": "https://nexo.luzia.com/mcp",
+            "url": f"{os.environ['NEXO_BASE_URL']}/mcp",
             "headers": {"X-Api-Key": "<developer_key>"},
         }
     }
@@ -94,7 +106,8 @@ agent = create_react_agent(
 
 ```bash
 # Discover available tools
-curl -X POST "https://nexo.luzia.com/mcp" \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "X-Api-Key: YOUR_DEVELOPER_KEY" \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
@@ -104,7 +117,8 @@ curl -X POST "https://nexo.luzia.com/mcp" \
 
 ```bash
 # Call a tool by its app UUID
-curl -X POST "https://nexo.luzia.com/mcp" \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "X-Api-Key: YOUR_DEVELOPER_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -120,6 +134,9 @@ curl -X POST "https://nexo.luzia.com/mcp" \
     }
   }'
 ```
+
+Set `NEXO_BASE_URL` to the MCP base URL for your environment before using the
+examples above. Local development uses `http://localhost:8000`.
 
 ---
 

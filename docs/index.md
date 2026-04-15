@@ -31,8 +31,9 @@ Ship your first integration in minutes:
 
 1. Get a developer key from the dashboard (Profile → Developer Access)
 2. `export NEXO_DEVELOPER_KEY=nexo_uak_...`
-3. `claude mcp add --transport http nexo-mcp https://nexo.luzia.com/mcp --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"`
-4. Ask: "Create an expense tracker for shared household bills"
+3. `export NEXO_BASE_URL=http://localhost:8000`
+4. `claude mcp add --scope project --transport http nexo-mcp "${NEXO_BASE_URL}/mcp" -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"`
+5. Ask: "Create an expense tracker for shared household bills"
 
 Or use the REST API directly: [Personalized Apps API](micro-apps-api.md)
 

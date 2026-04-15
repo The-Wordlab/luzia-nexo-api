@@ -2,7 +2,7 @@
   "mcpServers": {
     "nexo-mcp": {
       "type": "http",
-      "url": "${NEXO_BASE_URL:-https://nexo.luzia.com}/mcp",
+      "url": "${NEXO_BASE_URL}/mcp",
       "headers": {
         "X-Api-Key": "${NEXO_DEVELOPER_KEY}"
       }

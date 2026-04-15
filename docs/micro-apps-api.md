@@ -11,6 +11,14 @@ Personalized Apps are a first-party structured app runtime inside Nexo. This gui
     Connect an AI coding assistant and build apps through conversation.
     See [MCP Server](mcp.md) for setup.
 
+!!! warning "Dashboard host vs MCP host"
+    Use the dashboard hosts (`https://staging.nexo.luzia.com`, `https://nexo.luzia.com`)
+    to sign in and create developer keys.
+
+    Use the backend MCP base URL (`https://nexo-cdn-alb.staging.thewordlab.net`,
+    `https://luzia-nexo.thewordlab.net`, or `http://localhost:8000`) for MCP connections
+    and low-level MCP health checks.
+
 ## Authentication
 
 ### Developer key (recommended for CLI, MCP, and automation)
@@ -235,10 +243,10 @@ Nexo's MCP server at `/mcp` exposes Personalized Apps as discoverable tools. Any
 
 ```bash
 # Claude Code example
-claude mcp add nexo-server \
-  --transport streamable-http \
-  --url "https://nexo.luzia.com/mcp" \
-  --header "X-Api-Key: YOUR_DEVELOPER_KEY"
+export NEXO_BASE_URL=http://localhost:8000
+claude mcp add --scope project --transport http nexo-server \
+  "${NEXO_BASE_URL}/mcp" \
+  -H "X-Api-Key: YOUR_DEVELOPER_KEY"
 ```
 
 Use your **developer key** for MCP. App runtime secrets are for Partner Integration runtime calls, not for MCP.

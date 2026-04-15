@@ -17,15 +17,25 @@ Your key looks like `nexo_uak_...`. This is the only credential you need.
 
 ```bash
 export NEXO_DEVELOPER_KEY=nexo_uak_...
-export NEXO_BASE_URL=https://nexo.luzia.com
+export NEXO_BASE_URL=http://localhost:8000
 ```
+
+Use the MCP backend base URL for your environment:
+
+- local: `http://localhost:8000`
+- staging: `https://nexo-cdn-alb.staging.thewordlab.net`
+- production: `https://luzia-nexo.thewordlab.net`
+
+The dashboard hosts (`https://staging.nexo.luzia.com`, `https://nexo.luzia.com`) are
+where you sign in and create developer keys. Do not use them as the source of truth
+for MCP health checks while vanity `/mcp` routing is still being corrected.
 
 ### 3. Connect MCP
 
 ```bash
-claude mcp add --transport http nexo-mcp \
+claude mcp add --scope project --transport http nexo-mcp \
   "${NEXO_BASE_URL}/mcp" \
-  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 Or run: `bash scripts/connect-mcp.sh`
@@ -56,6 +66,15 @@ Your developer key is specific to the Nexo instance where you created it — a s
 
 Do not confuse with app runtime secrets (`X-App-Secret`) — those are for Partner
 Integration webhook auth and are never used with MCP.
+
+For raw `curl` or other low-level HTTP checks, also send:
+
+```bash
+-H "Accept: application/json, text/event-stream"
+```
+
+That `Accept` header is part of MCP transport negotiation. Without it, a healthy
+backend MCP host can return `406 Not Acceptable`.
 
 ## Available tools
 
@@ -204,7 +223,8 @@ The agent calls `micro_apps__get_context` and receives a compact markdown summar
 ### List available tools
 
 ```bash
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -218,7 +238,8 @@ curl -X POST https://nexo.luzia.com/mcp \
 ### List your apps
 
 ```bash
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -235,7 +256,8 @@ curl -X POST https://nexo.luzia.com/mcp \
 ### Plan an app from a prompt
 
 ```bash
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -255,7 +277,8 @@ curl -X POST https://nexo.luzia.com/mcp \
 ### Provision an app from a template
 
 ```bash
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -275,7 +298,8 @@ curl -X POST https://nexo.luzia.com/mcp \
 
 ```bash
 # Plan
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -292,7 +316,8 @@ curl -X POST https://nexo.luzia.com/mcp \
   }'
 
 # Apply (pass the operation from the plan response)
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -311,7 +336,8 @@ curl -X POST https://nexo.luzia.com/mcp \
 ### Get context summary
 
 ```bash
-curl -X POST https://nexo.luzia.com/mcp \
+curl -X POST "${NEXO_BASE_URL}/mcp" \
+  -H "Accept: application/json, text/event-stream" \
   -H "Content-Type: application/json" \
   -H "X-Api-Key: nexo_uak_your_key_here" \
   -d '{
@@ -332,8 +358,9 @@ curl -X POST https://nexo.luzia.com/mcp \
 **Option A: Command line (quick, local scope)**
 
 ```bash
-claude mcp add --transport http --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
-  nexo-mcp "${NEXO_BASE_URL}/mcp"
+claude mcp add --scope project --transport http nexo-mcp \
+  "${NEXO_BASE_URL}/mcp" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 Verify:
@@ -356,7 +383,7 @@ Add `.mcp.json` to your repo root:
   "mcpServers": {
     "nexo-mcp": {
       "type": "http",
-      "url": "${NEXO_BASE_URL:-https://nexo.luzia.com}/mcp",
+      "url": "${NEXO_BASE_URL}/mcp",
       "headers": {
         "X-Api-Key": "${NEXO_DEVELOPER_KEY}"
       }
@@ -365,14 +392,14 @@ Add `.mcp.json` to your repo root:
 }
 ```
 
-Team members who clone the repo get the MCP connection automatically. Each developer sets their own `NEXO_DEVELOPER_KEY` in their shell. `NEXO_BASE_URL` defaults to production if not set.
+Team members who clone the repo get the MCP connection automatically. Each developer sets both `NEXO_DEVELOPER_KEY` and `NEXO_BASE_URL` in their shell.
 
 **Option C: User config (all projects, private)**
 
 ```bash
-claude mcp add --transport http --scope user \
-  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
-  nexo-mcp "${NEXO_BASE_URL}/mcp"
+claude mcp add --scope user --transport http nexo-mcp \
+  "${NEXO_BASE_URL}/mcp" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 ### Claude Desktop (macOS / Windows)
@@ -387,7 +414,7 @@ Edit the config file:
   "mcpServers": {
     "nexo-mcp": {
       "type": "http",
-      "url": "https://nexo.luzia.com/mcp",
+      "url": "http://localhost:8000/mcp",
       "headers": {
         "X-Api-Key": "nexo_uak_your_key_here"
       }
@@ -407,7 +434,7 @@ Note: Claude Desktop does not support `${VAR}` env var expansion — use the lit
 3. Set:
     - Name: `nexo-mcp`
     - Transport: HTTP
-    - URL: `https://nexo.luzia.com/mcp`
+    - URL: `${NEXO_BASE_URL}/mcp`
     - Headers: `X-Api-Key: nexo_uak_your_key_here`
 
 No restart needed — Cursor picks up the change immediately.
@@ -422,7 +449,7 @@ No restart needed — Cursor picks up the change immediately.
 
 The Nexo MCP server is a standard Streamable HTTP endpoint. Any client that supports MCP can connect with:
 
-- **URL:** `https://nexo.luzia.com/mcp`
+- **URL:** `${NEXO_BASE_URL}/mcp`
 - **Transport:** Streamable HTTP (JSON-RPC over HTTP POST)
 - **Auth:** `X-Api-Key: nexo_uak_...` header on every request
 - **No session required** — each request is independently authenticated
@@ -430,17 +457,20 @@ The Nexo MCP server is a standard Streamable HTTP endpoint. Any client that supp
 ### Switching environments
 
 ```bash
-# Production (default)
-export NEXO_BASE_URL=https://nexo.luzia.com
+# Hosted environment
+export NEXO_BASE_URL=https://your-nexo-mcp-base-url
 
-# Staging
-export NEXO_BASE_URL=https://staging.nexo.luzia.com
+# Verified staging backend host
+export NEXO_BASE_URL=https://nexo-cdn-alb.staging.thewordlab.net
+
+# Verified production backend host
+export NEXO_BASE_URL=https://luzia-nexo.thewordlab.net
 
 # Local development
 export NEXO_BASE_URL=http://localhost:8000
 ```
 
-Developer keys are per-environment — a key created on staging does not work on production.
+Developer keys are per-environment — a key created on staging does not work on production. The dashboard host and MCP host can differ during rollout, so always use the MCP base URL for your environment.
 
 ## Debugging with MCP Inspector
 

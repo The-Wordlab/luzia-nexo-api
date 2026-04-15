@@ -13,10 +13,10 @@ No dashboard clicks, no REST calls, no schema design.
 
 ```bash
 export NEXO_DEVELOPER_KEY=nexo_uak_...
-export NEXO_BASE_URL=https://nexo.luzia.com
-claude mcp add --transport http nexo-mcp \
+export NEXO_BASE_URL=http://localhost:8000
+claude mcp add --scope project --transport http nexo-mcp \
   "${NEXO_BASE_URL}/mcp" \
-  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 Or run `bash scripts/connect-mcp.sh` from the repo root.

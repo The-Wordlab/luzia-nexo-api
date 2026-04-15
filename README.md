@@ -37,16 +37,27 @@ Create structured apps from the terminal via MCP:
 ```bash
 # Get your developer key from the dashboard (Profile → Developer Access)
 export NEXO_DEVELOPER_KEY=nexo_uak_...
-export NEXO_BASE_URL=https://nexo.luzia.com
+export NEXO_BASE_URL=http://localhost:8000
 
 # Connect MCP
-claude mcp add --transport http nexo-mcp \
+claude mcp add --scope project --transport http nexo-mcp \
   "${NEXO_BASE_URL}/mcp" \
-  --header "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 
 # Open Claude Code and ask:
 # "Create an expense tracker for shared household bills"
 ```
+
+Set `NEXO_BASE_URL` to the MCP base URL for your environment. Local
+(`http://localhost:8000`) is the verified default for the DX flow in this repo.
+For hosted MCP, use the backend base URL for the environment, not the dashboard
+host:
+
+- staging MCP: `https://nexo-cdn-alb.staging.thewordlab.net`
+- production MCP: `https://luzia-nexo.thewordlab.net`
+
+Dashboard sign-in and key provisioning still happen on `https://staging.nexo.luzia.com`
+and `https://nexo.luzia.com`.
 
 See the [Personalized Apps API](https://the-wordlab.github.io/luzia-nexo-api/micro-apps-api/)
 and [MCP Server](https://the-wordlab.github.io/luzia-nexo-api/mcp/) guides.
