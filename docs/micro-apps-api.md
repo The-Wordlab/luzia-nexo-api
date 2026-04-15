@@ -161,6 +161,8 @@ Pass the full `template` object from the planning step. The response is the crea
 ## Modify an existing app
 
 Use the operation plan/apply pattern to modify an app's schema or settings.
+For guided/stateful apps, that now includes app-level state/schedule/capability
+metadata, semantic table/field/view metadata, and record-level workflow metadata.
 
 ### POST /api/micro-apps/template-operation-plan
 
@@ -220,9 +222,25 @@ A JSON variant is available at `GET /api/micro-apps/context`:
 {
   "markdown": "## Shared Expenses\n...",
   "app_count": 2,
-  "total_records": 45
+  "total_records": 45,
+  "apps": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "name": "Workout Flow",
+      "archetype_key": "guided_tracker",
+      "playbook_key": "stateful_guided_app",
+      "metric_keys": ["completion_ratio", "current_streak"],
+      "log_keys": ["activity_log"]
+    }
+  ]
 }
 ```
+
+For guided, stateful apps, the structured app summaries now expose enough
+contract for stateless MCP iteration: archetype/playbook, metric keys, and log
+keys. Use `show_app` when the client needs the full app/table/field/view/log
+metadata, and `plan_operation` / `apply_operation` when it needs to add or
+update fields, views, settings, runtime handoff, or log declarations.
 
 ## Surface rendering
 

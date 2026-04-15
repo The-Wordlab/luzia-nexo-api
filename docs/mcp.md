@@ -84,20 +84,29 @@ backend MCP host can return `406 Not Acceptable`.
 |---|---|---|
 | `micro_apps__list_apps` | List all Personalized Apps owned by the authenticated user | -- |
 | `micro_apps__create_app` | Create an empty app shell (use when you already know the exact structure) | `name`, `description`, `locale` |
-| `micro_apps__show_app` | Get app with full schema: tables, fields, views, record counts | `app_id` |
+| `micro_apps__show_app` | Get app with full structured contract: app metadata, logs, tables, fields, views, record counts | `app_id` |
 | `micro_apps__add_record` | Add a record to a table | `app_id`, `table_key`, `values` |
 | `micro_apps__query_app` | Query records with filters and sorting | `app_id`, `table_key`, `filters`, `sort`, `limit` |
 | `micro_apps__modify_app` | Update an app's name or description | `app_id`, `name`, `description` |
 | `micro_apps__plan_app` | Plan an app from a natural-language prompt (returns template, does not create) | `prompt`, `locale`, `archetype_hint` |
 | `micro_apps__provision_app` | Create an app from a template plan (the "make it real" step) | `template` |
-| `micro_apps__plan_operation` | Plan a schema change from a prompt (add field, create view, etc.) | `prompt`, `app_id`, `table_key` |
-| `micro_apps__apply_operation` | Execute a planned operation against the database | `operation` |
-| `micro_apps__get_context` | Get a compact markdown summary of all your apps, schemas, and recent records | -- |
+| `micro_apps__plan_operation` | Plan a schema or contract change from a prompt (fields, views, settings, runtime handoff, log declarations) | `prompt`, `app_id`, `table_key` |
+| `micro_apps__apply_operation` | Execute a planned operation against the database, including structured app/table/field/view/record metadata and log declaration updates | `operation` |
+| `micro_apps__get_context` | Get markdown plus structured app summaries, including `metric_keys` and `log_keys`, for stateless iteration across existing apps | -- |
 
 **Two creation paths:**
 
 - **Prompt-driven:** `plan_app` → `provision_app` — describe what you want in natural language, get a complete app with tables, fields, views, and seed data.
 - **Manual:** `create_app` → `plan_operation` + `apply_operation` — create an empty shell, then add structure incrementally.
+
+For guided, stateful apps such as workout trackers, the canonical shape can now
+include archetype/playbook metadata, schedule config, metric definitions,
+semantic field roles, and app log streams. `show_app` and `get_context` expose
+that structure so MCP clients can continue editing without hidden assumptions.
+The same operation lane also supports private runtime handoff issuance and
+revocation when an agent needs to open an interactive app session, and it can
+also add or update app log declarations through `plan_operation` /
+`apply_operation` without adding another MCP tool.
 
 ### Partner Integration tools
 
