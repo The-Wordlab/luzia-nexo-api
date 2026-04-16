@@ -10,7 +10,7 @@ base/
   app.py           -- BaseWebhookApp (FastAPI scaffold, HMAC verification, profile extraction)
   contract.py      -- WebhookRequest / WebhookResponse Pydantic models
   llm.py           -- AssistantChain, AssistantGraph, create_llm() (Vertex AI Gemini via LiteLLM)
-  prompts.py       -- Canned system prompts (e-commerce, fitness coach)
+  prompts.py       -- Canned system prompts (e-commerce, travel)
 
 assistant_ecommerce.py  -- Example: e-commerce support assistant using LangChain
 ```

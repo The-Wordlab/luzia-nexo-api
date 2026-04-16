@@ -19,7 +19,6 @@ from base.app import BaseWebhookApp, create_app, WebhookConfig
 from base.prompts import (
     get_prompt_for_scenario,
     ECOMMERCE_ASSISTANT_PROMPT,
-    FITNESS_COACH_PROMPT,
 )
 
 __all__ = [
@@ -39,5 +38,4 @@ __all__ = [
     "WebhookConfig",
     "get_prompt_for_scenario",
     "ECOMMERCE_ASSISTANT_PROMPT",
-    "FITNESS_COACH_PROMPT",
 ]
