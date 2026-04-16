@@ -69,7 +69,6 @@ Clone a starter example, customize it for your domain, and deploy:
 
 | Use case | Example | Live demo |
 |---|---|---|
-| Morning briefing and follow-up nudges | [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
 | Food-commerce: discovery, checkout, tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | Travel: flights, budget, handoff, replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
 | News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
@@ -129,7 +128,7 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
 | Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
 | Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
-| Vertical orchestration | End-to-end partner flows: routines, food ordering, travel planning | `routines`, `food-ordering`, `travel-planning` |
+| Vertical orchestration | End-to-end partner flows: food ordering, travel planning | `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
 | Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
 | Personalized Apps API | Create and manage structured apps via REST | [micro-apps-api](micro-apps-api.md) |
@@ -144,7 +143,6 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | nexo-travel-rag | <https://nexo-travel-rag-v3me5awkta-ew.a.run.app/> |
 | nexo-football-live | <https://nexo-football-live-v3me5awkta-ew.a.run.app/> |
 | nexo-openclaw-bridge | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
-| nexo-routines | <https://nexo-routines-v3me5awkta-ew.a.run.app/> |
 | nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
 | nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |

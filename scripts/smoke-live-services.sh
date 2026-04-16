@@ -279,12 +279,8 @@ URL_STRUCTURED_PY="$(service_url nexo-webhook-structured-py)"
 URL_ADVANCED_PY="$(service_url nexo-webhook-advanced-py)"
 URL_MINIMAL_TS="$(service_url nexo-webhook-minimal-ts)"
 URL_OPENCLAW_BRIDGE="$(service_url nexo-openclaw-bridge)"
-URL_ROUTINES="$(service_url nexo-routines)"
 URL_FOOD_ORDERING="$(service_url nexo-food-ordering)"
 URL_TRAVEL_PLANNING="$(service_url nexo-travel-planning)"
-URL_SKY_DIAMOND="$(service_url luzia-sky-diamond)"
-URL_FITNESS_COACH="$(service_url nexo-fitness-coach)"
-URL_LANGUAGE_TUTOR="$(service_url nexo-language-tutor)"
 URL_NEWS_RAG="$(service_url nexo-news-rag)"
 URL_SPORTS_RAG="$(service_url nexo-sports-rag)"
 URL_TRAVEL_RAG="$(service_url nexo-travel-rag)"
@@ -299,12 +295,8 @@ http_get_check "structured-py root" "${URL_STRUCTURED_PY}/" "schema_version"
 http_get_check "advanced-py root" "${URL_ADVANCED_PY}/" "webhook-advanced-python"
 http_get_check "minimal-ts root" "${URL_MINIMAL_TS}/" "webhook-minimal-typescript"
 http_get_check "openclaw-bridge root" "${URL_OPENCLAW_BRIDGE}/" "webhook-openclaw-bridge-typescript"
-http_get_check "routines health" "${URL_ROUTINES}/health" "status"
 http_get_check "food-ordering health" "${URL_FOOD_ORDERING}/health" "status"
 http_get_check "travel-planning health" "${URL_TRAVEL_PLANNING}/health" "status"
-http_get_check "sky-diamond health" "${URL_SKY_DIAMOND}/health" "status"
-http_get_check "fitness-coach health" "${URL_FITNESS_COACH}/health" "status"
-http_get_check "language-tutor health" "${URL_LANGUAGE_TUTOR}/health" "status"
 http_get_check "news-rag health" "${URL_NEWS_RAG}/health" "status"
 http_get_check "sports-rag health" "${URL_SPORTS_RAG}/health" "status"
 http_get_check "travel-rag health" "${URL_TRAVEL_RAG}/health" "status"
@@ -350,11 +342,6 @@ WEBHOOK_SECRET="$OPENCLAW_WEBHOOK_SECRET" http_post_signed_check \
   "provider"
 
 http_post_signed_prompt_suggestions_check \
-  "routines webhook" \
-  "${URL_ROUTINES}/" \
-  '{"event":"message_created","message":{"role":"user","content":"morning briefing"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
   "food-ordering webhook" \
   "${URL_FOOD_ORDERING}/" \
   '{"event":"message_created","message":{"role":"user","content":"show vegan options"},"profile":{"display_name":"Mark"}}'
@@ -363,21 +350,6 @@ http_post_signed_prompt_suggestions_check \
   "travel-planning webhook" \
   "${URL_TRAVEL_PLANNING}/" \
   '{"event":"message_created","message":{"role":"user","content":"plan 3 days in Lisbon"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "sky-diamond webhook" \
-  "${URL_SKY_DIAMOND}/webhook" \
-  '{"event":"message_created","thread":{"id":"smoke-sky-diamond"},"message":{"role":"user","content":"Sky Diamond"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "fitness-coach webhook" \
-  "${URL_FITNESS_COACH}/" \
-  '{"event":"message_created","message":{"role":"user","content":"design a beginner workout plan"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "language-tutor webhook" \
-  "${URL_LANGUAGE_TUTOR}/" \
-  '{"event":"message_created","message":{"role":"user","content":"teach me how to order food in Italian"},"profile":{"display_name":"Mark"}}'
 
 http_post_signed_prompt_suggestions_check \
   "news-rag webhook" \

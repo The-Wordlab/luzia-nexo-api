@@ -30,11 +30,11 @@ Use this when you want to test a single flow end-to-end without deploying everyt
 echo -n "nexo-example-secret" | gcloud secrets create WEBHOOK_SECRET --data-file=-
 ```
 
-2. Deploy one service (example: `routines`):
+2. Deploy one service (example: `food-ordering`):
 
 ```bash
 GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/deploy-all-examples.sh routines
+./scripts/deploy-all-examples.sh food-ordering
 ```
 
 Available single targets:
@@ -42,12 +42,8 @@ Available single targets:
 - `structured-py`
 - `advanced-py`
 - `minimal-ts`
-- `routines`
 - `food-ordering`
 - `travel-planning`
-- `sky-diamond`
-- `fitness-coach`
-- `language-tutor`
 - `demo-receiver`
 - `hosted-py`
 - `hosted-ts`
@@ -56,7 +52,7 @@ Available single targets:
 3. Verify service health:
 
 ```bash
-gcloud run services describe nexo-routines \
+gcloud run services describe nexo-food-ordering \
   --region <your-region> \
   --format='value(status.url)'
 ```

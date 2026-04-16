@@ -377,12 +377,8 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | nexo-webhook-advanced-py | europe-west1 | `https://nexo-webhook-advanced-py-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-webhook-minimal-ts | europe-west1 | `https://nexo-webhook-minimal-ts-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-openclaw-bridge | europe-west1 | `https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app` | `/` |
-| nexo-routines | europe-west1 | `https://nexo-routines-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-food-ordering | europe-west1 | `https://nexo-food-ordering-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-travel-planning | europe-west1 | `https://nexo-travel-planning-v3me5awkta-ew.a.run.app` | `/` |
-| luzia-sky-diamond | europe-west1 | `https://luzia-sky-diamond-v3me5awkta-ew.a.run.app` | `/health` |
-| nexo-fitness-coach | europe-west1 | `https://nexo-fitness-coach-v3me5awkta-ew.a.run.app` | `/` |
-| nexo-language-tutor | europe-west1 | `https://nexo-language-tutor-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-news-rag | europe-west1 | `https://nexo-news-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-v3me5awkta-ew.a.run.app` | `/health` |

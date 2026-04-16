@@ -24,7 +24,6 @@
 #   sports
 #   travel
 #   football
-#   routines
 #   food-ordering
 #   travel-planning
 
@@ -48,7 +47,7 @@ usage() {
   echo "  all | hosted | rag"
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
   echo "  hosted-py | hosted-ts | demo-receiver"
-  echo "  news | sports | travel | football | routines | food-ordering | travel-planning"
+  echo "  news | sports | travel | football | food-ordering | travel-planning"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: europe-west1)"
@@ -127,13 +126,6 @@ deploy_openclaw_bridge() {
     "--clear-base-image --set-secrets OPENCLAW_WEBHOOK_SECRET=OPENCLAW_WEBHOOK_SECRET:latest,OPENCLAW_GATEWAY_TOKEN=OPENCLAW_GATEWAY_TOKEN:latest,OPENCLAW_ORIGIN_HEADER_VALUE=OPENCLAW_ORIGIN_HEADER_VALUE:latest --set-env-vars OPENCLAW_BASE_URL=${OPENCLAW_BASE_URL},OPENCLAW_AGENT_ID=${OPENCLAW_AGENT_ID}"
 }
 
-deploy_routines() {
-  deploy_source_service \
-    "nexo-routines" \
-    "${REPO_ROOT}/examples/webhook/routines/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
-}
-
 deploy_food_ordering() {
   deploy_source_service \
     "nexo-food-ordering" \
@@ -180,7 +172,6 @@ run_target() {
       deploy_advanced_py
       deploy_minimal_ts
       deploy_openclaw_bridge
-      deploy_routines
       deploy_food_ordering
       deploy_travel_planning
       deploy_rag_target all
@@ -198,7 +189,6 @@ run_target() {
     advanced-py) deploy_advanced_py ;;
     minimal-ts) deploy_minimal_ts ;;
     openclaw-bridge) deploy_openclaw_bridge ;;
-    routines) deploy_routines ;;
     food-ordering) deploy_food_ordering ;;
     travel-planning) deploy_travel_planning ;;
     hosted-py) deploy_hosted_py ;;

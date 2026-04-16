@@ -132,30 +132,6 @@
       "card_trigger_rules": []
     },
     {
-      "demo_key": "routines",
-      "name": "Daily Routines",
-      "description": "Daily productivity assistant - morning briefing, schedule management, and follow-up reminders with structured cards",
-      "config_json": {
-        "demo_key": "routines",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "calendar-check",
-        "demo_color": "#7C3AED",
-        "demo_order": 12,
-        "prompt_suggestions": [
-          "Give me my morning briefing",
-          "What meetings do I have today?",
-          "Summarize my pending tasks"
-        ]
-      },
-      "webhook_url_env": "DEMO_ROUTINES_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-routines-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": []
-    },
-    {
       "demo_key": "food-ordering",
       "name": "Food Ordering",
       "description": "Food commerce flagship - discover restaurants, build a basket with dietary and budget constraints, prepare checkout, and track delivery",
