@@ -503,7 +503,7 @@ make start-backend      # runs on http://localhost:8000
 # 3. Get a developer key
 #    Open http://localhost:3000 -> login -> Profile -> Developer Access -> Create key
 #    Or use the CLI:
-#    curl -X POST http://localhost:8000/api/auth/token -d '{"email":"admin@luzia.com","password":"YOUR_PASSWORD"}'
+#    curl -X POST http://localhost:8000/api/auth/token -d '{"email":"you@example.com","password":"YOUR_PASSWORD"}'
 #    curl -X POST http://localhost:8000/api/me/api-keys -H "Authorization: Bearer TOKEN"
 
 # 4. Connect MCP
@@ -514,7 +514,7 @@ claude mcp add --scope project --transport http nexo-mcp \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 
 # 5. Run the live-demo test harness
-export NEXO_TEST_EMAIL=admin@luzia.com
+export NEXO_TEST_EMAIL=you@example.com
 export NEXO_TEST_PASSWORD=YOUR_PASSWORD
 ./scripts/test-live-demos.sh
 ```
