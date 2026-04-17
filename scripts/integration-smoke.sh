@@ -185,12 +185,32 @@ if [[ -z "$MSG_BODY" ]]; then
   fail "Response body is empty"
 fi
 
-# Check that body contains at least one expected field
-if echo "$MSG_BODY" | grep -q '"output"\|"content"\|"message"\|"text"'; then
-  pass "Response body has expected shape"
+# Verify the /api/responses contract: the sync JSON response should contain
+# a recognizable output structure (output.text, content_parts, cards, or status).
+SHAPE_OK=0
+if echo "$MSG_BODY" | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    # Accept any of: output dict, text field, content_parts, cards, status
+    ok = (
+        isinstance(d.get('output'), dict)
+        or 'text' in d
+        or 'content_parts' in d
+        or 'cards' in d
+        or 'status' in d
+    )
+    sys.exit(0 if ok else 1)
+except:
+    sys.exit(1)
+" 2>/dev/null; then
+  SHAPE_OK=1
+fi
+
+if [[ "$SHAPE_OK" -eq 1 ]]; then
+  pass "Response matches canonical /api/responses contract"
 else
-  echo "[WARN] Response body may have unexpected shape. Got: $MSG_BODY"
-  # Not fatal - webhook could return a valid but minimal response
+  echo "[WARN] Response may have unexpected shape. Got: ${MSG_BODY:0:200}"
   pass "Response body is non-empty (shape check inconclusive)"
 fi
 

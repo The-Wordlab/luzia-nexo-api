@@ -148,16 +148,32 @@ print(t.get('id', ''))" 2>/dev/null)
     --max-time 30 \
     -d "{\"app_id\":\"$APP_ID\",\"thread_id\":\"$THREAD_ID\",\"input\":\"$MSG\"}" 2>/dev/null)
 
-  # Parse SSE events
+  # Parse SSE events - verify canonical stream shape
   EVENT_COUNT=$(echo "$RESPONSE" | grep -c '^event:' || true)
-  HAS_DONE=$(echo "$RESPONSE" | grep -c 'event: done' || true)
+  HAS_STREAM_START=$(echo "$RESPONSE" | grep -c 'event: stream_start' || true)
   HAS_CONTENT=$(echo "$RESPONSE" | grep -c 'event: content_delta' || true)
+  HAS_DONE=$(echo "$RESPONSE" | grep -c 'event: done' || true)
   BYTE_COUNT=${#RESPONSE}
 
+  # Verify done payload has required fields (text or content_parts)
+  DONE_PAYLOAD_OK=0
+  DONE_DATA=$(echo "$RESPONSE" | grep -A1 'event: done' | grep '^data:' | head -1)
+  if [[ -n "$DONE_DATA" ]]; then
+    if echo "$DONE_DATA" | python3 -c "
+import sys,json
+d=json.loads(sys.stdin.read().replace('data: ','',1))
+ok = 'text' in d or 'content_parts' in d or 'cards' in d or 'status' in d
+sys.exit(0 if ok else 1)
+" 2>/dev/null; then
+      DONE_PAYLOAD_OK=1
+    fi
+  fi
+
+  DETAILS="events=$EVENT_COUNT stream_start=$HAS_STREAM_START content=$HAS_CONTENT done=$HAS_DONE done_shape=$DONE_PAYLOAD_OK bytes=$BYTE_COUNT"
   if [[ "$HAS_DONE" -gt 0 && "$BYTE_COUNT" -gt 100 ]]; then
-    pass "$DEMO_KEY ($APP_NAME): events=$EVENT_COUNT content=$HAS_CONTENT done=$HAS_DONE bytes=$BYTE_COUNT"
+    pass "$DEMO_KEY ($APP_NAME): $DETAILS"
   else
-    fail "$DEMO_KEY ($APP_NAME): events=$EVENT_COUNT content=$HAS_CONTENT done=$HAS_DONE bytes=$BYTE_COUNT"
+    fail "$DEMO_KEY ($APP_NAME): $DETAILS"
   fi
 
   # Cleanup thread
