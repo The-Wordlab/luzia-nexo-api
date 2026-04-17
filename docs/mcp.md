@@ -55,6 +55,13 @@ the app with tables, fields, views, and seed data.
 
 > "Show me everything I have"
 
+**Recommended workflow:** Always plan before provisioning. Use `show_app` to
+verify after provisioning. Use `plan_operation` + `apply_operation` for
+incremental changes. Check the result in the dashboard and standalone webview.
+
+If you have the `luzia-nexo` repo checked out, use the `/build-app` slash
+command in Claude Code for a guided app creation workflow.
+
 ## Authentication
 
 Send your **developer key** in the `X-Api-Key` header. One key, one credential.
