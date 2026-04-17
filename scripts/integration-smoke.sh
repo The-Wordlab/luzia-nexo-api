@@ -9,7 +9,7 @@
 #   --nexo-url       Nexo base URL (default: http://localhost:8000)
 #   --webhook-url    Deployed Cloud Run webhook URL (required)
 #   --email          Test user email (default: e2e-smoke@luzia.com)
-#   --password       Test user password (default: NexoPass#99)
+#   --password       Test user password (default: $NEXO_TEST_PASSWORD env var, required)
 #   --webhook-secret Webhook secret (default: nexo-example-secret, or $WEBHOOK_SECRET env var)
 
 set -euo pipefail
@@ -17,8 +17,8 @@ set -euo pipefail
 # ── Defaults ──────────────────────────────────────────────────────────────────
 NEXO_URL="http://localhost:8000"
 WEBHOOK_URL=""
-EMAIL="tester@luzia.com"
-PASSWORD="NexoPass#99"
+EMAIL="${NEXO_TEST_EMAIL:-tester@luzia.com}"
+PASSWORD="${NEXO_TEST_PASSWORD:-}"
 WEBHOOK_SECRET="${WEBHOOK_SECRET:-nexo-example-secret}"
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
@@ -36,6 +36,11 @@ done
 if [[ -z "$WEBHOOK_URL" ]]; then
   echo "ERROR: --webhook-url is required"
   echo "Usage: $0 --webhook-url https://your-webhook.run.app [--nexo-url http://localhost:8000]"
+  exit 1
+fi
+
+if [[ -z "$PASSWORD" ]]; then
+  echo "ERROR: Set NEXO_TEST_PASSWORD env var or pass --password"
   exit 1
 fi
 
