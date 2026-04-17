@@ -1,6 +1,6 @@
 # Demo Catalog
 
-See what you can build with Nexo. Every example below is a production-ready integration pattern you can clone, customize, and deploy.
+See what you can build with Nexo. Every example below is a production-ready Connected App or reference-service pattern you can clone, customize, and deploy.
 
 - **Clone** any example and run it locally
 - **Test** against live deployed instances immediately

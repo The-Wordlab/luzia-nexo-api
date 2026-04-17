@@ -1,19 +1,19 @@
 # Luzia Nexo API
 
-Build apps for Luzia users.
+Build apps on top of Nexo, Luzia's apps runtime.
 
-This repository documents two developer lanes:
+This repository documents the two external developer lanes:
 
-- **Partner Integrations** - external webhook-backed apps that run on your infrastructure.
-- **Personalized Apps** - headless, user-scoped app creation and management through the Nexo API, MCP, and developer tooling.
+- **Connected Apps** - external webhook-backed apps that run on your infrastructure.
+- **Personalized Apps** - structured apps you create and manage through Nexo APIs, MCP, and developer tooling.
 
-The Nexo runtime handles routing, consent-managed profile context, rich UI payloads, and proactive delivery.
+Nexo handles routing, consent-managed profile context, rich UI payloads, streaming, and proactive delivery. This repo is the external examples and documentation companion to the main `luzia-nexo` runtime.
 
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
 
-**Partner Integrations**
+**Connected Apps**
 
 1. Implement a `POST /webhook` endpoint
 2. Return a valid JSON or SSE response envelope
@@ -28,7 +28,7 @@ The Nexo runtime handles routing, consent-managed profile context, rich UI paylo
 }
 ```
 
-See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quickstart/) for the webhook lane.
+See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quickstart/) for the Connected Apps webhook lane.
 
 **Personalized Apps**
 
@@ -85,13 +85,13 @@ sequenceDiagram
     Luzia-->>User: Final reply
 ```
 
-This webhook flow is the **primary external integration path**. Personalized Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and tools instead of partner webhooks.
+This webhook flow is the **primary external Connected Apps path**. Personalized Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and tools instead of partner webhooks.
 
 ## What's in this repository
 
 | Path | Description |
 |---|---|
-| [`examples/webhook/`](examples/webhook/) | Partner Integration examples (Python + TypeScript) |
+| [`examples/webhook/`](examples/webhook/) | Connected App examples (Python + TypeScript) |
 | [`examples/hosted/`](examples/hosted/) | Reference API services for Cloud Run |
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |

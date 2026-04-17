@@ -1,10 +1,15 @@
 # Luzia Nexo API
 
-Build apps for Luzia users.
+Build apps on top of Nexo, Luzia's apps runtime.
 
-The Nexo Agent Runtime handles message routing, delivery, signature verification, and consent management -- so you can focus on your domain logic.
+Nexo handles message routing, delivery, signature verification, consent-managed profile context, streaming, and rich UI payloads, so you can focus on your domain logic.
 
-Ship your first integration in minutes:
+This docs site covers two external developer lanes:
+
+- **Connected Apps** - external webhook-backed apps that run on your infrastructure
+- **Personalized Apps** - structured apps you create and manage through Nexo APIs, MCP, and developer tooling
+
+Ship your first Connected App in minutes:
 
 - **Signed webhook delivery** -- every request is HMAC-verified
 - **Approved profile context** -- locale, preferences, and more, released by Nexo after consent
@@ -20,7 +25,7 @@ Ship your first integration in minutes:
 
 ## 5-minute path
 
-**Partner Integration lane (primary external path):**
+**Connected Apps lane (primary external path):**
 
 1. Implement one `POST /webhook` endpoint in your backend.
 2. Return a valid JSON (or SSE) response envelope.
@@ -60,7 +65,7 @@ Improve first-message UX by returning `metadata.prompt_suggestions` in your webh
 
 ### Required vs optional
 
-- **Required** for live Partner Integrations: `webhook_url` + `WEBHOOK_SECRET`
+- **Required** for live Connected Apps: `webhook_url` + `WEBHOOK_SECRET`
 - **Optional** for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
 
 ## What You Can Build
@@ -79,7 +84,7 @@ For the full catalog, see [Demo Catalog](demos.md).
 
 ## Start Here
 
-1. [Quickstart](quickstart.md) -- get a Partner Integration live in minutes.
+1. [Quickstart](quickstart.md) -- get a Connected App live in minutes.
 2. [Demo Catalog](demos.md) -- browse all examples and live services.
 3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
 4. [Partner API Reference](partner-api-reference.md) -- full webhook/runtime contract details.
@@ -95,7 +100,7 @@ sequenceDiagram
     autonumber
     participant User as End User
     participant Luzia as Luzia Backend
-    participant Nexo as Nexo Runtime
+    participant Nexo as Nexo Apps Runtime
     participant Partner as Partner Service
 
     User->>Luzia: Send message
@@ -124,7 +129,7 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 
 | Capability | Description | Example |
 |---|---|---|
-| Webhook contract | Deterministic request and response schema for Partner Integrations | `webhook/minimal` |
+| Webhook contract | Deterministic request and response schema for Connected Apps | `webhook/minimal` |
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
 | Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
 | Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
@@ -163,4 +168,4 @@ For source links and what each demo does, see [Demo Catalog](demos.md).
 
 - In customer-facing product surfaces, Nexo uses **Personalized Apps**.
 - Internally and in code, you may still see the technical term **micro apps**.
-- **Partner Integrations** remain the external webhook-backed app family.
+- **Connected Apps** remain the external webhook-backed app family.
