@@ -522,6 +522,27 @@ export NEXO_TEST_PASSWORD=YOUR_PASSWORD
 This is the recommended path for developing MCP workflows, testing integration
 scripts, and verifying live-demo compatibility before moving to staging.
 
+## App-building workflow
+
+Once connected, use this sequence to build Personalized Apps:
+
+1. **Plan first:** `plan_app` with a clear prompt describes the app structure before creating anything
+2. **Provision:** `provision_app` with the plan template creates the app, tables, fields, views, and seed data
+3. **Verify:** `show_app` to inspect what was created
+4. **Evolve:** `plan_operation` + `apply_operation` for incremental changes (add fields, records, views)
+5. **Review:** Check the result in the dashboard (`/dashboard/micro-apps`) and standalone webview (`/micro-apps/{id}/webview`)
+
+**Tips by client:**
+
+- **Claude Code:** If you have the `luzia-nexo` repo, use the `/build-app` command for a guided workflow
+- **Claude Desktop:** Say "Create a [description] app" and the agent will call `plan_app` then `provision_app`
+- **Cursor / Codex / Windsurf:** The same tool sequence works. Start with `plan_app` to see the template, then `provision_app` to create it
+
+**Common anti-patterns:**
+- Do not skip `plan_app` and go straight to manual `create_app` unless you know the exact schema
+- Do not create more than 3 tables per app in V1
+- Do not mix Personalized App concepts with Connected App (webhook) concepts
+
 ## Debugging with MCP Inspector
 
 The MCP Inspector is a browser-based tool for exploring and testing MCP servers interactively:
