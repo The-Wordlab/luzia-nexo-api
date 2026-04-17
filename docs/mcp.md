@@ -488,6 +488,40 @@ export NEXO_BASE_URL=http://localhost:8000
 
 Developer keys are per-environment — a key created on staging does not work on production. The dashboard host and MCP host can differ during rollout, so always use the MCP base URL for your environment.
 
+### Local development with the Nexo runtime
+
+If you have the `luzia-nexo` runtime repo checked out locally:
+
+```bash
+# 1. Start the database and seed data
+cd ../luzia-nexo
+make setup              # first time only: DB + migrations + seeds
+
+# 2. Start the backend
+make start-backend      # runs on http://localhost:8000
+
+# 3. Get a developer key
+#    Open http://localhost:3000 -> login -> Profile -> Developer Access -> Create key
+#    Or use the CLI:
+#    curl -X POST http://localhost:8000/api/auth/token -d '{"email":"admin@luzia.com","password":"YOUR_PASSWORD"}'
+#    curl -X POST http://localhost:8000/api/me/api-keys -H "Authorization: Bearer TOKEN"
+
+# 4. Connect MCP
+export NEXO_DEVELOPER_KEY=nexo_uak_...
+export NEXO_BASE_URL=http://localhost:8000
+claude mcp add --scope project --transport http nexo-mcp \
+  "${NEXO_BASE_URL}/mcp" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
+
+# 5. Run the live-demo test harness
+export NEXO_TEST_EMAIL=admin@luzia.com
+export NEXO_TEST_PASSWORD=YOUR_PASSWORD
+./scripts/test-live-demos.sh
+```
+
+This is the recommended path for developing MCP workflows, testing integration
+scripts, and verifying live-demo compatibility before moving to staging.
+
 ## Debugging with MCP Inspector
 
 The MCP Inspector is a browser-based tool for exploring and testing MCP servers interactively:
