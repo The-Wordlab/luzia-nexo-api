@@ -252,17 +252,36 @@ Return structured output payloads alongside text:
 
 #### SSE streaming
 
-Return HTTP `200` + `Content-Type: text/event-stream`:
+Return HTTP `200` + `Content-Type: text/event-stream`.
+
+The canonical SSE event vocabulary:
+
+| Event type | When emitted | Payload |
+|---|---|---|
+| `stream_start` | First event - signals stream beginning | `{}` (empty, or optional metadata) |
+| `content_delta` | Each text chunk from the LLM | `{"text": "<chunk>"}` |
+| `done` | Final event - full response metadata | Schema below |
+| `enrichment` | Reserved for future use - cards/actions mid-stream | - |
+| `error` | Reserved for future use - standalone error event | - |
+
+Example stream:
 
 ```text
-data: {"type":"delta","text":"Sure - "}
+event: stream_start
+data: {}
 
-data: {"type":"delta","text":"I can help with that."}
+event: content_delta
+data: {"text":"Sure - "}
 
-data: {"type":"done","schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"metadata":{"prompt_suggestions":["Show me options","Track status"]}}
+event: content_delta
+data: {"text":"I can help with that."}
+
+event: done
+data: {"schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"text":"Sure - I can help with that.","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
 ```
 
 The `done` event is required and must include `schema_version` and `task.status`.
+It should also include `text` (the full accumulated response text).
 It may also include `cards`, `actions`, `artifacts`, and `capability` (same shape as the JSON response).
 
 #### Streaming behavior details
@@ -281,7 +300,8 @@ It may also include `cards`, `actions`, `artifacts`, and `capability` (same shap
 If your webhook needs to signal an error during streaming, emit a `done` event with `task.status: "failed"` and an `error` object:
 
 ```text
-data: {"type":"done","schema_version":"2026-03","task":{"id":"tsk_err","status":"failed"},"error":{"code":"upstream_timeout","message":"Could not reach booking system","retryable":true}}
+event: done
+data: {"schema_version":"2026-03","task":{"id":"tsk_err","status":"failed"},"error":{"code":"upstream_timeout","message":"Could not reach booking system","retryable":true}}
 ```
 
 ### Retry behavior

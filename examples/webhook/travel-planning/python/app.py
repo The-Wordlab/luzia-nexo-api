@@ -643,11 +643,11 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
         async for chunk in response:
             delta = chunk.choices[0].delta.content or ""
             if delta:
-                yield f"data: {json.dumps({'type': 'delta', 'text': delta})}\n\n"
+                yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': delta})}\n\n"
     except Exception as exc:
         logger.warning("LLM streaming failed: %s", exc)
         error_text = "I'm having trouble generating a response right now."
-        yield f"data: {json.dumps({'type': 'delta', 'text': error_text})}\n\n"
+        yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': error_text})}\n\n"
 
 
 # ---------------------------------------------------------------------------
@@ -885,20 +885,28 @@ async def webhook(request: Request):
             full_text = ""
             if prefix:
                 full_text += prefix
-                yield f"data: {json.dumps({'type': 'delta', 'text': prefix})}\n\n"
+                yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': prefix})}\n\n"
                 yield f"event: task.delta\ndata: {json.dumps({'text': prefix})}\n\n"
 
             async for event in stream_llm(system, llm_prompt):
-                if event.startswith("data:"):
+                if event.startswith("event: content_delta") or (
+                    event.startswith("data:") and not event.startswith("event:")
+                ):
                     try:
-                        payload = json.loads(event[len("data:"):].strip())
-                    except json.JSONDecodeError:
+                        data_line = event
+                        if "\ndata:" in event:
+                            data_line = event.split("\ndata:", 1)[1].strip()
+                        elif event.startswith("data:"):
+                            data_line = event[len("data:"):].strip()
+                        payload = json.loads(data_line)
+                    except (json.JSONDecodeError, ValueError):
                         yield event
                         continue
-                    if payload.get("type") == "delta":
+                    ptype = payload.get("type", "")
+                    if ptype in ("content_delta", "delta"):
                         text = payload.get("text", "")
                         full_text += text
-                        yield event
+                        yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
                         yield f"event: task.delta\ndata: {json.dumps({'text': text})}\n\n"
                         continue
                 yield event

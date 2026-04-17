@@ -819,7 +819,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'planning'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'planning'})}\n\n"
 
         with patch.object(m, "stream_llm", side_effect=_fake_stream):
             resp = client.post(
@@ -839,7 +839,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'ok'})}\n\n"
 
         with patch.object(m, "stream_llm", side_effect=_fake_stream):
             resp = client.post(
@@ -870,7 +870,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'ok'})}\n\n"
 
         with patch.object(m, "stream_llm", side_effect=_fake_stream):
             resp = client.post(
@@ -917,7 +917,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(m, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'trip planned'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'trip planned'})}\n\n"
 
         with patch.object(m, "stream_llm", side_effect=_fake_stream):
             resp = client.post(
@@ -931,7 +931,7 @@ class TestSSEStreaming:
             for line in resp.text.splitlines()
             if line.startswith("data:")
         ]
-        delta_texts = [e.get("text", "") for e in events if e.get("type") == "delta"]
+        delta_texts = [e.get("text", "") for e in events if e.get("type") in ("content_delta", "delta")]
         full_text = "".join(delta_texts)
         assert "Elena" in full_text
 

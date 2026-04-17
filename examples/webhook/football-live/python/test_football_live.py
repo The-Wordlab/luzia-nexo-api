@@ -710,7 +710,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(server, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'hello'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'hello'})}\n\n"
 
         with patch.object(server, "search_matches", return_value=[_sample_match_result()]):
             with patch.object(server, "stream_llm", side_effect=_fake_stream):
@@ -731,7 +731,7 @@ class TestSSEStreaming:
         monkeypatch.setattr(server, "STREAMING_ENABLED", True)
 
         async def _fake_stream(_s, _u):
-            yield f"data: {json.dumps({'type': 'delta', 'text': 'ok'})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': 'ok'})}\n\n"
 
         with patch.object(server, "search_matches", return_value=[_sample_match_result()]):
             with patch.object(server, "stream_llm", side_effect=_fake_stream):

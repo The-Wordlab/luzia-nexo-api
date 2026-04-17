@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
@@ -254,18 +255,52 @@ class NexoWebhookResponse(BaseModel):
 # SSE streaming contract
 # ---------------------------------------------------------------------------
 
+# Canonical SSE event type names agreed between nexo and partner webhooks.
+SSE_EVENT_STREAM_START = "stream_start"
+SSE_EVENT_CONTENT_DELTA = "content_delta"
+SSE_EVENT_DONE = "done"
+# Reserved for future use (not yet emitted by helpers):
+SSE_EVENT_ENRICHMENT = "enrichment"
+SSE_EVENT_ERROR = "error"
 
-class NexoSseDeltaEvent(BaseModel):
-    """SSE delta event carrying a text chunk."""
+
+class NexoSseStreamStartEvent(BaseModel):
+    """SSE stream_start event - first event in a streaming response.
+
+    Signals that the stream is beginning. Partners may include optional
+    metadata (responseId, threadId) when available. Nexo ignores unknown
+    fields for forward compatibility.
+    """
+
+    model_config = {"extra": "allow"}
+
+
+class NexoSseContentDeltaEvent(BaseModel):
+    """SSE content_delta event carrying a text chunk.
+
+    Replaces the legacy 'delta' event type.
+    """
 
     text: str
 
 
+# Legacy alias kept for backwards compatibility in existing test code.
+NexoSseDeltaEvent = NexoSseContentDeltaEvent
+
+
 class NexoSseDoneEvent(BaseModel):
-    """SSE done event carrying the final metadata, cards, and actions."""
+    """SSE done event carrying the final metadata, cards, and actions.
+
+    The ``text`` field carries the full accumulated response text.
+    It is optional to allow existing partners time to adopt the field.
+    """
 
     schema_version: str
     status: str
+    text: str | None = Field(
+        default=None,
+        description="Full accumulated response text (added in 2026-04)",
+    )
     cards: list[NexoCard] | None = Field(default=None)
     actions: list[NexoAction] | None = Field(default=None)
 
@@ -286,6 +321,47 @@ class NexoSseDoneEvent(BaseModel):
         if v not in VALID_STATUSES:
             raise ValueError(f"status must be one of {VALID_STATUSES}, got {v!r}")
         return v
+
+
+def parse_sse_events(raw: str) -> list[tuple[str, dict]]:
+    """Parse a raw SSE stream string into a list of (event_type, data) pairs.
+
+    Handles both named events (``event: <type>\\ndata: <json>``) and
+    bare data lines (``data: <text>``).  Bare data lines without a
+    named event type are returned with event_type ``"data"``.
+
+    Returns a list of (event_type, payload) tuples where payload is
+    the parsed JSON dict (or a plain string for non-JSON bare data).
+    """
+    events: list[tuple[str, dict]] = []
+    current_event: str | None = None
+    current_data: str | None = None
+
+    for line in raw.splitlines():
+        line = line.strip()
+        if line.startswith("event:"):
+            current_event = line[len("event:"):].strip()
+        elif line.startswith("data:"):
+            current_data = line[len("data:"):].strip()
+        elif line == "":
+            if current_data is not None:
+                try:
+                    payload = json.loads(current_data)
+                except (json.JSONDecodeError, ValueError):
+                    payload = current_data  # type: ignore[assignment]
+                events.append((current_event or "data", payload))
+            current_event = None
+            current_data = None
+
+    # Handle stream that doesn't end with a blank line
+    if current_data is not None:
+        try:
+            payload = json.loads(current_data)
+        except (json.JSONDecodeError, ValueError):
+            payload = current_data  # type: ignore[assignment]
+        events.append((current_event or "data", payload))
+
+    return events
 
 
 # ---------------------------------------------------------------------------

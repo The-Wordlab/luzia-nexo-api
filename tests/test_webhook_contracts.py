@@ -180,7 +180,7 @@ class _RoutinesFixture:
     @staticmethod
     def mock_stream(mod: Any, text: str = "ok"):
         async def _fake(*_a, **_kw):
-            yield f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
         return patch.object(mod, "stream_llm", side_effect=_fake)
 
     @staticmethod
@@ -227,7 +227,7 @@ class _FoodFixture:
     @staticmethod
     def mock_stream(mod: Any, text: str = "ok"):
         async def _fake(*_a, **_kw):
-            yield f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
         return patch.object(mod, "stream_llm", side_effect=_fake)
 
     @staticmethod
@@ -291,7 +291,7 @@ class _FootballFixture:
     @staticmethod
     def mock_stream(mod: Any, text: str = "ok"):
         async def _fake(*_a, **_kw):
-            yield f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
         return patch.object(mod, "stream_llm", side_effect=_fake)
 
     @staticmethod
@@ -348,7 +348,7 @@ class _TravelFixture:
     @staticmethod
     def mock_stream(mod: Any, text: str = "ok"):
         async def _fake(*_a, **_kw):
-            yield f"data: {json.dumps({'type': 'delta', 'text': text})}\n\n"
+            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
         return patch.object(mod, "stream_llm", side_effect=_fake)
 
     @staticmethod
