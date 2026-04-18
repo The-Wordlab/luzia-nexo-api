@@ -234,8 +234,8 @@ Create structured apps from the terminal using MCP.
 
 ### What you need
 
-- A Nexo account
-- A developer key (from Dashboard → Profile → Developer Access)
+- A Nexo account (or a local Nexo runtime - see [local setup](mcp.md#local-development-with-the-nexo-runtime))
+- A developer key (from Dashboard -> Profile -> Developer Access)
 
 ### Connect
 

@@ -210,8 +210,7 @@ fi
 if [[ "$SHAPE_OK" -eq 1 ]]; then
   pass "Response matches canonical /api/responses contract"
 else
-  echo "[WARN] Response may have unexpected shape. Got: ${MSG_BODY:0:200}"
-  pass "Response body is non-empty (shape check inconclusive)"
+  fail "Response does not match canonical /api/responses contract (expected output dict, text, content_parts, cards, or status). Got: ${MSG_BODY:0:300}"
 fi
 
 # ── Done (cleanup runs via trap) ──────────────────────────────────────────────

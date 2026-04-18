@@ -170,8 +170,17 @@ sys.exit(0 if ok else 1)
   fi
 
   DETAILS="events=$EVENT_COUNT stream_start=$HAS_STREAM_START content=$HAS_CONTENT done=$HAS_DONE done_shape=$DONE_PAYLOAD_OK bytes=$BYTE_COUNT"
-  if [[ "$HAS_DONE" -gt 0 && "$BYTE_COUNT" -gt 100 ]]; then
+  if [[ "$HAS_STREAM_START" -gt 0 && "$HAS_DONE" -gt 0 && "$DONE_PAYLOAD_OK" -gt 0 && "$BYTE_COUNT" -gt 100 ]]; then
     pass "$DEMO_KEY ($APP_NAME): $DETAILS"
+  elif [[ "$HAS_DONE" -gt 0 && "$BYTE_COUNT" -gt 100 ]]; then
+    # Response arrived but stream shape is not canonical
+    if [[ "$HAS_STREAM_START" -eq 0 ]]; then
+      fail "$DEMO_KEY ($APP_NAME): missing stream_start event ($DETAILS)"
+    elif [[ "$DONE_PAYLOAD_OK" -eq 0 ]]; then
+      fail "$DEMO_KEY ($APP_NAME): done payload missing text/content_parts/cards/status ($DETAILS)"
+    else
+      fail "$DEMO_KEY ($APP_NAME): $DETAILS"
+    fi
   else
     fail "$DEMO_KEY ($APP_NAME): $DETAILS"
   fi

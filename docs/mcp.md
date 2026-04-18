@@ -490,34 +490,55 @@ Developer keys are per-environment — a key created on staging does not work on
 
 ### Local development with the Nexo runtime
 
-If you have the `luzia-nexo` runtime repo checked out locally:
+Most MCP workflows, demo scripts, and integration tests need a running Nexo
+backend. If you have the `luzia-nexo` runtime repo checked out as a sibling
+directory (`../luzia-nexo`), use this one-path local setup:
 
 ```bash
-# 1. Start the database and seed data
+# 1. Start the Nexo runtime (in ../luzia-nexo)
 cd ../luzia-nexo
 make setup              # first time only: DB + migrations + seeds
+make seed-demo          # seed demo apps and characters (needed for demo scripts)
+make start-backend      # backend on http://localhost:8000
+make start-frontend     # frontend on http://localhost:3000 (needed for dashboard key creation)
 
-# 2. Start the backend
-make start-backend      # runs on http://localhost:8000
+# 2. Get a developer key
+#    Option A (dashboard): Open http://localhost:3000 -> login -> Profile -> Developer Access -> Create key
+#    Option B (CLI):
+#    TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/jwt/login \
+#      -H "Content-Type: application/x-www-form-urlencoded" \
+#      -d "username=admin@luzia.com&password=YOUR_PASSWORD" | jq -r .access_token)
+#    curl -s -X POST http://localhost:8000/api/me/api-keys \
+#      -H "Authorization: Bearer $TOKEN" \
+#      -H "Content-Type: application/json" \
+#      -d '{"name":"dev-key"}' | jq .key
 
-# 3. Get a developer key
-#    Open http://localhost:3000 -> login -> Profile -> Developer Access -> Create key
-#    Or use the CLI:
-#    curl -X POST http://localhost:8000/api/auth/token -d '{"email":"you@example.com","password":"YOUR_PASSWORD"}'
-#    curl -X POST http://localhost:8000/api/me/api-keys -H "Authorization: Bearer TOKEN"
-
-# 4. Connect MCP
+# 3. Set credentials (in this repo directory)
 export NEXO_DEVELOPER_KEY=nexo_uak_...
 export NEXO_BASE_URL=http://localhost:8000
+
+# 4. Connect MCP
 claude mcp add --scope project --transport http nexo-mcp \
   "${NEXO_BASE_URL}/mcp" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 
-# 5. Run the live-demo test harness
-export NEXO_TEST_EMAIL=you@example.com
-export NEXO_TEST_PASSWORD=YOUR_PASSWORD
-./scripts/test-live-demos.sh
+# 5. Verify MCP is working
+claude mcp list          # should show nexo-mcp
+
+# 6. Run demo/integration scripts against local Nexo
+./scripts/test-live-demos.sh                    # conversational demo pass
+./scripts/integration-smoke.sh \
+  --webhook-url https://your-webhook.run.app    # integration test
 ```
+
+**Seed data matters.** If demo scripts fail with "app not found" errors, run
+`make seed-demo` in `../luzia-nexo` to ensure demo apps and characters are
+seeded. `make setup` seeds production data but not demo data.
+
+**Frontend is optional but recommended.** The dashboard at `http://localhost:3000`
+is the easiest way to create a developer key, inspect apps, and verify the
+runtime. If you only need MCP/API access and already have a key, the backend
+alone is sufficient.
 
 This is the recommended path for developing MCP workflows, testing integration
 scripts, and verifying live-demo compatibility before moving to staging.
