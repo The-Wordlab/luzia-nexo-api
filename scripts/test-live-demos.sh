@@ -81,7 +81,7 @@ auth_header() {
 # Step 2: List demo apps
 echo ""
 echo "--- List demo apps ---"
-APPS_JSON=$(curl -s -L "$NEXO_URL/api/apps/" \
+APPS_JSON=$(curl -s -L "$NEXO_URL/api/apps/?size=100" \
   -H "$(auth_header)" \
   -H "Content-Type: application/json" 2>/dev/null)
 
