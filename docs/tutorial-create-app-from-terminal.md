@@ -230,8 +230,24 @@ In 6 conversational turns:
 
 The same app is visible in the Nexo dashboard at `https://nexo.luzia.com/dashboard` and can be accessed via the [REST API](micro-apps-api.md).
 
+## Using other MCP clients
+
+The same workflow works in any MCP client. The key steps are always:
+1. Connect to `${NEXO_BASE_URL}/mcp` with your developer key
+2. Ask the agent to plan an app
+3. Review and provision
+4. Evolve with operations
+
+**Claude Desktop:** Add the MCP server in `~/Library/Application Support/Claude/claude_desktop_config.json` (see [connection guide](mcp.md#claude-desktop-macos--windows)). Then say "Create a meal planner" in a new conversation.
+
+**Cursor:** Add the MCP server in Settings -> MCP (see [connection guide](mcp.md#cursor)). Use the chat panel to describe apps.
+
+**Codex / Windsurf:** Connect using the same HTTP transport URL and header. The tool sequence (`plan_app` -> `provision_app` -> `show_app` -> `plan_operation` -> `apply_operation`) is identical across all clients.
+
+**Tip:** For richer apps, reference the [available primitives](mcp.md#app-building-primitives) in your prompt: "Create a training plan with a HeroCard daily view, milestones, and a progress_ratio metric."
+
 ## Next steps
 
 - [Personalized Apps API](micro-apps-api.md) -- full REST reference
-- [MCP Server](mcp.md) -- all 11 available tools
+- [MCP Server](mcp.md) -- all 11 available tools, connection guides, and app-building primitives
 - [Agent Interop](agent-interop.md) -- MCP and A2A protocol details
