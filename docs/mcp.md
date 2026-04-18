@@ -574,6 +574,44 @@ npx @modelcontextprotocol/inspector http "${NEXO_BASE_URL}/mcp"
 
 Add your developer key in the Inspector's headers configuration panel (`X-Api-Key: nexo_uak_...`). This is useful for testing tool schemas and responses without an AI assistant.
 
+## App-building primitives
+
+When using `plan_app` or `plan_operation`, these building blocks are available.
+Reference them in your prompt to get the correct renderer and contract shape.
+
+**Card renderers** (set as `view_type` on a view):
+
+- `HeroCard` - daily mission layout; requires `view_role: "today"` and progress metric definitions
+- `MilestoneList` - ordered milestones with lock/check icons; requires a milestone table and a cross-table metric sourced from an activity/log table
+- `LeaderboardCard` - participant ranking; requires a `participant_leaderboard` metric definition
+- `SummaryCard` - metric display with progress bars; works with any metric definitions
+
+**view_role** (set on individual views):
+
+- `"today"` - activates the HeroCard daily layout; at most one view per app
+- `"overview"` - summary/analytics layout used by MilestoneList and LeaderboardCard
+
+**scope** (record ownership, set per table or record):
+
+- `"system"` - agent/owner-owned seed data (exercise library, milestone definitions)
+- `"shared"` - readable and writable by all participants
+- `"personal"` - private to the authenticated user
+
+**metric_definitions** (in `state_json.metric_definitions`):
+
+Available aggregations: `count`, `sum`, `progress_ratio`, `current_streak`,
+`latest_value`, `grouped_count`, `participant_leaderboard`. Cross-table metrics
+(e.g. milestone completion sourced from a separate log table) use `source_table_key`.
+
+**state_json.presentation** (visual shell):
+
+- `accent_color` - hex color for chrome and progress indicators
+- `illustration_key` - illustration name for empty/onboarding states
+- `cover_variant` - `"gradient"`, `"illustration"`, or `"solid"`
+
+For full examples and usage guidance, see the canonical workflow doc in the
+`luzia-nexo` repo at `.agents/docs/nexo-app-builder-workflow.md`.
+
 ## Related docs
 
 - [Personalized Apps API](micro-apps-api.md) -- same operations via REST
