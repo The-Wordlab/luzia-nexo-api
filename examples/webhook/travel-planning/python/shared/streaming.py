@@ -5,7 +5,7 @@ these into content_delta events for downstream consumers.
 
 Inbound partner SSE contract (what your webhook should emit):
   plain data: <chunk>  - one per LLM token/chunk; no event: line needed
-  event: done          - final event with schema_version, status, text, cards, actions
+  event: done          - final event with schema_version, task.status, text, cards, actions
   event: error         - explicit partner-side failure (optional)
 
 Do NOT emit ``event: content_delta`` or ``event: stream_start``.

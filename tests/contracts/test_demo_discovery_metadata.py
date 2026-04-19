@@ -14,7 +14,6 @@ WEBHOOK_ROOT = REPO_ROOT / "examples" / "webhook"
 
 
 HOSTED_DISCOVERY_EXAMPLES = [
-    ("routines", WEBHOOK_ROOT / "routines" / "python", "app.py", "demo_discovery_routines"),
     ("food-ordering", WEBHOOK_ROOT / "food-ordering" / "python", "app.py", "demo_discovery_food_ordering"),
     ("travel-planning", WEBHOOK_ROOT / "travel-planning" / "python", "app.py", "demo_discovery_travel_planning"),
     ("news-rag", WEBHOOK_ROOT / "news-rag" / "python", "server.py", "demo_discovery_news_rag"),

@@ -45,7 +45,7 @@ POST /
            }
     Reply: {
                "schema_version": "2026-03",
-               "status": "completed",
+               "task": {"id": "<stable task id>", "status": "completed"},
                "content_parts": [{"type": "text", "text": "<text>"}],
                "cards": [...],                        # optional
                "metadata": {                          # optional
@@ -405,7 +405,7 @@ async def receive_webhook(request: Request) -> JSONResponse:
         cards = _build_action_cards(action_result)
         response_body: dict[str, Any] = {
             "schema_version": "2026-03",
-            "status": "completed",
+            "task": {"id": f"tsk_advanced_{intent}_{action_id}", "status": "completed"},
             "content_parts": [{"type": "text", "text": reply}],
             "cards": cards,
             "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent(intent)},
@@ -422,7 +422,7 @@ async def receive_webhook(request: Request) -> JSONResponse:
     return JSONResponse(
         {
             "schema_version": "2026-03",
-            "status": "completed",
+            "task": {"id": f"tsk_advanced_message_{action_id}", "status": "completed"},
             "content_parts": [{"type": "text", "text": reply_text}],
             "metadata": {"prompt_suggestions": _prompt_suggestions_for_intent("")},
         }

@@ -1,12 +1,13 @@
 """CDC: SSE streaming contract tests.
 
-Validates the canonical SSE event vocabulary:
-  - stream_start  - first event in a stream (metadata, optional fields)
-  - content_delta - text chunks (replaces legacy 'delta')
-  - done          - final event with schema_version, status, text, cards, actions
+Validates both sides of the SSE story:
+  - Nexo outbound vocabulary still uses named events like stream_start and
+    content_delta
+  - partner-side shared helpers emit the inbound contract Nexo expects:
+    plain ``data:`` lines for chunks and ``event: done`` at the end
 
-These tests exercise the shared streaming helpers directly and verify that
-the helpers emit the correct event types and structure.
+These tests exercise the shared partner helpers directly and verify that
+they emit the correct inbound structure.
 """
 
 from __future__ import annotations
@@ -191,8 +192,8 @@ def test_parse_sse_events_empty_stream() -> None:
 
 
 @pytest.mark.asyncio
-async def test_stream_response_emits_stream_start_first() -> None:
-    """stream_response emits stream_start as the very first event."""
+async def test_stream_response_emits_plain_data_chunks_first() -> None:
+    """stream_response emits bare data chunks first, not Nexo-outbound events."""
     import sys
     from pathlib import Path
 
@@ -209,9 +210,8 @@ async def test_stream_response_emits_stream_start_first() -> None:
 
         events = parse_sse_events(raw)
         assert events, "Expected at least one event"
-        assert events[0][0] == SSE_EVENT_STREAM_START, (
-            f"First event should be stream_start, got {events[0][0]!r}"
-        )
+        assert events[0] == ("data", "Hello")
+        assert events[1] == ("data", "world")
     finally:
         sys.path.remove(
             str(Path(__file__).parent.parent.parent / "examples/webhook/shared")
@@ -221,8 +221,8 @@ async def test_stream_response_emits_stream_start_first() -> None:
 
 
 @pytest.mark.asyncio
-async def test_stream_response_emits_content_delta_not_delta() -> None:
-    """stream_response emits content_delta events, not legacy 'delta' events."""
+async def test_stream_response_does_not_emit_named_delta_events() -> None:
+    """stream_response emits bare data lines, not content_delta/delta events."""
     import sys
     from pathlib import Path
 
@@ -238,13 +238,13 @@ async def test_stream_response_emits_content_delta_not_delta() -> None:
         raw = "".join([chunk async for chunk in streaming_mod.stream_response(_chunks(), envelope)])
 
         events = parse_sse_events(raw)
+        data_events = [(et, d) for et, d in events if et == "data"]
         delta_events = [(et, d) for et, d in events if et == "content_delta"]
         legacy_delta_events = [(et, d) for et, d in events if et == "delta"]
 
-        assert len(delta_events) == 2, f"Expected 2 content_delta events, got {delta_events}"
-        assert len(legacy_delta_events) == 0, (
-            f"Found legacy 'delta' events that should be 'content_delta': {legacy_delta_events}"
-        )
+        assert data_events == [("data", "chunk1"), ("data", "chunk2")]
+        assert len(delta_events) == 0, f"Unexpected content_delta events: {delta_events}"
+        assert len(legacy_delta_events) == 0, f"Unexpected legacy delta events: {legacy_delta_events}"
     finally:
         sys.path.remove(
             str(Path(__file__).parent.parent.parent / "examples/webhook/shared")
@@ -288,8 +288,8 @@ async def test_stream_response_done_event_includes_text() -> None:
 
 
 @pytest.mark.asyncio
-async def test_stream_with_prefix_emits_content_delta() -> None:
-    """stream_with_prefix emits content_delta events (not legacy 'delta')."""
+async def test_stream_with_prefix_emits_plain_data_chunks() -> None:
+    """stream_with_prefix emits bare data lines for prefix and chunks."""
     import sys
     from pathlib import Path
 
@@ -308,11 +308,13 @@ async def test_stream_with_prefix_emits_content_delta() -> None:
         ])
 
         events = parse_sse_events(raw)
+        data_events = [(et, d) for et, d in events if et == "data"]
         delta_events = [(et, d) for et, d in events if et == "content_delta"]
         legacy_events = [(et, d) for et, d in events if et == "delta"]
 
         assert len(legacy_events) == 0, f"Legacy 'delta' events found: {legacy_events}"
-        assert len(delta_events) >= 2, f"Expected >=2 content_delta events: {delta_events}"
+        assert len(delta_events) == 0, f"Unexpected content_delta events: {delta_events}"
+        assert data_events == [("data", "prefix"), ("data", "rest")]
     finally:
         sys.path.remove(
             str(Path(__file__).parent.parent.parent / "examples/webhook/shared")

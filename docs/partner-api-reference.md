@@ -254,27 +254,20 @@ Return structured output payloads alongside text:
 
 Return HTTP `200` + `Content-Type: text/event-stream`.
 
-The canonical SSE event vocabulary:
+The canonical inbound partner SSE vocabulary:
 
 | Event type | When emitted | Payload |
 |---|---|---|
-| `stream_start` | First event - signals stream beginning | `{}` (empty, or optional metadata) |
-| `content_delta` | Each text chunk from the LLM | `{"text": "<chunk>"}` |
-| `done` | Final event - full response metadata | Schema below |
-| `enrichment` | Reserved for future use - cards/actions mid-stream | - |
-| `error` | Reserved for future use - standalone error event | - |
+| _none_ (`data:` line only) | Each text chunk from the LLM | Plain text chunk |
+| `done` | Final event - full response metadata | Canonical envelope with `schema_version` and `task.status` |
+| `error` | Optional explicit partner-side failure event | Plain text or JSON error payload |
 
 Example stream:
 
 ```text
-event: stream_start
-data: {}
+data: Sure -
 
-event: content_delta
-data: {"text":"Sure - "}
-
-event: content_delta
-data: {"text":"I can help with that."}
+data: I can help with that.
 
 event: done
 data: {"schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"text":"Sure - I can help with that.","metadata":{"prompt_suggestions":["Show me options","Track status"]}}
@@ -283,6 +276,11 @@ data: {"schema_version":"2026-03","task":{"id":"tsk_1","status":"completed"},"te
 The `done` event is required and must include `schema_version` and `task.status`.
 It should also include `text` (the full accumulated response text).
 It may also include `cards`, `actions`, `artifacts`, and `capability` (same shape as the JSON response).
+
+Do not emit `stream_start` or `content_delta` from partner webhooks. Those are
+Nexo-outbound event types used on the client-facing side. Nexo still accepts
+them for compatibility, but partner examples and docs should use plain `data:`
+chunk lines plus the terminal `done` event.
 
 #### Streaming behavior details
 

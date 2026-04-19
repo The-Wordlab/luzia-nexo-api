@@ -25,9 +25,15 @@ class ContentPartOut(BaseModel):
     text: str
 
 
+class TaskOut(BaseModel):
+    id: str
+    status: str
+
+
 class WebhookResponseOut(BaseModel):
     schema_version: str
-    status: str
+    task: TaskOut
+    status: str | None = None
     content_parts: list[ContentPartOut]
     cards: list[dict[str, Any]] | None = None
     metadata: dict[str, Any] | None = None
@@ -65,6 +71,7 @@ def _webhook_response(
 ) -> WebhookResponseOut:
     return WebhookResponseOut(
         schema_version="2026-03",
+        task=TaskOut(id="tsk_hosted_example", status="completed"),
         status="completed",
         content_parts=[ContentPartOut(type="text", text=text)],
         cards=cards,

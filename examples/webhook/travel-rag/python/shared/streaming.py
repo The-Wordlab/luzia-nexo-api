@@ -3,6 +3,11 @@
 Partners stream LLM output as plain `data:` lines. Nexo normalizes
 these into content_delta events for downstream consumers.
 
+Inbound partner contract:
+  - `data: <chunk>` for text chunks
+  - `event: done` with canonical envelope including `task.status`
+  - optional `event: error` for explicit failures
+
 Usage:
     return StreamingResponse(
         stream_response(llm_chunks, envelope),
@@ -20,10 +25,7 @@ async def stream_response(
     llm_stream: AsyncIterator[str],
     envelope: dict,
 ) -> AsyncIterator[str]:
-    """Stream LLM tokens as data: lines, then emit done with envelope.
-
-    Accumulates full text and adds it to envelope.content_parts automatically.
-    """
+    """Stream LLM tokens as data: lines, then emit done with envelope."""
     full_text = ""
     async for chunk in llm_stream:
         if chunk:
@@ -35,6 +37,7 @@ async def stream_response(
     if full_text:
         content_parts.insert(0, {"type": "text", "text": full_text})
     envelope["content_parts"] = content_parts
+    envelope["text"] = full_text
 
     yield f"event: done\ndata: {json.dumps(envelope)}\n\n"
 
@@ -58,5 +61,6 @@ async def stream_with_prefix(
     if full_text:
         content_parts.insert(0, {"type": "text", "text": full_text})
     envelope["content_parts"] = content_parts
+    envelope["text"] = full_text
 
     yield f"event: done\ndata: {json.dumps(envelope)}\n\n"

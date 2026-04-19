@@ -28,7 +28,7 @@ Contract:
            }
   ->       {
                "schema_version": "2026-03",
-               "status": "completed",
+               "task": {"id": "tsk_structured", "status": "completed"},
                "content_parts": [{"type": "text", "text": "<personalised text>"}],
                "cards": [...]  # optional
            }
@@ -56,7 +56,7 @@ async def root() -> JSONResponse:
                 {
                     "path": "/",
                     "method": "POST",
-                    "description": "Main webhook endpoint returning schema_version/status/content_parts/cards.",
+                    "description": "Main webhook endpoint returning schema_version/task/content_parts/cards.",
                     "auth": "Optional WEBHOOK_SECRET (X-Signature)",
                 }
             ],
@@ -213,7 +213,7 @@ async def receive_webhook(request: Request) -> JSONResponse:
     cards = _build_cards(context)
     response: dict[str, Any] = {
         "schema_version": "2026-03",
-        "status": "completed",
+        "task": {"id": "tsk_structured", "status": "completed"},
         "content_parts": [{"type": "text", "text": reply}],
         "metadata": {
             "prompt_suggestions": _prompt_suggestions_for_intent(

@@ -1,6 +1,6 @@
 """Cross-repo webhook contract tests.
 
-Validates that all Python webhook examples (routines, food-ordering,
+Validates that all supported Python webhook examples (food-ordering,
 football-live, travel-planning) return correct canonical envelopes and
 reject invalid requests correctly.
 
@@ -77,7 +77,6 @@ WEBHOOK_ROOT = REPO_ROOT / "examples" / "webhook"
 sys.path.insert(0, str(REPO_ROOT / "examples"))
 from test_support.fake_vector_store import FakeVectorStoreRegistry
 
-ROUTINES_PATH = WEBHOOK_ROOT / "routines" / "python"
 FOOD_PATH = WEBHOOK_ROOT / "food-ordering" / "python"
 FOOTBALL_PATH = WEBHOOK_ROOT / "football-live" / "python"
 TRAVEL_PATH = WEBHOOK_ROOT / "travel-planning" / "python"
@@ -87,7 +86,15 @@ TRAVEL_PATH = WEBHOOK_ROOT / "travel-planning" / "python"
 # ---------------------------------------------------------------------------
 
 SCHEMA_VERSION = "2026-03"
-VALID_STATUSES = {"completed", "error"}
+VALID_TASK_STATUSES = {
+    "queued",
+    "in_progress",
+    "requires_input",
+    "completed",
+    "failed",
+    "canceled",
+}
+VALID_LEGACY_STATUSES = {"completed", "error"}
 VALID_CAPABILITY_STATES = {"live", "simulated", "requires_connector"}
 
 # ---------------------------------------------------------------------------
@@ -146,58 +153,36 @@ def _make_payload(content: str, **extra) -> dict[str, Any]:
     return base
 
 
+def _effective_status(payload: dict[str, Any]) -> str | None:
+    task = payload.get("task")
+    if isinstance(task, dict):
+        status = task.get("status")
+        if isinstance(status, str):
+            return status
+    status = payload.get("status")
+    return status if isinstance(status, str) else None
+
+
+def _parsed_sse_data_events(raw_sse: str) -> list[dict[str, Any]]:
+    events: list[dict[str, Any]] = []
+    for line in raw_sse.splitlines():
+        if not line.startswith("data:"):
+            continue
+        payload = line[len("data:"):].strip()
+        try:
+            parsed = json.loads(payload)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            events.append(parsed)
+    return events
+
+
 # ---------------------------------------------------------------------------
 # Per-webhook fixture builders
 #
 # Each returns (client, module) with all I/O mocked.
 # ---------------------------------------------------------------------------
-
-
-class _RoutinesFixture:
-    """Loads the routines webhook and patches call_llm."""
-
-    _module_name = "contract_routines"
-
-    @classmethod
-    def load(cls) -> tuple[TestClient, Any]:
-        sys.path.insert(0, str(ROUTINES_PATH))
-        try:
-            mod = _load_module(ROUTINES_PATH, cls._module_name, "app.py")
-            mod.WEBHOOK_SECRET = ""
-            client = TestClient(mod.app, raise_server_exceptions=False)
-            return client, mod
-        finally:
-            sys.path.remove(str(ROUTINES_PATH))
-
-    @classmethod
-    def unload(cls) -> None:
-        _unload_module(cls._module_name)
-
-    @staticmethod
-    def mock_llm(mod: Any, return_value: str = "ok") -> Any:
-        return patch.object(mod, "call_llm", return_value=return_value)
-
-    @staticmethod
-    def mock_stream(mod: Any, text: str = "ok"):
-        async def _fake(*_a, **_kw):
-            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
-        return patch.object(mod, "stream_llm", side_effect=_fake)
-
-    @staticmethod
-    def happy_payload() -> dict:
-        return _make_payload("morning briefing")
-
-    @staticmethod
-    def intent_payload() -> dict:
-        return _make_payload("Add a reminder to call doctor")
-
-    @staticmethod
-    def has_llm(mod: Any) -> bool:
-        return hasattr(mod, "call_llm")
-
-    @staticmethod
-    def has_streaming(mod: Any) -> bool:
-        return hasattr(mod, "STREAMING_ENABLED")
 
 
 class _FoodFixture:
@@ -226,9 +211,14 @@ class _FoodFixture:
 
     @staticmethod
     def mock_stream(mod: Any, text: str = "ok"):
-        async def _fake(*_a, **_kw):
-            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
-        return patch.object(mod, "stream_llm", side_effect=_fake)
+        target = "stream_llm_chunks" if hasattr(mod, "stream_llm_chunks") else "stream_llm"
+        if target == "stream_llm_chunks":
+            async def _fake(*_a, **_kw):
+                yield text
+        else:
+            async def _fake(*_a, **_kw):
+                yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
+        return patch.object(mod, target, side_effect=_fake)
 
     @staticmethod
     def happy_payload() -> dict:
@@ -373,7 +363,6 @@ class _TravelFixture:
 # ---------------------------------------------------------------------------
 
 WEBHOOK_FIXTURES = [
-    pytest.param(_RoutinesFixture, id="routines"),
     pytest.param(_FoodFixture, id="food-ordering"),
     pytest.param(_FootballFixture, id="football-live"),
     pytest.param(_TravelFixture, id="travel-planning"),
@@ -432,7 +421,7 @@ class TestHappyPath:
 
     @pytest.mark.parametrize("fixture_cls", WEBHOOK_FIXTURES)
     def test_response_has_valid_status(self, fixture_cls):
-        """Response status is one of: 'completed', 'error'."""
+        """Response carries a valid canonical lifecycle status."""
         client, mod = fixture_cls.load()
         try:
             payload = fixture_cls.happy_payload()
@@ -446,9 +435,11 @@ class TestHappyPath:
                     resp = client.post("/", json=payload)
 
             data = resp.json()
-            assert "status" in data, f"Missing 'status' in response: {data}"
-            assert data["status"] in VALID_STATUSES, (
-                f"Invalid status {data['status']!r}; must be one of {VALID_STATUSES}"
+            status = _effective_status(data)
+            assert status is not None, f"Missing lifecycle status in response: {data}"
+            assert status in VALID_TASK_STATUSES | VALID_LEGACY_STATUSES, (
+                f"Invalid status {status!r}; must be one of "
+                f"{VALID_TASK_STATUSES | VALID_LEGACY_STATUSES}"
             )
         finally:
             fixture_cls.unload()
@@ -654,12 +645,10 @@ class TestSSEStreaming:
 
             assert resp.status_code == 200
 
-            events = [
-                json.loads(line[len("data:"):].strip())
-                for line in resp.text.splitlines()
-                if line.startswith("data:")
+            events = _parsed_sse_data_events(resp.text)
+            done_events = [
+                e for e in events if e.get("type") == "done" or "schema_version" in e
             ]
-            done_events = [e for e in events if e.get("type") == "done"]
             assert len(done_events) >= 1, f"No 'done' SSE event found. Events: {events}"
             done = done_events[-1]
             assert done.get("schema_version") == SCHEMA_VERSION, (
@@ -687,15 +676,16 @@ class TestSSEStreaming:
                 else:
                     resp = client.post("/", json=payload, headers={"Accept": "text/event-stream"})
 
-            events = [
-                json.loads(line[len("data:"):].strip())
-                for line in resp.text.splitlines()
-                if line.startswith("data:")
-            ]
-            done = next((e for e in events if e.get("type") == "done"), None)
+            events = _parsed_sse_data_events(resp.text)
+            done = next(
+                (e for e in events if e.get("type") == "done" or "schema_version" in e),
+                None,
+            )
             assert done is not None, "No SSE done event found"
-            assert done.get("status") in VALID_STATUSES, (
-                f"SSE done event status {done.get('status')!r} not in {VALID_STATUSES}"
+            status = _effective_status(done)
+            assert status in VALID_TASK_STATUSES | VALID_LEGACY_STATUSES, (
+                f"SSE done event status {status!r} not in "
+                f"{VALID_TASK_STATUSES | VALID_LEGACY_STATUSES}"
             )
         finally:
             fixture_cls.unload()
@@ -764,7 +754,7 @@ class TestSadPathMissingBody:
             # Either an error field in body or HTTP 4xx is acceptable
             if resp.status_code == 200:
                 data = resp.json()
-                assert "error" in data or data.get("status") == "error", (
+                assert "error" in data or _effective_status(data) in {"failed", "error"}, (
                     f"Empty content returned 200 without error indicator: {data}"
                 )
             else:
