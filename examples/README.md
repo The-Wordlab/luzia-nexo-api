@@ -66,7 +66,6 @@ Folders:
 - `webhook/minimal`
 - `webhook/structured`
 - `webhook/advanced`
-- `webhook/detective-game`
 - `webhook/news-rag`
 - `webhook/sports-rag`
 - `webhook/travel-rag`

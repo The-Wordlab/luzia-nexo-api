@@ -122,7 +122,7 @@ http://<your-host>:8080/
 ```json
 {
   "schema_version": "2026-03",
-  "status": "completed",
+  "task": {"id": "tsk_news_query", "status": "completed"},
   "content_parts": [
     {"type": "text", "text": "Based on [1] and [2], OpenAI released GPT-5 today..."}
   ],
