@@ -2,7 +2,7 @@
 
 Ship your first Nexo Partner Integration in minutes, then expand to richer experiences.
 
-This page covers the **webhook-backed Partner Integration lane**. If you want to create first-party structured apps for a user through the Nexo API or MCP, use the [Personalized Apps API](micro-apps-api.md) guide instead.
+This page covers the **webhook-backed Partner Integration lane**. If you want to create first-party structured apps for a user through the Nexo API or MCP, use the [Personalized Apps API](micro-apps-api.md) guide instead. For apps that need reference data and derived outputs, see [Knowledge Packs](knowledge-packs.md).
 
 ## What you need
 

@@ -4,10 +4,11 @@ Build apps on top of Nexo, Luzia's apps runtime.
 
 Nexo handles message routing, delivery, signature verification, consent-managed profile context, streaming, and rich UI payloads, so you can focus on your domain logic.
 
-This docs site covers two external developer lanes:
+This docs site covers three external developer lanes:
 
 - **Connected Apps** - external webhook-backed apps that run on your infrastructure
 - **Personalized Apps** - structured apps you create and manage through Nexo APIs, MCP, and developer tooling
+- **Knowledge Packs** - app-attached reference data with sync tracking and deterministic derived projections
 
 Ship your first Connected App in minutes:
 
@@ -42,7 +43,7 @@ Ship your first Connected App in minutes:
 
 Or use the REST API directly: [Personalized Apps API](micro-apps-api.md)
 
-Start here: [Quickstart](quickstart.md) | [Personalized Apps API](micro-apps-api.md) | [MCP Server](mcp.md)
+Start here: [Quickstart](quickstart.md) | [Personalized Apps API](micro-apps-api.md) | [Knowledge Packs](knowledge-packs.md) | [MCP Server](mcp.md)
 
 ### Prompt chips
 

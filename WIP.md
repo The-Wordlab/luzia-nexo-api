@@ -53,6 +53,14 @@ Operational checklist:
 - [docs/partner-api-reference.md](docs/partner-api-reference.md)
 - [docs/hosting.md](docs/hosting.md)
 
+## Recent (2026-04-20)
+
+14. **Knowledge Packs documentation added** - full developer guide at
+    `docs/knowledge-packs.md` covering packs, datasets, records, sources,
+    projections, REST API examples, MCP tools, sync workflow, and ownership
+    model. MCP tools table updated in `docs/mcp.md`. Navigation and index
+    updated with Knowledge Packs as a third developer lane.
+
 ## Backlog (next hardening)
 
 1. Add worker-job execution observability (structured logs + simple success/failure dashboard query snippets).
