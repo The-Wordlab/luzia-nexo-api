@@ -6,6 +6,10 @@ For the product model and runtime architecture, see the [Micro Apps Guide](https
 
 Personalized Apps are a first-party structured app runtime inside Nexo. This guide covers the REST API and MCP access for developers who want to create, manage, and query them from the command line or an AI coding assistant.
 
+!!! info "Knowledge Packs"
+    Apps that need reference data (team rosters, product catalogs, fixture schedules)
+    or derived outputs (standings, leaderboards) can use [Knowledge Packs](knowledge-packs.md).
+
 !!! tip "MCP access"
     All operations on this page are also available as MCP tools.
     Connect an AI coding assistant and build apps through conversation.
