@@ -115,6 +115,32 @@ revocation when an agent needs to open an interactive app session, and it can
 also add or update app log declarations through `plan_operation` /
 `apply_operation` without adding another MCP tool.
 
+### Knowledge Packs tools
+
+Knowledge Packs let you attach reference data to apps and compute derived outputs like standings or leaderboards.
+
+| Tool | Description | Key parameters |
+|---|---|---|
+| `knowledge_packs__list_packs` | List Knowledge Packs for an app | `app_id` |
+| `knowledge_packs__list_datasets` | List datasets within a pack (with record counts) | `pack_id` |
+| `knowledge_packs__list_sources` | List sync sources with status, errors, and content hash | `pack_id` |
+| `knowledge_packs__list_projections` | List projection definitions for an app | `app_id` |
+| `knowledge_packs__list_projection_runs` | List recent projection run history | `definition_id`, `limit` |
+| `knowledge_packs__run_projection` | Trigger a projection run | `app_id`, `definition_id` |
+
+**What Knowledge Packs are for:**
+
+- App-attached reference datasets (team rosters, product catalogs, fixture schedules)
+- Clean sync/update lifecycle with source tracking
+- Deterministic derived projections (standings, leaderboards, group aggregations)
+
+**What they are not:**
+
+- Not a replacement for Personalized Apps tables (which hold user-entered operational state)
+- Not a generic database - use them for reference/grounding data
+
+Knowledge Packs are managed through the REST API (`/api/knowledge-packs`). The MCP tools provide inspection and projection execution. See the [Knowledge Packs guide](knowledge-packs.md) for the full workflow.
+
 ### Partner Integration tools
 
 Each active Partner Integration is exposed as a tool named by its UUID. The tool description includes the app's name and capabilities. Calling the tool sends a message through the webhook pipeline and returns the response.

@@ -48,6 +48,7 @@ nav:
   - API Reference: partner-api-reference.md
   - Micro Apps API: micro-apps-api.md
   - MCP Server: mcp.md
+  - Knowledge Packs: knowledge-packs.md
   - "Tutorial: Create App from Terminal": tutorial-create-app-from-terminal.md
   - Internal Apps: internal-apps.md
   - GCP Deploy Playbook: gcp-deploy-playbook.md
