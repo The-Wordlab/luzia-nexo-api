@@ -61,11 +61,17 @@ Projections compute derived outputs from dataset records.
 
 ## REST API
 
+Use your developer key for the REST examples below:
+
+```bash
+export NEXO_DEVELOPER_KEY=nexo_uak_...
+```
+
 ### Create a pack
 
 ```bash
 curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs" \
-  -H "Authorization: Bearer ${TOKEN}" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "key": "product-catalog",
@@ -80,7 +86,7 @@ curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs" \
 
 ```bash
 curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets" \
-  -H "Authorization: Bearer ${TOKEN}" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "key": "products",
@@ -92,7 +98,7 @@ curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets" \
 
 ```bash
 curl -X PUT "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets/${DATASET_ID}/records" \
-  -H "Authorization: Bearer ${TOKEN}" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "record_key": "prod-001",
@@ -112,7 +118,7 @@ the existing record (merging `data_json` fields).
 
 ```bash
 curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets/${DATASET_ID}/records/bulk" \
-  -H "Authorization: Bearer ${TOKEN}" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '[
     {"record_key": "prod-001", "data_json": {"name": "Wireless Headphones", "price": 79.99}},
@@ -127,7 +133,7 @@ Response: `{"created": 3, "updated": 0, "total": 3}`
 
 ```bash
 curl -X POST "${NEXO_BASE_URL}/api/projections/apps/${APP_ID}/definitions" \
-  -H "Authorization: Bearer ${TOKEN}" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "key": "price-ranking",
@@ -143,7 +149,7 @@ curl -X POST "${NEXO_BASE_URL}/api/projections/apps/${APP_ID}/definitions" \
 
 ```bash
 curl -X POST "${NEXO_BASE_URL}/api/projections/apps/${APP_ID}/definitions/${DEF_ID}/run" \
-  -H "Authorization: Bearer ${TOKEN}"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 Response includes run status, timing, and record counts:
@@ -249,4 +255,5 @@ On error: `PATCH .../sources/{id}/sync` with `{"sync_status": "error", "last_err
 Superusers can inspect Knowledge Packs health at:
 `/dashboard/admin/knowledge-packs`
 
-This shows pack status, source sync health, and projection definitions across all apps.
+This is an internal admin/operator surface in `luzia-nexo`, not part of the
+public developer workflow in this repo.

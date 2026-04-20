@@ -62,7 +62,9 @@ curl -X POST "https://nexo.luzia.com/api/auth/token" \
 
 A form-encoded variant is also available at `POST /api/auth/token/form` for tools that prefer form encoding.
 
-Use the token on all subsequent requests:
+Use the token on all subsequent requests if you are working through a browser or
+dashboard-authenticated flow. For CLI, MCP, and automation, prefer the
+developer-key examples below.
 
 ```bash
 export TOKEN="eyJhbGciOiJIUzI1NiIs..."
@@ -76,7 +78,7 @@ Returns all Personalized Apps owned by the authenticated user.
 
 ```bash
 curl "https://nexo.luzia.com/api/micro-apps" \
-  -H "Authorization: Bearer $TOKEN"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 **Response** (array of app summaries):
@@ -106,7 +108,7 @@ Turn a natural-language prompt into a structured template preview. The response 
 
 ```bash
 curl -X POST "https://nexo.luzia.com/api/micro-apps/template-plan" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "Help me track my weekly grocery spending",
@@ -153,7 +155,7 @@ Review the template. If it looks right, provision.
 
 ```bash
 curl -X POST "https://nexo.luzia.com/api/micro-apps/provision-from-template" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "template": { ... }
@@ -174,7 +176,7 @@ Plan a mutation on an existing app:
 
 ```bash
 curl -X POST "https://nexo.luzia.com/api/micro-apps/template-operation-plan" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "app_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -188,7 +190,7 @@ Execute the planned mutation:
 
 ```bash
 curl -X POST "https://nexo.luzia.com/api/micro-apps/apply-operation" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
     "app_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -204,7 +206,7 @@ Returns a compact markdown summary of all the user's apps, tables, fields, and r
 
 ```bash
 curl "https://nexo.luzia.com/api/micro-apps/context.md" \
-  -H "Authorization: Bearer $TOKEN"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 **Response** (`text/markdown`):
@@ -254,7 +256,7 @@ Render a compact card for embedding in chat:
 
 ```bash
 curl "https://nexo.luzia.com/api/micro-apps/$APP_ID/surface?surface=chat_card" \
-  -H "Authorization: Bearer $TOKEN"
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
 ## MCP access
