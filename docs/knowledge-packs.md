@@ -7,8 +7,8 @@ derived outputs like standings, leaderboards, and group aggregations.
 
 Use Knowledge Packs when your app needs:
 
-- **Reference datasets** that don't change with every user action (team rosters,
-  product catalogs, fixture schedules, scoring configs)
+- **Reference datasets** that don't change with every user action (product
+  catalogs, menu items, employee directories, pricing tiers)
 - **Derived outputs** computed deterministically from reference + operational data
   (standings tables, leaderboard rankings, group counts)
 - **Sync tracking** so you know when reference data was last updated and whether
@@ -33,8 +33,8 @@ A Knowledge Pack is a named container of reference data attached to an app.
 
 ### Datasets
 
-Each pack contains one or more datasets - logical collections like "teams",
-"fixtures", or "scoring_configs".
+Each pack contains one or more datasets - logical collections like "products",
+"categories", or "pricing_tiers".
 
 ### Records
 
@@ -68,8 +68,8 @@ curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "worldcup-2026",
-    "title": "FIFA World Cup 2026",
+    "key": "product-catalog",
+    "title": "Product Catalog",
     "owner_type": "app",
     "owner_id": "YOUR_APP_ID",
     "pack_type": "structured"
@@ -83,8 +83,8 @@ curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "teams",
-    "title": "Teams"
+    "key": "products",
+    "title": "Products"
   }'
 ```
 
@@ -95,12 +95,12 @@ curl -X PUT "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets/${DATASET_
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "record_key": "team-bra",
+    "record_key": "prod-001",
     "data_json": {
-      "name": "Brazil",
-      "short_name": "BRA",
-      "group_id": "group-c",
-      "points": 9
+      "name": "Wireless Headphones",
+      "category": "electronics",
+      "price": 79.99,
+      "in_stock": true
     }
   }'
 ```
@@ -115,9 +115,9 @@ curl -X POST "${NEXO_BASE_URL}/api/knowledge-packs/${PACK_ID}/datasets/${DATASET
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '[
-    {"record_key": "team-bra", "data_json": {"name": "Brazil", "points": 9}},
-    {"record_key": "team-ger", "data_json": {"name": "Germany", "points": 6}},
-    {"record_key": "team-jpn", "data_json": {"name": "Japan", "points": 3}}
+    {"record_key": "prod-001", "data_json": {"name": "Wireless Headphones", "price": 79.99}},
+    {"record_key": "prod-002", "data_json": {"name": "USB-C Cable", "price": 12.99}},
+    {"record_key": "prod-003", "data_json": {"name": "Laptop Stand", "price": 45.00}}
   ]'
 ```
 
@@ -130,12 +130,12 @@ curl -X POST "${NEXO_BASE_URL}/api/projections/apps/${APP_ID}/definitions" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{
-    "key": "group-standings",
-    "title": "Group Standings",
+    "key": "price-ranking",
+    "title": "Products by Price",
     "projection_type": "standings",
-    "config_json": {"sort_key": "points", "tiebreaker_keys": ["gd", "gf"]},
-    "source_dataset_id": "TEAMS_DATASET_ID",
-    "output_dataset_id": "STANDINGS_DATASET_ID"
+    "config_json": {"sort_key": "price", "descending": true},
+    "source_dataset_id": "PRODUCTS_DATASET_ID",
+    "output_dataset_id": "RANKED_DATASET_ID"
   }'
 ```
 
