@@ -59,8 +59,79 @@ the app with tables, fields, views, and seed data.
 verify after provisioning. Use `plan_operation` + `apply_operation` for
 incremental changes. Check the result in the dashboard and standalone webview.
 
+This is the same underlying creation grammar used by the dashboard Builder
+chat in `luzia-nexo`. Builder and MCP are two surfaces over the same creation
+contract.
+
 If you have the `luzia-nexo` repo checked out, use the `/build-app` slash
 command in Claude Code for a guided app creation workflow.
+
+## Canonical creation grammar
+
+Use this sequence by default:
+
+1. clarify the goal
+2. `plan_app`
+3. review the proposed shape
+4. `provision_app`
+5. inspect with `show_app` or `get_context`
+6. evolve with `plan_operation` / `apply_operation`
+
+Do not treat `create_app` as the main creation story. It is the
+advanced/manual path when you already know the exact schema and intentionally
+want to start from an empty shell.
+
+If you build a UI client around this flow, keep prompt suggestions as the
+canonical first-run affordance. If suggestions need fetching, prefer a loading
+state over introducing alternate "special demo" starter UIs that drift from the
+dashboard Builder experience.
+
+## When to use what
+
+### Use `plan_app` -> `provision_app` when
+
+- you want the normal, recommended app-creation flow
+- you are describing the app in natural language
+- you want parity with the dashboard Builder chat path
+
+### Use `create_app` when
+
+- you already know the exact schema you want
+- you want an empty shell first
+
+### Use `show_app` / `get_context` when
+
+- you need to inspect what exists before mutating it
+- you want a compact summary for an agent to continue without hidden
+  assumptions
+
+### Use `plan_operation` / `apply_operation` when
+
+- the app already exists and you want to evolve it safely
+- you need new fields, views, records, logs, metrics, or bounded metadata
+  changes
+
+### Use Knowledge Packs when
+
+- the app needs app-attached reference data
+- the app depends on source-managed datasets or deterministic projections
+- the problem is not just normal user-entered operational records
+
+### Use Raw Data after creation when
+
+- you need direct record-level inspection or editing
+- you want a faithful secondary data view rather than the app's primary
+  task-first runtime
+
+### Use Connect Website when
+
+- the app should be associated with an owned domain
+- you need `/.well-known/nexo.txt` verification for hosted access
+
+### Use public share when
+
+- you need temporary or revocable public access
+- you do not need owned-domain verification
 
 ## Authentication
 
@@ -100,11 +171,18 @@ backend MCP host can return `406 Not Acceptable`.
 | `micro_apps__plan_operation` | Plan a schema or contract change from a prompt (fields, views, settings, runtime handoff, log declarations) | `prompt`, `app_id`, `table_key` |
 | `micro_apps__apply_operation` | Execute a planned operation against the database, including structured app/table/field/view/record metadata and log declaration updates | `operation` |
 | `micro_apps__get_context` | Get markdown plus structured app summaries, including `metric_keys` and `log_keys`, for stateless iteration across existing apps | -- |
+| `micro_apps__bulk_create_records` | Create multiple records in one call (max 100), with optional upsert mode | `app_id`, `table_key`, `records`, `mode`, `lookup_key` |
+| `micro_apps__bulk_update_records` | Update multiple records in one call (max 100) | `app_id`, `table_key`, `updates` |
+| `micro_apps__bulk_delete_records` | Soft-delete multiple records in one call (max 100) | `app_id`, `table_key`, `record_ids` |
+| `micro_apps__aggregate_records` | Run server-side aggregations (count, sum, avg, min, max, count_distinct) with optional group_by | `app_id`, `table_key`, `aggregations`, `group_by` |
 
-**Two creation paths:**
+**Creation paths:**
 
-- **Prompt-driven:** `plan_app` → `provision_app` — describe what you want in natural language, get a complete app with tables, fields, views, and seed data.
-- **Manual:** `create_app` → `plan_operation` + `apply_operation` — create an empty shell, then add structure incrementally.
+- **Prompt-driven (recommended):** `plan_app` -> `provision_app` - describe what you want in natural language, get a complete app with tables, fields, views, and seed data. This is the same path used by the dashboard Builder chat.
+- **Manual:** `create_app` -> `plan_operation` + `apply_operation` - create an empty shell, then add structure incrementally. Use when you already know the exact schema.
+
+The prompt-driven path is the canonical creation path. The dashboard Builder UI
+uses it exclusively.
 
 For guided, stateful apps such as workout trackers, the canonical shape can now
 include archetype/playbook metadata, schedule config, metric definitions,
@@ -139,11 +217,42 @@ Knowledge Packs let you attach reference data to apps and compute derived output
 - Not a replacement for Personalized Apps tables (which hold user-entered operational state)
 - Not a generic database - use them for reference/grounding data
 
+**Typical signal that you need Knowledge Packs:** your prompt depends on
+reference datasets, freshness tracking, or deterministic derived outputs such as
+standings or leaderboards. If the app only needs user-entered workflow state,
+stay with normal app tables and logs.
+
 Knowledge Packs are managed through the REST API (`/api/knowledge-packs`). The MCP tools provide inspection and projection execution. See the [Knowledge Packs guide](knowledge-packs.md) for the full workflow.
 
-### Partner Integration tools
+### Connected Apps tools
 
-Each active Partner Integration is exposed as a tool named by its UUID. The tool description includes the app's name and capabilities. Calling the tool sends a message through the webhook pipeline and returns the response.
+Connected Apps tools let you manage webhook-backed partner integrations via MCP.
+
+| Tool | Description | Key parameters |
+|---|---|---|
+| `connected_apps__list_apps` | List all Connected Apps the user can manage | -- |
+| `connected_apps__create_app` | Create a new Connected App in an org | `org_id`, `name`, `webhook_url` |
+| `connected_apps__show_app` | Get full details for a Connected App | `app_id` |
+| `connected_apps__update_app` | Update a Connected App's config | `app_id`, `name`, `webhook_url`, ... |
+| `connected_apps__get_webhook_diagnostics` | Webhook readiness diagnostics | `app_id` |
+| `connected_apps__check_webhook_health` | Health probe against the partner webhook | `app_id` |
+| `connected_apps__sync_capabilities` | Pull capability metadata from partner agent card | `app_id` |
+| `connected_apps__list_capabilities` | Return synced capability metadata | `app_id` |
+| `connected_apps__get_prompt_suggestions` | Get prompt suggestions for an app | `app_id` |
+| `connected_apps__submit_app` | Submit a draft app for review | `app_id` |
+| `connected_apps__resubmit_app` | Resubmit a rejected app for review | `app_id` |
+
+### Partner Integration runtime tools
+
+Each active Partner Integration is also exposed as a runtime tool named by its UUID. The tool description includes the app's name and capabilities. Calling the tool sends a message through the webhook pipeline and returns the response.
+
+### Public discovery tools
+
+These tools are always visible, even without a developer key:
+
+| Tool | Description |
+|---|---|
+| `nexo__discover` | Discover available Nexo capabilities and learn how to get a developer key |
 
 ## Walkthrough: Create an app from a prompt
 
@@ -637,7 +746,7 @@ use `source_table_key` on the metric definition.
 - `cover_variant` - `"gradient"`, `"illustration"`, or `"solid"`
 
 For full examples and usage guidance, see the canonical workflow doc in the
-`luzia-nexo` repo at `.agents/docs/nexo-app-builder-workflow.md`.
+`luzia-nexo` repo at `docs/guides/nexo-app-builder-workflow.md`.
 
 ## Related docs
 
