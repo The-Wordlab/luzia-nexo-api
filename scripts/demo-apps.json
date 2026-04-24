@@ -71,10 +71,7 @@
           "What are tonight's key fixtures?"
         ],
         "showcase_family": "sports",
-        "showcase_role": "primary",
-        "deep_dives": [
-          "football-live"
-        ]
+        "showcase_role": "primary"
       },
       "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8091",
@@ -102,33 +99,6 @@
       },
       "webhook_url_env": "DEMO_TRAVEL_RAG_WEBHOOK_URL",
       "webhook_url_default": "http://localhost:8092",
-      "card_trigger_rules": []
-    },
-    {
-      "demo_key": "football-live",
-      "name": "Football Live",
-      "description": "Football deep-dive - live scores, standings, and top scorers with structured cards",
-      "config_json": {
-        "demo_key": "football-live",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "goal",
-        "demo_color": "#2563EB",
-        "demo_order": 9,
-        "prompt_suggestions": [
-          "Live scores right now",
-          "La Liga top scorers this season",
-          "Show me this week's Premier League fixtures"
-        ],
-        "showcase_family": "sports",
-        "showcase_role": "secondary",
-        "deep_dive_for": "sports-rag"
-      },
-      "webhook_url_env": "DEMO_FOOTBALL_LIVE_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8093",
       "card_trigger_rules": []
     },
     {
