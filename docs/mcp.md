@@ -88,6 +88,38 @@ dashboard Builder experience.
 
 ## When to use what
 
+### Surface choice
+
+Use the same underlying app contract, but choose the right surface explicitly:
+
+| Need | Use | Why |
+|---|---|---|
+| Interactive creation inside Nexo | Builder | Dashboard-native path with immediate runtime handoff |
+| Terminal / coding-assistant creation | MCP | Canonical headless flow for Claude/Codex/Cursor |
+| Exact schema-first shell creation | raw REST / `create_app` | Advanced/manual path, not the main creation story |
+| Reference data, sync state, deterministic standings/leaderboards | Knowledge Packs | Better fit than ordinary app records |
+| Custom branded frontend after backend creation | External frontend delivery | Build app backend first, then attach a `webapp` or `webview_optimized` frontend |
+
+Do not invent a second creation story. Builder and MCP should both follow the
+same creation grammar.
+
+For custom frontends, the intended direction is:
+
+- Nexo remains the canonical backend/runtime
+- static web frontends may be published to Drophere by default unless another
+  host is chosen
+- normal authenticated web launch should prefer a Nexo vanity/origin route
+- direct external/native launch should use an explicit bootstrap contract
+
+Use this quick ladder:
+
+1. stay in default Nexo runtime if it already solves the need
+2. add a custom frontend only when the UI needs more control
+3. choose `webapp` for normal web or `webview_optimized` for native-wrapper
+   and compact contexts
+4. keep Nexo as the canonical backend
+5. keep client-side JavaScript thin and presentation-focused
+
 ### Use `plan_app` -> `provision_app` when
 
 - you want the normal, recommended app-creation flow
@@ -116,6 +148,33 @@ dashboard Builder experience.
 - the app needs app-attached reference data
 - the app depends on source-managed datasets or deterministic projections
 - the problem is not just normal user-entered operational records
+
+### Client-side JavaScript rule
+
+Client-side JavaScript is fine for:
+
+- local UI state
+- grouped summaries over fetched records
+- charts/progress/rings
+- optimistic UX
+
+Move logic into Nexo backend contracts and/or Knowledge Packs when it becomes:
+
+- canonical across clients
+- based on reference data
+- tied to sync/freshness
+- durable derived outputs that multiple surfaces should agree on
+
+### Failure policy
+
+During app creation:
+
+- fail fast on provider / planner errors
+- surface the real error
+- retry the same step when appropriate
+- do not silently fall back to a different creation path
+- do not silently degrade the main Builder/MCP creation story into a hidden
+  deterministic path
 
 ### Use Raw Data after creation when
 

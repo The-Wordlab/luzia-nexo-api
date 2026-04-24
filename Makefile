@@ -3,35 +3,37 @@ SHELL := /bin/bash
 GCP_PROJECT_ID ?= luzia-nexo-api-examples
 GCP_REGION ?= europe-west1
 VENV_BIN ?= $(CURDIR)/.venv/bin
+PYTHON ?= $(VENV_BIN)/python
 PYTEST ?= $(VENV_BIN)/pytest
 
 .PHONY: setup-dev check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 setup-dev:
-	./scripts/setup-dev.sh
+	source ~/.zshrc && ./scripts/setup-dev.sh
 
 check-toolchain:
-	./scripts/check-toolchain.sh
+	source ~/.zshrc && ./scripts/check-toolchain.sh
 
 check-mermaid:
-	python3 scripts/check_mermaid.py
+	@if [ ! -x "$(PYTHON)" ]; then echo "ERROR: $(PYTHON) not found. Run 'make setup-dev' first."; exit 1; fi
+	$(PYTHON) scripts/check_mermaid.py
 
 test-demo-receiver:
 	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
 	cd examples/hosted/demo-receiver && $(PYTEST) -q
 
 test-examples:
-	./scripts/test-examples.sh
+	source ~/.zshrc && ./scripts/test-examples.sh
 
 test-rag-examples:
-	./scripts/test-rag-examples.sh
+	source ~/.zshrc && ./scripts/test-rag-examples.sh
 
 test-contracts:
 	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
 	cd tests/contracts && $(PYTEST) -q
 
 test-hosted-examples:
-	./scripts/test-hosted-examples.sh
+	source ~/.zshrc && ./scripts/test-hosted-examples.sh
 
 test-sdk:
 	cd sdk/javascript && source ~/.zshrc && pnpm install --no-frozen-lockfile && pnpm test
@@ -99,13 +101,13 @@ smoke-live-services:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/smoke-live-services.sh
 
 seed-demo-local: ## Seed demo apps against local Nexo (http://localhost:8000)
-	python3 scripts/seed-demo-apps.py --env local
+	$(PYTHON) scripts/seed-demo-apps.py --env local
 
 seed-demo: ## Seed demo apps (reads --env flag, default: local)
-	python3 scripts/seed-demo-apps.py
+	$(PYTHON) scripts/seed-demo-apps.py
 
 seed-demo-dry-run: ## Preview demo seed without making changes
-	python3 scripts/seed-demo-apps.py --dry-run
+	$(PYTHON) scripts/seed-demo-apps.py --dry-run
 
 docs-build:
 	$(MAKE) check-toolchain

@@ -302,7 +302,6 @@ If your integration has a knowledge base (news, product catalog, documentation),
 - [News Feed RAG](examples-showcase.md#news-feed-rag) -- RSS + vector retrieval + LLM + source cards
 - [Sports Feed RAG](examples-showcase.md#sports-feed-rag) -- Live match data + intent detection + streaming
 - [Travel RAG](examples-showcase.md#travel-rag) -- Destination guides + itinerary advice
-- [Football Live RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python) -- Live scores, standings, and top scorers
 
 ### Add vertical orchestration
 

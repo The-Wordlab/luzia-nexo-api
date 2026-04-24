@@ -9,6 +9,12 @@ This repository documents the two external developer lanes:
 
 Nexo handles routing, consent-managed profile context, rich UI payloads, streaming, and proactive delivery. This repo is the external examples and documentation companion to the main `luzia-nexo` runtime.
 
+World Cup note:
+- World Cup-specific product/runtime architecture is moving into
+  `worldcup-server`.
+- This repo should not present a football-specific flagship example lane.
+- Keep only reusable generic developer-experience patterns here.
+
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
@@ -47,6 +53,30 @@ claude mcp add --scope project --transport http nexo-mcp \
 # Open Claude Code and ask:
 # "Create an expense tracker for shared household bills"
 ```
+
+Recommended creation grammar:
+
+1. clarify the goal in natural language
+2. `plan_app`
+3. review the proposed shape
+4. `provision_app`
+5. inspect with `show_app` or `get_context`
+6. evolve with `plan_operation` / `apply_operation`
+
+This is the same underlying creation model used by the dashboard Builder chat
+inside `luzia-nexo`. The UI and MCP are two surfaces over the same creation
+contract, not separate products.
+
+Use the advanced manual path (`create_app`) only when you already know the
+exact schema you want and intentionally want to start from an empty shell.
+
+Use follow-through features only when the app needs them:
+- **Knowledge Packs** for app-attached reference data or deterministic
+  projections
+- **Raw Data** for direct record-level inspection or editing after the app
+  exists
+- **Connect Website** when the app should be associated with an owned domain
+- **public share** when you need temporary or revocable public access
 
 Set `NEXO_BASE_URL` to the MCP base URL for your environment. Local
 (`http://localhost:8000`) is the verified default for the DX flow in this repo.
@@ -96,6 +126,13 @@ This webhook flow is the **primary external Connected Apps path**. Personalized 
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |
 | [`docs/`](docs/) | Documentation source ([published site](https://the-wordlab.github.io/luzia-nexo-api/)) |
+
+Migration note:
+- World Cup-specific code, GCP deployment shape, and football/live intelligence
+  should consolidate into `worldcup-server`
+- this repo should keep only generic patterns that help other partner
+  integrations: worker/job split, live-ingest structure, event detection
+  patterns, and streaming/delivery design
 
 ## Profile context
 

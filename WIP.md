@@ -17,7 +17,8 @@
 10. **Worker indexing mode added** - Cloud Run Jobs + Scheduler wiring for all four RAG services.
 11. **Dev setup simplified** - `make setup-dev` installs Python/docs dependencies for a fresh checkout.
 12. **Public dashboard URL docs aligned** - partner-facing docs now consistently point to `https://nexo.luzia.com` (no `/partners` path references).
-13. **A2A rollout started** - `news-rag`, `sports-rag`, `travel-rag`, and `football-live` now publish `/.well-known/agent.json` and include `task`/`capability`/`artifacts` in webhook envelopes.
+13. **A2A rollout started** - `news-rag`, `sports-rag`, and `travel-rag` now publish `/.well-known/agent.json` and include `task`/`capability`/`artifacts` in webhook envelopes.
+14. **World Cup migration direction clarified** - World Cup-specific product/runtime architecture should consolidate into `worldcup-server`; this repo should keep only reusable generic patterns.
 
 ## Verification
 
@@ -53,8 +54,15 @@ Operational checklist:
 - [docs/partner-api-reference.md](docs/partner-api-reference.md)
 - [docs/hosting.md](docs/hosting.md)
 
-## Recent (2026-04-20)
+## Recent (2026-04-24)
 
+15. **World Cup retirement shaping started** - the examples repo now records the intended split:
+    - `worldcup-server` becomes the canonical home for World Cup product, chat,
+      GCP deployment shape, live football integration, and Nexo-backed app
+      architecture
+    - `luzia-nexo-api` keeps only reusable generic example/devex ideas
+
+## Recent (2026-04-20)
 14. **Knowledge Packs documentation added** - full developer guide at
     `docs/knowledge-packs.md` covering packs, datasets, records, sources,
     projections, REST API examples, MCP tools, sync workflow, and ownership

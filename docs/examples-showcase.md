@@ -365,39 +365,6 @@ Source: [examples/webhook/travel-rag/python](https://github.com/The-Wordlab/luzi
 
 ---
 
-## Football Live RAG
-
-A real-time football assistant focused on scores, standings, and top scorers across multiple leagues.
-It supports intent routing (`scores`, `standings`, `scorers`, `general`) and returns rich sports cards
-with live-aware metadata.
-
-### Try it
-
-```bash
-curl -X POST "https://nexo-football-live-v3me5awkta-ew.a.run.app/" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event": "message_received",
-    "message": { "content": "Who is top scorer in the Premier League?" },
-    "thread": { "id": "thread-004" },
-    "timestamp": "2026-03-09T10:00:00Z"
-  }'
-```
-
-### Run locally
-
-```bash
-cd examples/webhook/football-live/python
-pip install -r requirements.txt
-GOOGLE_CLOUD_PROJECT=<your-project-id> \
-GOOGLE_CLOUD_LOCATION=<your-region> \
-FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
-```
-
-Source: [examples/webhook/football-live/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/football-live/python)
-
----
-
 ## Push Events API
 
 The RAG examples can push events proactively to subscriber threads using the Nexo Partner API. This turns the chat thread from a static Q&A into a live feed.

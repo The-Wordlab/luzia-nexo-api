@@ -3,6 +3,10 @@
 Build a fully structured app using natural conversation with an AI coding assistant.
 No dashboard clicks, no REST calls, no schema design.
 
+This is the same underlying creation grammar used by the dashboard Builder chat
+inside `luzia-nexo`. Builder and MCP are two surfaces over the same creation
+contract.
+
 ## Prerequisites
 
 - A Nexo account
@@ -87,6 +91,27 @@ Tell the agent what you want:
     ```
 
 Your app now exists with 2 tables, 7 fields, 3 views, and a seed record.
+
+## Choosing the right path
+
+Use the recommended prompt-driven path by default:
+
+1. clarify the goal
+2. `plan_app`
+3. review
+4. `provision_app`
+5. inspect with `show_app` or `get_context`
+6. evolve with `plan_operation` / `apply_operation`
+
+Use `create_app` only when you intentionally want to start from an empty shell
+with an exact schema in mind.
+
+If planning or provisioning fails:
+
+- surface the real provider / planner error
+- retry the same step when retry makes sense
+- do not silently switch to a different creation path
+- do not hide the error behind deterministic fallback
 
 ## Step 3: Add data
 
@@ -245,6 +270,53 @@ The same workflow works in any MCP client. The key steps are always:
 **Codex / Windsurf:** Connect using the same HTTP transport URL and header. The tool sequence (`plan_app` -> `provision_app` -> `show_app` -> `plan_operation` -> `apply_operation`) is identical across all clients.
 
 **Tip:** For richer apps, reference the [available primitives](mcp.md#app-building-primitives) in your prompt: "Create a training plan with a HeroCard daily view, milestones, and a progress_ratio metric."
+
+If the app needs reference data or deterministic derived outputs, add a
+follow-through step with [Knowledge Packs](knowledge-packs.md) instead of
+trying to force everything into normal app records. If the app needs an owned
+hosted domain, use the app's `Connect Website` / authorized-domain flow after
+creation. Use public share only for temporary or revocable access.
+
+If the app needs a custom frontend beyond the default Nexo runtime:
+
+- keep Nexo as the backend/system of record
+- decide whether you want:
+  - a traditional `webapp`
+  - a `webview_optimized` surface for native wrappers or compact standalone use
+- publish the static frontend to Drophere by default unless another host is
+  chosen explicitly
+- prefer a Nexo vanity/origin launch path for ordinary authenticated web users
+- use an explicit bootstrap/launch contract for native or true external launch
+
+Quick ladder:
+
+1. stay in default Nexo runtime if it already solves the product need
+2. attach a custom frontend only when the UI actually needs more control
+3. choose:
+   - `webapp` for normal full-page web
+   - `webview_optimized` for native-wrapper or compact standalone use
+4. keep Nexo as the canonical backend
+5. keep client-side JavaScript thin and presentation-focused
+
+Quick rule:
+
+- use normal app tables for user-entered workflow state
+- use Knowledge Packs for reference datasets, freshness tracking, and
+  deterministic projections like standings or leaderboards
+
+Client-side JavaScript is a good fit for:
+
+- local UI state
+- progress rings and charts
+- grouped summaries over already-fetched records
+- sheets, tabs, drawers, and optimistic UX
+
+Move the logic into backend contracts and/or Knowledge Packs when it becomes:
+
+- canonical across clients
+- based on reference data
+- tied to sync/freshness
+- a durable derived output that multiple surfaces should agree on
 
 ## Next steps
 

@@ -98,7 +98,7 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 |---|---|---|
 | `WEBHOOK_SECRET` | Standard webhook services | Shared HMAC signing secret with Nexo (recommended value: `nexo-example-secret`) |
 | `OPENCLAW_WEBHOOK_SECRET` | openclaw-bridge | Dedicated OpenClaw webhook signing secret (recommended value: `nexo-openclaw-secret`) |
-| `FOOTBALL_DATA_API_KEY` | sports-rag, football-live | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
+| `FOOTBALL_DATA_API_KEY` | sports-rag | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
 | `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
 | `NEXO_PGVECTOR_DSN` | RAG services | Cloud SQL DSN for pgvector storage |
@@ -382,7 +382,6 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | nexo-news-rag | europe-west1 | `https://nexo-news-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-v3me5awkta-ew.a.run.app` | `/health` |
 | nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-v3me5awkta-ew.a.run.app` | `/health` |
-| nexo-football-live | europe-west1 | `https://nexo-football-live-v3me5awkta-ew.a.run.app` | `/health` |
 
 ### Secrets inventory (example)
 

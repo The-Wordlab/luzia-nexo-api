@@ -15,6 +15,14 @@ Personalized Apps are a first-party structured app runtime inside Nexo. This gui
     Connect an AI coding assistant and build apps through conversation.
     See [MCP Server](mcp.md) for setup.
 
+!!! tip "Same creation model as Builder"
+    The recommended MCP / CLI flow is the same underlying creation grammar used
+    by the dashboard Builder chat in `luzia-nexo`:
+    clarify -> plan -> review -> provision -> inspect -> evolve.
+    If you wrap this flow in a UI, keep prompt suggestions as the canonical
+    first-run affordance. If suggestions need fetching, prefer a loading state
+    over alternate starter UIs that drift from the dashboard Builder path.
+
 !!! warning "Dashboard host vs MCP host"
     Use the dashboard hosts (`https://staging.nexo.luzia.com`, `https://nexo.luzia.com`)
     to sign in and create developer keys.
@@ -100,6 +108,9 @@ curl "https://nexo.luzia.com/api/micro-apps" \
 
 Creating an app is a two-step process: plan a template, then provision.
 
+Use this as the canonical creation path unless you intentionally need exact
+manual schema control.
+
 ### Step 1: Plan a template
 
 ### POST /api/micro-apps/template-plan
@@ -163,6 +174,20 @@ curl -X POST "https://nexo.luzia.com/api/micro-apps/provision-from-template" \
 ```
 
 Pass the full `template` object from the planning step. The response is the created app with its ID.
+
+## Choosing the right path
+
+- Use `template-plan` + `provision-from-template` for the normal recommended
+  creation flow
+- Use `create_app` only if you intentionally want to start from an empty shell
+- Use `template-operation-plan` + `apply-operation` to evolve an existing app
+- Use Knowledge Packs when the app needs app-attached reference data,
+  freshness tracking, or deterministic projections
+- Use Raw Data / Data Workbench after creation when you need record-level
+  inspection or editing rather than the app's primary task-first runtime
+- Use Connect Website / authorized domains when the app should be associated
+  with an owned hosted domain
+- Use public share when you need temporary or revocable public access
 
 ## Modify an existing app
 

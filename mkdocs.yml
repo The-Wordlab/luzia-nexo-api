@@ -55,5 +55,6 @@ nav:
   - Hosting (Optional): hosting.md
   - Demo Catalog: demos.md
   - Examples Showcase: examples-showcase.md
+  - World Cup Migration: worldcup-migration.md
   - Live Streaming Architecture (Advanced): design-live-streaming.md
   - Agent Interop (MCP & A2A): agent-interop.md

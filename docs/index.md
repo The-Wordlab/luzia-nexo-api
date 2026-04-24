@@ -133,7 +133,7 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | Webhook contract | Deterministic request and response schema for Connected Apps | `webhook/minimal` |
 | Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
 | Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
-| Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag`, `football-live` |
+| Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag` |
 | Vertical orchestration | End-to-end partner flows: food ordering, travel planning | `food-ordering`, `travel-planning` |
 | OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
 | Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
@@ -147,7 +147,6 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | nexo-news-rag | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
 | nexo-sports-rag | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
 | nexo-travel-rag | <https://nexo-travel-rag-v3me5awkta-ew.a.run.app/> |
-| nexo-football-live | <https://nexo-football-live-v3me5awkta-ew.a.run.app/> |
 | nexo-openclaw-bridge | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
 | nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
 | nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
@@ -156,6 +155,9 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 | nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |
 
 For source links and what each demo does, see [Demo Catalog](demos.md).
+
+World Cup-specific football/live examples are intentionally not part of the
+active public examples surface here. That work is moving into `worldcup-server`.
 
 ## Design Principles
 
