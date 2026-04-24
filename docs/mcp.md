@@ -4,6 +4,13 @@ Nexo exposes an MCP server at `/mcp` (Streamable HTTP). Connect any MCP client t
 create and manage Personalized Apps through natural conversation, or invoke Partner
 Integration tools programmatically.
 
+For builders, the important mental model is:
+
+- Nexo is the backend/runtime layer
+- MCP is the black-box creation and control seam
+- the resulting app can also have durable runtime UI, not only headless tool
+  behavior
+
 ## Quick start
 
 Get productive in under 2 minutes:
@@ -102,6 +109,10 @@ Use the same underlying app contract, but choose the right surface explicitly:
 
 Do not invent a second creation story. Builder and MCP should both follow the
 same creation grammar.
+
+Strategically, this means Nexo can act as more than a CRUD backend. It can be
+the layer where Luzia gains new app-backed capabilities with durable state and
+runtime UI, while MCP stays the builder-facing control surface.
 
 For custom frontends, the intended direction is:
 
@@ -234,6 +245,8 @@ backend MCP host can return `406 Not Acceptable`.
 | `micro_apps__bulk_update_records` | Update multiple records in one call (max 100) | `app_id`, `table_key`, `updates` |
 | `micro_apps__bulk_delete_records` | Soft-delete multiple records in one call (max 100) | `app_id`, `table_key`, `record_ids` |
 | `micro_apps__aggregate_records` | Run server-side aggregations (count, sum, avg, min, max, count_distinct) with optional group_by | `app_id`, `table_key`, `aggregations`, `group_by` |
+| `micro_apps__provision_app_schema` | Create an app with full schema in one call (tables, fields, KP, datasets) | `name`, `tables`, `knowledge_pack` |
+| `micro_apps__export_app` | Export an app's schema in provision-compatible format (for environment promotion) | `app_id` |
 
 **Creation paths:**
 
@@ -274,6 +287,17 @@ Knowledge Packs let you attach reference data to apps and compute derived output
 **What they are not:**
 
 - Not a replacement for Personalized Apps tables (which hold user-entered operational state)
+
+### Capability discovery tools
+
+| Tool | Description | Key parameters |
+|---|---|---|
+| `capabilities__get_manifest` | Get the full capability manifest (all apps with intents, entrypoints, context URLs) | -- |
+
+The manifest lets MCP clients and external runtimes discover what apps and
+capabilities are available without knowing Nexo internals. Each entry includes
+the app family, initiative metadata, character association, context endpoints,
+and UI entrypoints.
 - Not a generic database - use them for reference/grounding data
 
 **Typical signal that you need Knowledge Packs:** your prompt depends on
@@ -755,7 +779,7 @@ Once connected, use this sequence to build Personalized Apps:
 
 **Common anti-patterns:**
 - Do not skip `plan_app` and go straight to manual `create_app` unless you know the exact schema
-- Do not create more than 3 tables per app in V1
+- Do not create more than 10 tables per app in V1
 - Do not mix Personalized App concepts with Connected App (webhook) concepts
 
 ## Debugging with MCP Inspector
