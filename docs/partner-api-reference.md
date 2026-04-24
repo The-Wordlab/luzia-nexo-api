@@ -908,6 +908,107 @@ See [examples-showcase.md](examples-showcase.md) for a working implementation in
 
 ---
 
+## Capability Discovery
+
+### GET /api/capabilities/manifest
+
+Returns all apps and capabilities available to the authenticated developer. Use this endpoint to discover what Connected Apps and Personalized Apps are available, what intents they support, and how to reach their context and UI surfaces.
+
+**Authentication:** Bearer token (obtained via [developer key exchange](developer-auth.md#use-with-the-rest-api)).
+
+```bash
+curl "${NEXO_BASE_URL}/api/capabilities/manifest" \
+  -H "Authorization: Bearer eyJ..."
+```
+
+**Response:**
+
+```json
+{
+  "version": "2026-04",
+  "generated_at": "2026-04-24T14:30:00.000000+00:00",
+  "entries": [
+    {
+      "app_id": "550e8400-e29b-41d4-a716-446655440000",
+      "slug": "expense-tracker",
+      "name": "Household Expenses",
+      "family": "personalized_app",
+      "initiative_key": "household",
+      "initiative_role": "tracker",
+      "owner_type": "user",
+      "owner_label": null,
+      "character": null,
+      "capability_summary": "Track shared household bills and expenses",
+      "intents": ["expense-tracker.create", "expense-tracker.query"],
+      "context": {
+        "markdown_url": "/api/micro-apps/550e8400-.../context.md",
+        "json_url": "/api/micro-apps/550e8400-.../context"
+      },
+      "ui": {
+        "dashboard_url": "https://nexo.luzia.com/dashboard/micro-apps/550e8400-...",
+        "runtime_url": "https://nexo.luzia.com/dashboard/micro-apps/550e8400-.../runtime",
+        "webview_url": "https://nexo.luzia.com/micro-apps/550e8400-.../webview",
+        "public_app_url": null
+      }
+    },
+    {
+      "app_id": "660e8400-e29b-41d4-a716-446655440001",
+      "slug": null,
+      "name": "Sports Feed",
+      "family": "connected_app",
+      "initiative_key": null,
+      "initiative_role": null,
+      "owner_type": "org",
+      "owner_label": "Acme Sports",
+      "character": {
+        "character_id": "770e8400-e29b-41d4-a716-446655440002",
+        "character_name": "Sports Bot"
+      },
+      "capability_summary": "Live scores, match previews, and post-match analysis",
+      "intents": ["sports.scores", "sports.preview", "sports.analysis"],
+      "context": {
+        "markdown_url": "/api/apps/660e8400-.../context.md",
+        "json_url": "/api/apps/660e8400-.../context"
+      },
+      "ui": {
+        "dashboard_url": "https://nexo.luzia.com/dashboard/apps/660e8400-...",
+        "runtime_url": "https://nexo.luzia.com/dashboard/apps/660e8400-.../chat",
+        "webview_url": "https://nexo.luzia.com/apps/660e8400-.../webview",
+        "public_app_url": null
+      }
+    }
+  ]
+}
+```
+
+### Manifest entry fields
+
+| Field | Type | Description |
+|---|---|---|
+| `app_id` | UUID | Unique app identifier. |
+| `slug` | string or null | Template key for Personalized Apps. Null for Connected Apps. |
+| `name` | string | Display name of the app. |
+| `family` | string | `"personalized_app"` or `"connected_app"`. |
+| `initiative_key` | string or null | Grouping key when apps belong to a shared initiative. |
+| `initiative_role` | string or null | Role within the initiative (e.g. `"tracker"`, `"planner"`). |
+| `owner_type` | string | `"user"` or `"org"`. |
+| `owner_label` | string or null | Organization name when `owner_type` is `"org"`. |
+| `character` | object or null | Character identity: `character_id` (UUID) and `character_name` (string). |
+| `capability_summary` | string or null | Human-readable description of what the app does. |
+| `intents` | string[] | List of intent identifiers the app can handle. |
+| `context` | object | `markdown_url` and `json_url` for fetching the app's full context bundle. |
+| `ui` | object | `dashboard_url`, `runtime_url`, `webview_url`, and `public_app_url` for reaching the app's UI surfaces. |
+
+### Use cases
+
+- **Dynamic skill discovery** - external AI runtimes can fetch the manifest to learn what capabilities are available and route user requests to the right app.
+- **Context loading** - use `context.json_url` or `context.markdown_url` to fetch an app's full context (schema, data, configuration) for grounding LLM calls.
+- **UI deep linking** - use `ui.runtime_url` or `ui.webview_url` to open an app directly in the appropriate surface.
+
+For a dedicated walkthrough of capability discovery patterns, see [Capability Discovery](capability-discovery.md).
+
+---
+
 ## App lifecycle
 
 Apps follow a review workflow before they become available to users:

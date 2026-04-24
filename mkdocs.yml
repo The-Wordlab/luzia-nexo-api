@@ -46,6 +46,7 @@ nav:
   - Home: index.md
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
+  - Capability Discovery: capability-discovery.md
   - Micro Apps API: micro-apps-api.md
   - MCP Server: mcp.md
   - Knowledge Packs: knowledge-packs.md

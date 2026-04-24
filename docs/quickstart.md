@@ -218,6 +218,7 @@ See [Partner API Reference - App lifecycle](partner-api-reference.md#app-lifecyc
 
 ## Next steps
 
+- Discover available apps and skills: [Capability Discovery](capability-discovery.md)
 - Full contract and examples: [Partner API Reference](partner-api-reference.md)
 - TypeScript SDK: [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk/javascript)
 - Examples folder: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
