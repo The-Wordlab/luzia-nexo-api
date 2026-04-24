@@ -115,7 +115,6 @@ get_test_message() {
     news-rag)         echo "What are the latest headlines?" ;;
     sports-rag)       echo "Tell me about recent football matches" ;;
     travel-rag)       echo "What are top destinations in Europe?" ;;
-    football-live)    echo "Show me live match scores" ;;
     *)                echo "Hello" ;;
   esac
 }

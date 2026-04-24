@@ -19,7 +19,6 @@ HOSTED_DISCOVERY_EXAMPLES = [
     ("news-rag", WEBHOOK_ROOT / "news-rag" / "python", "server.py", "demo_discovery_news_rag"),
     ("sports-rag", WEBHOOK_ROOT / "sports-rag" / "python", "server.py", "demo_discovery_sports_rag"),
     ("travel-rag", WEBHOOK_ROOT / "travel-rag" / "python", "server.py", "demo_discovery_travel_rag"),
-    ("football-live", WEBHOOK_ROOT / "football-live" / "python", "server.py", "demo_discovery_football_live"),
 ]
 
 

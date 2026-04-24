@@ -147,7 +147,6 @@ AGENT_CARD: dict[str, Any] = {
                     ],
                     "showcase_family": "sports",
                     "showcase_role": "primary",
-                    "deep_dives": ["football-live"],
                 },
             }
         ]
@@ -881,7 +880,7 @@ async def root() -> JSONResponse:
     return JSONResponse(
         {
             "service": "webhook-sports-rag-python",
-            "description": "Broad sports flagship webhook with intent routing, streaming, live event detection, and a football deep-dive companion.",
+            "description": "Broad sports flagship webhook with intent routing, streaming, and live event detection.",
             "routes": [
                 {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
                 {"path": "/health", "method": "GET", "description": "Collection counts and runtime state"},
@@ -894,7 +893,6 @@ async def root() -> JSONResponse:
             "showcase": {
                 "family": "sports",
                 "role": "primary",
-                "deep_dives": ["football-live"],
             },
             "auth": "Optional WEBHOOK_SECRET (X-Timestamp + X-Signature)",
             "schema_version": SCHEMA_VERSION,

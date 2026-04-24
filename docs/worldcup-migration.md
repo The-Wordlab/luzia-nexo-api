@@ -47,8 +47,9 @@ The end state is:
 - World Cup-specific code and GCP deployment shape live in `worldcup-server`
 - this repo keeps only generic developer-experience patterns
 
-Operational cleanup still required:
-- undeploy the old football-live GCP service and related scheduler/worker
-  resources
-- remove football-live from active seed/demo/showcase paths
-- remove old staging/production app records that still surface the demo lane
+Operational cleanup completed:
+- GCP Cloud Run service deleted
+- demo-apps.json manifest entry removed
+- football-live example directory deleted from this repo
+- all docs, tests, CI, and docker-compose references cleaned up
+- sports-rag deep_dives cross-reference removed

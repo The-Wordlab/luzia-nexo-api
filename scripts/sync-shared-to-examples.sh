@@ -20,7 +20,6 @@ EXAMPLES=(
   news-rag
   travel-rag
   sports-rag
-  football-live
   routines
   travel-planning
 )

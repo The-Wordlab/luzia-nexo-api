@@ -284,7 +284,6 @@ URL_TRAVEL_PLANNING="$(service_url nexo-travel-planning)"
 URL_NEWS_RAG="$(service_url nexo-news-rag)"
 URL_SPORTS_RAG="$(service_url nexo-sports-rag)"
 URL_TRAVEL_RAG="$(service_url nexo-travel-rag)"
-URL_FOOTBALL_LIVE="$(service_url nexo-football-live)"
 
 echo "== Discovery/health checks =="
 http_get_check "demo-receiver health" "${URL_DEMO_RECEIVER}/health" "ok"
@@ -300,7 +299,6 @@ http_get_check "travel-planning health" "${URL_TRAVEL_PLANNING}/health" "status"
 http_get_check "news-rag health" "${URL_NEWS_RAG}/health" "status"
 http_get_check "sports-rag health" "${URL_SPORTS_RAG}/health" "status"
 http_get_check "travel-rag health" "${URL_TRAVEL_RAG}/health" "status"
-http_get_check "football-live health" "${URL_FOOTBALL_LIVE}/health" "status"
 
 echo
 echo "== Functional checks =="
@@ -366,11 +364,6 @@ http_post_signed_prompt_suggestions_check \
   "${URL_TRAVEL_RAG}/" \
   '{"event":"message_created","message":{"role":"user","content":"suggest a city break"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_prompt_suggestions_check \
-  "football-live webhook" \
-  "${URL_FOOTBALL_LIVE}/" \
-  '{"event":"message_created","message":{"role":"user","content":"who are top scorers"},"profile":{"display_name":"Mark"}}'
-
 http_get_check "demo-receiver events endpoint" "${URL_DEMO_RECEIVER}/v1/events/smoke-demo" "events"
 http_get_expect_code_check "demo-receiver ingest endpoint (method check)" "${URL_DEMO_RECEIVER}/v1/ingest/smoke-demo" "405" "Method Not Allowed"
 
@@ -392,11 +385,6 @@ if [[ "${RUN_INGEST}" == "true" ]]; then
     "${URL_TRAVEL_RAG}/ingest" \
     '{}' \
     "summary"
-  http_post_signed_check \
-    "football-live ingest trigger" \
-    "${URL_FOOTBALL_LIVE}/ingest/live" \
-    '{}' \
-    "matches_updated"
 fi
 
 echo

@@ -3,7 +3,7 @@
 # Create or update Cloud Run Jobs for RAG ingest workers.
 #
 # Usage:
-#   ./scripts/deploy-rag-workers.sh <all|news|sports|travel|football>
+#   ./scripts/deploy-rag-workers.sh <all|news|sports|travel>
 #
 # Required env:
 #   GCP_PROJECT_ID
@@ -19,7 +19,6 @@
 # - news:     python ingest.py
 # - sports:   python worker.py with SPORTS_WORKER_MODE=live
 # - travel:   python worker.py
-# - football: python worker.py with FOOTBALL_WORKER_MODE=live
 
 set -euo pipefail
 
@@ -31,10 +30,10 @@ JOB_MAX_RETRIES="${JOB_MAX_RETRIES:-1}"
 WORKER_LLM_MODEL="${WORKER_LLM_MODEL:-vertex_ai/gemini-2.5-flash}"
 WORKER_EMBEDDING_MODEL="${WORKER_EMBEDDING_MODEL:-vertex_ai/text-embedding-004}"
 SYNC_WORKER_IMAGE_WITH_SERVICE="${SYNC_WORKER_IMAGE_WITH_SERVICE:-true}"
-ALL_TARGETS="news sports travel football"
+ALL_TARGETS="news sports travel"
 
 usage() {
-  echo "Usage: $0 <all|news|sports|travel|football>"
+  echo "Usage: $0 <all|news|sports|travel>"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION, AR_REPO, JOB_PREFIX, JOB_TASK_TIMEOUT, JOB_MAX_RETRIES"
@@ -53,7 +52,7 @@ fi
 TARGET="$1"
 case "$TARGET" in
   all) targets="$ALL_TARGETS" ;;
-  news|sports|travel|football) targets="$TARGET" ;;
+  news|sports|travel) targets="$TARGET" ;;
   *) usage ;;
 esac
 
@@ -67,7 +66,6 @@ image_ref() {
     news) service="nexo-news-rag" ;;
     sports) service="nexo-sports-rag" ;;
     travel) service="nexo-travel-rag" ;;
-    football) service="nexo-football-live" ;;
   esac
   if [[ "${SYNC_WORKER_IMAGE_WITH_SERVICE}" == "true" ]]; then
     local deployed_image
@@ -90,7 +88,6 @@ job_args() {
     news) echo "python ingest.py" ;;
     sports) echo "python worker.py" ;;
     travel) echo "python worker.py" ;;
-    football) echo "python worker.py" ;;
   esac
 }
 
@@ -105,9 +102,6 @@ job_env_vars() {
     travel)
       echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_travel,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
       ;;
-    football)
-      echo "VECTOR_STORE_BACKEND=pgvector,VECTOR_STORE_DURABLE=true,PGVECTOR_SCHEMA=rag_football,FOOTBALL_WORKER_MODE=live,LLM_MODEL=${WORKER_LLM_MODEL},EMBEDDING_MODEL=${WORKER_EMBEDDING_MODEL},VERTEXAI_PROJECT=${GCP_PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
-      ;;
   esac
 }
 
@@ -116,7 +110,6 @@ job_secrets() {
     news) echo "PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest" ;;
     sports) echo "PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest" ;;
     travel) echo "PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest" ;;
-    football) echo "PGVECTOR_DSN=NEXO_PGVECTOR_DSN:latest,FOOTBALL_DATA_API_KEY=FOOTBALL_DATA_API_KEY:latest" ;;
   esac
 }
 

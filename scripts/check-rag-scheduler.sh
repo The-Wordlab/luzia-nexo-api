@@ -49,7 +49,6 @@ expect_endpoint_uri() {
     news) echo "$(service_url nexo-news-rag)/ingest" ;;
     sports) echo "$(service_url nexo-sports-rag)/ingest/live" ;;
     travel) echo "$(service_url nexo-travel-rag)/ingest" ;;
-    football) echo "$(service_url nexo-football-live)/ingest/live" ;;
   esac
 }
 
@@ -63,7 +62,6 @@ schedule_for() {
     news) echo "*/30 * * * *" ;;
     sports) echo "*/5 * * * *" ;;
     travel) echo "0 * * * *" ;;
-    football) echo "*/5 * * * *" ;;
   esac
 }
 
@@ -73,7 +71,6 @@ scheduler_name() {
       news) echo "${SCHEDULER_PREFIX}-news-index" ;;
       sports) echo "${SCHEDULER_PREFIX}-sports-live-index" ;;
       travel) echo "${SCHEDULER_PREFIX}-travel-index" ;;
-      football) echo "${SCHEDULER_PREFIX}-football-live-index" ;;
     esac
   else
     echo "${WORKER_SCHEDULER_PREFIX}-$1"
@@ -133,7 +130,7 @@ echo "Project: ${GCP_PROJECT_ID}"
 echo "Region:  ${REGION}"
 
 fail=0
-for t in news sports travel football; do
+for t in news sports travel; do
   if ! check_one "$t"; then
     fail=1
   fi

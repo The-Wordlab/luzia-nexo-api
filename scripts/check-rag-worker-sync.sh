@@ -21,14 +21,13 @@ if [[ -z "${GCP_PROJECT_ID:-}" ]]; then
   exit 2
 fi
 
-targets=(news sports travel football)
+targets=(news sports travel)
 
 service_name() {
   case "$1" in
     news) echo "nexo-news-rag" ;;
     sports) echo "nexo-sports-rag" ;;
     travel) echo "nexo-travel-rag" ;;
-    football) echo "nexo-football-live" ;;
   esac
 }
 
@@ -37,7 +36,6 @@ job_name() {
     news) echo "nexo-rag-news-worker" ;;
     sports) echo "nexo-rag-sports-worker" ;;
     travel) echo "nexo-rag-travel-worker" ;;
-    football) echo "nexo-rag-football-worker" ;;
   esac
 }
 

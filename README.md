@@ -9,12 +9,6 @@ This repository documents the two external developer lanes:
 
 Nexo handles routing, consent-managed profile context, rich UI payloads, streaming, and proactive delivery. This repo is the external examples and documentation companion to the main `luzia-nexo` runtime.
 
-World Cup note:
-- World Cup-specific product/runtime architecture is moving into
-  `worldcup-server`.
-- This repo should not present a football-specific flagship example lane.
-- Keep only reusable generic developer-experience patterns here.
-
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
@@ -126,13 +120,6 @@ This webhook flow is the **primary external Connected Apps path**. Personalized 
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |
 | [`docs/`](docs/) | Documentation source ([published site](https://the-wordlab.github.io/luzia-nexo-api/)) |
-
-Migration note:
-- World Cup-specific code, GCP deployment shape, and football/live intelligence
-  should consolidate into `worldcup-server`
-- this repo should keep only generic patterns that help other partner
-  integrations: worker/job split, live-ingest structure, event detection
-  patterns, and streaming/delivery design
 
 ## Profile context
 

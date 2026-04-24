@@ -1,7 +1,7 @@
 """Cross-repo webhook contract tests.
 
 Validates that all supported Python webhook examples (food-ordering,
-football-live, travel-planning) return correct canonical envelopes and
+travel-planning) return correct canonical envelopes and
 reject invalid requests correctly.
 
 Uses pytest parametrize to run the same contract checks against each webhook.
@@ -78,7 +78,6 @@ sys.path.insert(0, str(REPO_ROOT / "examples"))
 from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 FOOD_PATH = WEBHOOK_ROOT / "food-ordering" / "python"
-FOOTBALL_PATH = WEBHOOK_ROOT / "football-live" / "python"
 TRAVEL_PATH = WEBHOOK_ROOT / "travel-planning" / "python"
 
 # ---------------------------------------------------------------------------
@@ -237,79 +236,6 @@ class _FoodFixture:
         return hasattr(mod, "STREAMING_ENABLED")
 
 
-class _FootballFixture:
-    """Loads the football-live webhook with an in-memory fake vector store."""
-
-    _module_name = "contract_football"
-
-    @classmethod
-    def load(cls) -> tuple[TestClient, Any]:
-        sys.path.insert(0, str(FOOTBALL_PATH))
-        try:
-            server_mod = _load_module(FOOTBALL_PATH, cls._module_name, "server.py")
-            # Also load ingest (football-live has a separate ingest.py)
-            ingest_spec = importlib.util.spec_from_file_location(
-                f"{cls._module_name}_ingest", FOOTBALL_PATH / "ingest.py"
-            )
-            ingest_mod = importlib.util.module_from_spec(ingest_spec)
-            sys.modules[f"{cls._module_name}_ingest"] = ingest_mod
-            ingest_spec.loader.exec_module(ingest_mod)
-
-            fake_store = FakeVectorStoreRegistry()
-            ingest_mod._pg_collections = {}
-            ingest_mod.get_collection = lambda name: fake_store.get(name)
-            ingest_mod.embed_texts = lambda texts: [[0.0] * 1536 for _ in texts]
-            server_mod.get_collection = lambda name: fake_store.get(name)
-
-            server_mod.WEBHOOK_SECRET = ""
-            server_mod.FOOTBALL_DATA_API_KEY = ""
-
-            client = TestClient(server_mod.app, raise_server_exceptions=False)
-            return client, server_mod
-        finally:
-            sys.path.remove(str(FOOTBALL_PATH))
-
-    @classmethod
-    def unload(cls) -> None:
-        _unload_module(cls._module_name)
-        _unload_module(f"{cls._module_name}_ingest")
-
-    @staticmethod
-    def mock_llm(mod: Any, return_value: str = "ok") -> Any:
-        return patch.object(mod, "call_llm", return_value=return_value)
-
-    @staticmethod
-    def mock_stream(mod: Any, text: str = "ok"):
-        async def _fake(*_a, **_kw):
-            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
-        return patch.object(mod, "stream_llm", side_effect=_fake)
-
-    @staticmethod
-    def mock_search(mod: Any):
-        """Patch all search functions to return empty results (no vector-store query needed)."""
-        return [
-            patch.object(mod, "search_matches", return_value=[]),
-            patch.object(mod, "search_standings", return_value=[]),
-            patch.object(mod, "search_scorers", return_value=[]),
-        ]
-
-    @staticmethod
-    def happy_payload() -> dict:
-        return {"message": {"content": "Arsenal score"}}
-
-    @staticmethod
-    def intent_payload() -> dict:
-        return {"message": {"content": "top scorer"}}
-
-    @staticmethod
-    def has_llm(mod: Any) -> bool:
-        return hasattr(mod, "call_llm")
-
-    @staticmethod
-    def has_streaming(mod: Any) -> bool:
-        return hasattr(mod, "STREAMING_ENABLED")
-
-
 class _TravelFixture:
     """Loads the travel-planning webhook and patches async call_llm."""
 
@@ -364,7 +290,6 @@ class _TravelFixture:
 
 WEBHOOK_FIXTURES = [
     pytest.param(_FoodFixture, id="food-ordering"),
-    pytest.param(_FootballFixture, id="football-live"),
     pytest.param(_TravelFixture, id="travel-planning"),
 ]
 

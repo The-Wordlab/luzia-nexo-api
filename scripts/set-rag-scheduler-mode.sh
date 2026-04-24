@@ -35,14 +35,12 @@ endpoint_jobs=(
   "${ENDPOINT_PREFIX}-news-index"
   "${ENDPOINT_PREFIX}-sports-live-index"
   "${ENDPOINT_PREFIX}-travel-index"
-  "${ENDPOINT_PREFIX}-football-live-index"
 )
 
 worker_jobs=(
   "${WORKER_PREFIX}-news"
   "${WORKER_PREFIX}-sports"
   "${WORKER_PREFIX}-travel"
-  "${WORKER_PREFIX}-football"
 )
 
 set_job_state() {

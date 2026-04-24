@@ -22,7 +22,6 @@ docker compose up --build
 | news-rag       | 8090      | POST /          | Python   | RSS news RAG via pgvector + LLM              |
 | sports-rag     | 8091      | POST /          | Python   | Sports RSS + match data RAG                   |
 | travel-rag     | 8092      | POST /          | Python   | Travel destination + blog RAG                 |
-| football-live  | 8093      | POST /          | Python   | Live football scores, standings, scorers RAG  |
 
 ### Quick smoke test
 
@@ -69,7 +68,6 @@ Folders:
 - `webhook/news-rag`
 - `webhook/sports-rag`
 - `webhook/travel-rag`
-- `webhook/football-live`
 - `webhook/llm-powered` -- reusable base classes for LLM-powered webhooks (see its README)
 - `webhook/openclaw-bridge`
 - `partner-api/proactive`

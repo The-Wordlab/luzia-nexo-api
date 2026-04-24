@@ -7,7 +7,6 @@
 #   8090  news-rag   — RSS-backed RAG (pgvector)
 #   8091  sports-rag — Sports RSS + match data RAG (pgvector)
 #   8092  travel-rag — Travel destination + blog RAG (pgvector)
-#   8093  football-live — Live football scores/standings/scorers RAG
 #
 # Copy .env.example to .env and fill in API keys before starting.
 
@@ -179,35 +178,3 @@ services:
       retries: 3
     restart: unless-stopped
 
-  football-live:
-    build:
-      context: ./webhook/football-live/python
-      dockerfile: Dockerfile
-    ports:
-      - "8093:8003"
-    environment:
-      FOOTBALL_DATA_API_KEY: "${FOOTBALL_DATA_API_KEY:-}"
-      WEBHOOK_SECRET: "${WEBHOOK_SECRET:-}"
-      LLM_MODEL: "${LLM_MODEL:-vertex_ai/gemini-2.5-flash}"
-      EMBEDDING_MODEL: "${EMBEDDING_MODEL:-vertex_ai/text-embedding-004}"
-      GOOGLE_CLOUD_PROJECT: "${GOOGLE_CLOUD_PROJECT:-}"
-      GOOGLE_CLOUD_LOCATION: "${GOOGLE_CLOUD_LOCATION:-europe-west1}"
-      VERTEXAI_PROJECT: "${VERTEXAI_PROJECT:-}"
-      VERTEXAI_LOCATION: "${VERTEXAI_LOCATION:-}"
-      STREAMING_ENABLED: "${STREAMING_ENABLED:-true}"
-      REFRESH_INTERVAL: "${REFRESH_INTERVAL:-300}"
-      TOP_K: "${TOP_K:-5}"
-      VECTOR_STORE_BACKEND: "${VECTOR_STORE_BACKEND:-pgvector}"
-      VECTOR_STORE_DURABLE: "${VECTOR_STORE_DURABLE:-true}"
-      PGVECTOR_DSN: "${PGVECTOR_DSN:-postgresql://postgres:postgres@pgvector:5432/nexo_rag}"
-      PGVECTOR_SCHEMA: "${PGVECTOR_SCHEMA_FOOTBALL:-rag_football}"
-    depends_on:
-      pgvector:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
-      interval: 30s
-      timeout: 10s
-      start_period: 60s
-      retries: 3
-    restart: unless-stopped

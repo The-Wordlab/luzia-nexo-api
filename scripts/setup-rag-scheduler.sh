@@ -3,7 +3,7 @@
 # Create or update Cloud Scheduler jobs for RAG ingest endpoints.
 #
 # Usage:
-#   ./scripts/setup-rag-scheduler.sh <all|news|sports|travel|football>
+#   ./scripts/setup-rag-scheduler.sh <all|news|sports|travel>
 #
 # Required env:
 #   GCP_PROJECT_ID
@@ -14,7 +14,6 @@
 #   NEWS_SERVICE_URL           Override service URL
 #   SPORTS_SERVICE_URL         Override service URL
 #   TRAVEL_SERVICE_URL         Override service URL
-#   FOOTBALL_SERVICE_URL       Override service URL
 #   SCHEDULER_OIDC_SA          Optional service account email for OIDC-authenticated jobs
 #   SCHEDULER_OIDC_AUDIENCE    Optional audience for OIDC token (defaults to endpoint URL)
 
@@ -22,10 +21,10 @@ set -euo pipefail
 
 REGION="${GCP_REGION:-europe-west1}"
 JOB_PREFIX="${JOB_PREFIX:-nexo-rag}"
-ALL_TARGETS="news sports travel football"
+ALL_TARGETS="news sports travel"
 
 usage() {
-  echo "Usage: $0 <all|news|sports|travel|football>"
+  echo "Usage: $0 <all|news|sports|travel>"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION, JOB_PREFIX, *_SERVICE_URL, SCHEDULER_OIDC_SA, SCHEDULER_OIDC_AUDIENCE"
@@ -44,7 +43,7 @@ fi
 TARGET="$1"
 case "$TARGET" in
   all) targets="$ALL_TARGETS" ;;
-  news|sports|travel|football) targets="$TARGET" ;;
+  news|sports|travel) targets="$TARGET" ;;
   *) usage ;;
 esac
 
@@ -53,7 +52,6 @@ service_url() {
     news) echo "${NEWS_SERVICE_URL:-https://nexo-news-rag-v3me5awkta-ew.a.run.app}" ;;
     sports) echo "${SPORTS_SERVICE_URL:-https://nexo-sports-rag-v3me5awkta-ew.a.run.app}" ;;
     travel) echo "${TRAVEL_SERVICE_URL:-https://nexo-travel-rag-v3me5awkta-ew.a.run.app}" ;;
-    football) echo "${FOOTBALL_SERVICE_URL:-https://nexo-football-live-v3me5awkta-ew.a.run.app}" ;;
   esac
 }
 
@@ -62,7 +60,6 @@ schedule_spec() {
     news) echo "*/30 * * * *" ;;
     sports) echo "*/5 * * * *" ;;
     travel) echo "0 * * * *" ;;
-    football) echo "*/5 * * * *" ;;
   esac
 }
 
@@ -71,7 +68,6 @@ endpoint_path() {
     news) echo "/ingest" ;;
     sports) echo "/ingest/live" ;;
     travel) echo "/ingest" ;;
-    football) echo "/ingest/live" ;;
   esac
 }
 
@@ -80,7 +76,6 @@ job_name() {
     news) echo "${JOB_PREFIX}-news-index" ;;
     sports) echo "${JOB_PREFIX}-sports-live-index" ;;
     travel) echo "${JOB_PREFIX}-travel-index" ;;
-    football) echo "${JOB_PREFIX}-football-live-index" ;;
   esac
 }
 

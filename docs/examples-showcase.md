@@ -431,20 +431,17 @@ GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvico
 cd examples/webhook/travel-rag/python
 GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> uvicorn server:app --port 8083
 
-# Football Live RAG on :8003
-cd examples/webhook/football-live/python
-GOOGLE_CLOUD_PROJECT=<your-project-id> GOOGLE_CLOUD_LOCATION=<your-region> FOOTBALL_DATA_API_KEY=... uvicorn server:app --port 8003
 ```
 
 ## Deploying to Cloud Run
 
-Deploy all four RAG services with a single command:
+Deploy all three RAG services with a single command:
 
 ```bash
 GCP_PROJECT_ID=your-project ./scripts/deploy-rag-examples.sh all
 ```
 
-Individual targets: `news`, `sports`, `travel`, `football`.
+Individual targets: `news`, `sports`, `travel`.
 
 Prerequisites and full deployment guide: [Hosting](hosting.md)
 

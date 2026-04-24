@@ -22,7 +22,6 @@ jobs:
           pip install -r examples/webhook/news-rag/python/requirements.txt
           pip install -r examples/webhook/sports-rag/python/requirements.txt
           pip install -r examples/webhook/travel-rag/python/requirements.txt
-          pip install -r examples/webhook/football-live/python/requirements.txt
           pip install -r examples/webhook/routines/python/requirements.txt
           pip install -r examples/webhook/food-ordering/python/requirements.txt
           pip install -r examples/webhook/travel-planning/python/requirements.txt
@@ -54,10 +53,6 @@ jobs:
       - name: Run travel RAG webhook tests
         run: |
           cd examples/webhook/travel-rag/python
-          pytest -q
-      - name: Run football live webhook tests
-        run: |
-          cd examples/webhook/football-live/python
           pytest -q
       - name: Run routines webhook tests
         run: |

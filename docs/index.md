@@ -156,9 +156,6 @@ Nexo fully owns consent collection, storage, and scope enforcement.
 
 For source links and what each demo does, see [Demo Catalog](demos.md).
 
-World Cup-specific football/live examples are intentionally not part of the
-active public examples surface here. That work is moving into `worldcup-server`.
-
 ## Design Principles
 
 - **Contract-first:** Same schema rules across local and production.

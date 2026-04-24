@@ -24,6 +24,5 @@ run_suite() {
 run_suite "examples/webhook/news-rag/python" "test_news_rag.py"
 run_suite "examples/webhook/sports-rag/python" "test_sports_rag.py"
 run_suite "examples/webhook/travel-rag/python" "test_travel_rag.py"
-run_suite "examples/webhook/football-live/python" "test_football_live.py"
 
 echo "RAG test suites passed"
