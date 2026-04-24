@@ -76,6 +76,7 @@ See working Connected Apps you can clone, customize, and deploy:
 | [Knowledge Packs](knowledge-packs.md) | App-attached reference data |
 | [MCP Server](mcp.md) | AI coding assistant integration |
 | [Partner API Reference](partner-api-reference.md) | Full webhook and runtime contract |
+| [Developer Auth](developer-auth.md) | Developer keys, MCP auth, REST API auth |
 | [Demo Catalog](demos.md) | Browse and deploy example apps |
 | [Hosting](hosting.md) | Deploy to Cloud Run |
 
