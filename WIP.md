@@ -47,11 +47,12 @@
 
 ## Recent (2026-04-24)
 
-15. **World Cup retirement shaping started** - the examples repo now records the intended split:
-    - `worldcup-server` becomes the canonical home for World Cup product, chat,
-      GCP deployment shape, live football integration, and Nexo-backed app
-      architecture
-    - `luzia-nexo-api` keeps only reusable generic example/devex ideas
+15. **World Cup migration completed** - football-live example fully removed
+    (code, docs, tests, CI, docker-compose). `worldcup-server` is now the
+    canonical home for World Cup product and Nexo-backed app architecture.
+    This repo keeps only reusable generic patterns.
+16. **Landing page rewritten** - externally focused, two clear paths (Connected
+    Apps / Personalized Apps), no internal architecture details exposed.
 
 ## Recent (2026-04-20)
 14. **Knowledge Packs documentation added** - full developer guide at
