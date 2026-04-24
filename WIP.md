@@ -1,7 +1,7 @@
 # Work In Progress
 
-**Last Updated:** 2026-03-12
-**Status:** Production-hardening pass complete (ADC + pgvector + scheduler indexing + worker jobs + setup UX).
+**Last Updated:** 2026-04-24
+**Status:** Post-migration. Football-live retired. Knowledge Packs docs shipped. World Cup consolidated into worldcup-server.
 
 ## Current state
 
@@ -20,31 +20,22 @@
 13. **A2A rollout started** - `news-rag`, `sports-rag`, and `travel-rag` now publish `/.well-known/agent.json` and include `task`/`capability`/`artifacts` in webhook envelopes.
 14. **World Cup migration direction clarified** - World Cup-specific product/runtime architecture should consolidate into `worldcup-server`; this repo should keep only reusable generic patterns.
 
-## Verification
+## What shipped recently
 
-Executed successfully:
-- `make setup-dev`
-- `make test-all`
-- `make docs-build`
-- `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-scheduler`
-- `GCP_PROJECT_ID=luzia-nexo-api-examples make check-rag-worker-scheduler`
-- `gcloud run jobs execute nexo-rag-{news,sports,travel,football}-worker --wait` (all successful)
-- `make test-rag-examples`
+- football-live example fully removed (code, docs, tests, CI, docker-compose)
+- Knowledge Packs developer guide added (`docs/knowledge-packs.md`)
+- MCP tools table updated with 6 KP tools
+- World Cup references scrubbed from platform docs (lives in worldcup-server now)
+- demo-apps.json cleaned (football-live entry and sports-rag deep_dives removed)
 
-## Next step
+## Next
 
-Operational checklist:
-1. `make gcp-bootstrap` (enable APIs, create Artifact Registry)
-2. Create secrets in Secret Manager (`WEBHOOK_SECRET`, `NEXO_PGVECTOR_DSN`, `FOOTBALL_DATA_API_KEY`, optional `OPENAI_API_KEY`)
-3. Deploy RAG services: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/deploy-rag-examples.sh all`
-4. Choose indexing mode:
-   - Endpoint mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/setup-rag-scheduler.sh all`
-   - Worker mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> SCHEDULER_RUNNER_SA=<sa> ./scripts/setup-rag-worker-scheduler.sh all`
-5. Verify scheduler drift:
-   - Endpoint mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/check-rag-scheduler.sh endpoint`
-   - Worker mode: `GCP_PROJECT_ID=<id> GCP_REGION=<region> ./scripts/check-rag-scheduler.sh worker`
-6. Verify health endpoints show `vector_store.backend=pgvector` and `durable=true`
-7. Run smoke test: `./scripts/integration-smoke.sh --webhook-url <service-url>`
+- Update docs when the new Nexo provisioning endpoint ships
+  (`POST /api/micro-apps/provision`) - this replaces the 15-call setup pattern
+- Update MCP docs when `provision_app` MCP tool ships
+- Consider adding a "Getting Started: Create Your First App" guide that shows
+  the one-call provisioning flow
+- Keep operational RAG services healthy (news, sports, travel on Cloud Run)
 
 ## Quick links
 
