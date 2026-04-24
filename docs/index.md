@@ -1,171 +1,90 @@
 # Luzia Nexo API
 
-Build apps on top of Nexo, Luzia's apps runtime.
+Build apps that run inside Luzia.
 
-Nexo handles message routing, delivery, signature verification, consent-managed profile context, streaming, and rich UI payloads, so you can focus on your domain logic.
+Nexo is the apps runtime behind Luzia. You bring the domain logic -
+Nexo handles delivery, threading, streaming, identity, and rich UI.
 
-This docs site covers three external developer lanes:
+## Two ways to build
 
-- **Connected Apps** - external webhook-backed apps that run on your infrastructure
-- **Personalized Apps** - structured apps you create and manage through Nexo APIs, MCP, and developer tooling
-- **Knowledge Packs** - app-attached reference data with sync tracking and deterministic derived projections
+### Connected Apps
 
-Ship your first Connected App in minutes:
+Your backend receives webhook requests with conversation context and returns
+responses. You own the infrastructure and the domain logic.
 
-- **Signed webhook delivery** -- every request is HMAC-verified
-- **Approved profile context** -- locale, preferences, and more, released by Nexo after consent
-- **Rich cards and actions** -- structured UI beyond plain text
-- **Streaming responses** -- real-time SSE for responsive experiences
-- **Proactive push events** -- notify users when something happens in your domain
-- **Production-ready examples** -- clone, customize, deploy
+- Signed webhook delivery (HMAC-SHA256)
+- Sync JSON or streaming SSE responses
+- Rich cards, actions, and prompt suggestions
+- Proactive push events to subscriber threads
 
-!!! tip "Nexo dashboard"
-    Manage apps, webhook secrets, and live tests in the partner dashboard.
+[Get started with Connected Apps](quickstart.md){ .md-button .md-button--primary }
 
-    [Open Nexo Dashboard](https://nexo.luzia.com){ .md-button .md-button--primary }
+### Personalized Apps
 
-## 5-minute path
+Structured apps you create and manage through Nexo APIs or MCP. Nexo owns the
+storage, rendering, and runtime - you define the shape.
 
-**Connected Apps lane (primary external path):**
+- Create apps with tables, fields, and Knowledge Packs
+- Use MCP from Claude Code, Codex, or any AI coding assistant
+- Attach reference data through Knowledge Packs
+- Publish to web or native via domain-verified sessions
 
-1. Implement one `POST /webhook` endpoint in your backend.
-2. Return a valid JSON (or SSE) response envelope.
-3. In Nexo, set your `webhook_url` and `WEBHOOK_SECRET`.
-4. Send a test message from the dashboard.
+[Personalized Apps API](micro-apps-api.md){ .md-button }
+[MCP Server](mcp.md){ .md-button }
 
-**Personalized Apps lane (developer-driven):**
+## Quick start
 
-1. Get a developer key from the dashboard (Profile → Developer Access)
-2. `export NEXO_DEVELOPER_KEY=nexo_uak_...`
-3. `export NEXO_BASE_URL=http://localhost:8000`
-4. `claude mcp add --scope project --transport http nexo-mcp "${NEXO_BASE_URL}/mcp" -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"`
-5. Ask: "Create an expense tracker for shared household bills"
+**Connected App** - implement one webhook endpoint:
 
-Or use the REST API directly: [Personalized Apps API](micro-apps-api.md)
+```bash
+# 1. Clone a starter
+git clone https://github.com/The-Wordlab/luzia-nexo-api
+cd examples/webhook/minimal/python
 
-Start here: [Quickstart](quickstart.md) | [Personalized Apps API](micro-apps-api.md) | [Knowledge Packs](knowledge-packs.md) | [MCP Server](mcp.md)
+# 2. Run locally
+pip install -r requirements.txt && python server.py
 
-### Prompt chips
-
-Improve first-message UX by returning `metadata.prompt_suggestions` in your webhook response. Nexo renders these as clickable chips in chat.
-
-```json
-{
-  "schema_version": "2026-03",
-  "task": { "id": "tsk_1", "status": "completed" },
-  "content_parts": [{ "type": "text", "text": "I can help with that." }],
-  "metadata": {
-    "prompt_suggestions": [
-      "Show me options",
-      "Track status",
-      "What do you recommend?"
-    ]
-  }
-}
+# 3. Point Nexo at your endpoint
+# Dashboard > Apps > Your App > Webhooks > set URL + secret
 ```
 
-### Required vs optional
+**Personalized App** - create from the command line:
 
-- **Required** for live Connected Apps: `webhook_url` + `WEBHOOK_SECRET`
-- **Optional** for advanced flows: cards/actions, proactive events, RAG, OpenClaw bridge
+```bash
+# 1. Get a developer key from Dashboard > Profile > Developer Access
+export NEXO_DEVELOPER_KEY=nexo_uak_...
 
-## What You Can Build
+# 2. Connect MCP
+claude mcp add nexo-mcp "https://nexo-cdn-alb.staging.thewordlab.net/mcp" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 
-Clone a starter example, customize it for your domain, and deploy:
-
-| Use case | Example | Live demo |
-|---|---|---|
-| Food-commerce: discovery, checkout, tracking | [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
-| Travel: flights, budget, handoff, replanning | [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
-| News answers with source cards | [News RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/news-rag/python) | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
-| Sports coverage with live match data | [Sports RAG](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/sports-rag/python) | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
-| OpenClaw runtime bridge | [OpenClaw Bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
-
-For the full catalog, see [Demo Catalog](demos.md).
-
-## Start Here
-
-1. [Quickstart](quickstart.md) -- get a Connected App live in minutes.
-2. [Demo Catalog](demos.md) -- browse all examples and live services.
-3. [Examples Deep Dive](examples-showcase.md) -- architecture and response patterns.
-4. [Partner API Reference](partner-api-reference.md) -- full webhook/runtime contract details.
-5. [Personalized Apps API](micro-apps-api.md) -- create and manage personalized apps from CLI or MCP.
-6. [MCP Server](mcp.md) -- connect AI coding assistants to Nexo tools.
-7. [Internal Apps](internal-apps.md) -- boundary note pointing back to the Nexo-owned implementation docs.
-8. [Hosting](hosting.md) -- deploy to Cloud Run.
-
-## Integration Architecture
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant User as End User
-    participant Luzia as Luzia Backend
-    participant Nexo as Nexo Apps Runtime
-    participant Partner as Partner Service
-
-    User->>Luzia: Send message
-    Luzia->>Nexo: Delegate partner handling
-    Nexo->>Partner: Signed webhook request
-    Partner->>Partner: Verify signature + process domain logic
-    alt JSON mode
-        Partner-->>Nexo: Response envelope with text/cards/actions
-    else SSE mode
-        Partner-->>Nexo: Stream delta/done events
-    end
-    Nexo-->>Luzia: Runtime-processed result
-    Luzia-->>User: Final reply
+# 3. Ask your assistant to create an app
 ```
 
-## Consent Boundary
+## Browse examples
 
-Nexo fully owns consent collection, storage, and scope enforcement.
+See working Connected Apps you can clone, customize, and deploy:
 
-- The user grants or denies profile access in the Nexo experience.
-- Nexo decides which profile fields may be released for a given app and turn.
-- Your webhook receives only the approved scoped profile data.
-- Your webhook does not implement consent logic and does not need to know how the user granted it.
+[Demo Catalog](demos.md){ .md-button }
 
-## Capabilities
+## Docs
 
-| Capability | Description | Example |
-|---|---|---|
-| Webhook contract | Deterministic request and response schema for Connected Apps | `webhook/minimal` |
-| Rich UI payloads | Cards, actions, structured metadata | `webhook/structured` |
-| Signature verification | HMAC-SHA256 request signing and verification | `webhook/advanced` |
-| Retrieval-augmented responses | Domain retrieval + LLM + citations | `news-rag`, `sports-rag`, `travel-rag` |
-| Vertical orchestration | End-to-end partner flows: food ordering, travel planning | `food-ordering`, `travel-planning` |
-| OpenClaw integration | Bridge from Nexo webhook to OpenClaw responses API | `openclaw-bridge` |
-| Proactive delivery | Push events into subscriber threads | `partner-api/proactive` |
-| Personalized Apps API | Create and manage structured apps via REST | [micro-apps-api](micro-apps-api.md) |
-| MCP server | Expose Partner Integration and Personalized Apps tools to AI coding assistants | [mcp](mcp.md) |
-
-## Live Examples
-
-| Service | URL |
+| Topic | Description |
 |---|---|
-| nexo-news-rag | <https://nexo-news-rag-v3me5awkta-ew.a.run.app/> |
-| nexo-sports-rag | <https://nexo-sports-rag-v3me5awkta-ew.a.run.app/> |
-| nexo-travel-rag | <https://nexo-travel-rag-v3me5awkta-ew.a.run.app/> |
-| nexo-openclaw-bridge | <https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/> |
-| nexo-food-ordering | <https://nexo-food-ordering-v3me5awkta-ew.a.run.app/> |
-| nexo-travel-planning | <https://nexo-travel-planning-v3me5awkta-ew.a.run.app/> |
-| nexo-examples-py | <https://nexo-examples-py-v3me5awkta-ew.a.run.app/> |
-| nexo-examples-ts | <https://nexo-examples-ts-v3me5awkta-ew.a.run.app/> |
-| nexo-demo-receiver | <https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/> |
+| [Quickstart](quickstart.md) | Get a Connected App live in minutes |
+| [Personalized Apps API](micro-apps-api.md) | REST API for structured apps |
+| [Knowledge Packs](knowledge-packs.md) | App-attached reference data |
+| [MCP Server](mcp.md) | AI coding assistant integration |
+| [Partner API Reference](partner-api-reference.md) | Full webhook and runtime contract |
+| [Demo Catalog](demos.md) | Browse and deploy example apps |
+| [Hosting](hosting.md) | Deploy to Cloud Run |
 
-For source links and what each demo does, see [Demo Catalog](demos.md).
-
-## Design Principles
-
-- **Contract-first:** Same schema rules across local and production.
-- **Capability-first:** Docs describe what you can build, not just minimal setup.
-- **Deployable by default:** All server examples are production-ready.
-- **Privacy is structural:** Consent and profile boundaries are part of the runtime contract.
-- **Safe configuration:** No secrets hardcoded in code or docs.
+!!! tip "Nexo Dashboard"
+    Manage apps, webhook secrets, and live tests at
+    [nexo.luzia.com](https://nexo.luzia.com).
 
 ## Product language
 
-- In customer-facing product surfaces, Nexo uses **Personalized Apps**.
-- Internally and in code, you may still see the technical term **micro apps**.
-- **Connected Apps** remain the external webhook-backed app family.
+- **Personalized Apps** is the product name for structured apps in Nexo.
+- **Connected Apps** is the product name for webhook-backed partner apps.
+- In code, you may see the technical term **micro apps** for Personalized Apps.
