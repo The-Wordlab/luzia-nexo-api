@@ -263,7 +263,7 @@ The same workflow works in any MCP client. The key steps are always:
 3. Review and provision
 4. Evolve with operations
 
-**Claude Desktop:** Add the MCP server in `~/Library/Application Support/Claude/claude_desktop_config.json` (see [connection guide](mcp.md#claude-desktop-macos--windows)). Then say "Create a meal planner" in a new conversation.
+**Claude Desktop:** Add the MCP server in `~/Library/Application Support/Claude/claude_desktop_config.json` (see [connection guide](mcp.md#connecting-other-clients)). Then say "Create a meal planner" in a new conversation.
 
 **Cursor:** Add the MCP server in Settings -> MCP (see [connection guide](mcp.md#cursor)). Use the chat panel to describe apps.
 
