@@ -1042,6 +1042,41 @@ See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk
 - All examples: [github.com/The-Wordlab/luzia-nexo-api/tree/main/examples](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples)
 - Live hosted services: [Home - Live examples](index.md#live-examples)
 
+## External Runtime Integration
+
+External runtimes (such as AI assistants, chat platforms, or automation tools) can integrate with Nexo through account linking, capability discovery, and context bundles.
+
+### Account Linking
+
+Account linking connects an external user identity to a Nexo account. This lets external runtimes act on behalf of the user.
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `/api/account-linking/runtimes` | GET | Bearer | List registered runtimes |
+| `/api/account-linking/links` | GET | Bearer | List user's linked accounts |
+| `/api/account-linking/links/initiate` | POST | Bearer | Start a new link session |
+| `/api/account-linking/links/{link_id}/verify` | POST | Bearer | Complete verification |
+| `/api/account-linking/links/{link_id}` | DELETE | Bearer | Unlink an account |
+
+### Context Bundle
+
+The Context Bundle API returns a unified, ranked projection of user context - profile facts, app summaries, capabilities, and external runtime data.
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `/api/context/bundle` | POST | Bearer | Build a JSON context bundle |
+| `/api/context/bundle.md` | GET | Bearer | Get the bundle as markdown |
+
+The bundle includes items from:
+- **profile** - user facts and preferences
+- **app** - personalized app summaries
+- **capability** - app capabilities from the manifest
+- **external_runtime** - capabilities and typed summaries from linked runtimes
+
+### Capability Discovery
+
+See [Capability Discovery](capability-discovery.md) for the full capability manifest contract.
+
 ## Support
 
 - Luzia Nexo: [nexo.luzia.com](https://nexo.luzia.com)
