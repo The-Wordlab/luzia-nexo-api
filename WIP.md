@@ -48,8 +48,9 @@
 - Keep the auth bridge doc explicit that:
   - linked Connected App companion ingress is already proven
   - create/exchange plus auth continuation now exists internally
-  - user-facing hosted login entry and guest-adoption continuity are still the
-    remaining proving work
+  - user-facing hosted login entry is now wired in WC2026 with an explicit
+    public `auth_base_url` config seam
+  - guest-adoption continuity is still the remaining proving work
 - Consider adding a "Getting Started: Create Your First App" guide that shows
   the one-call provisioning flow
 - Keep operational RAG services healthy (news, sports, travel on Cloud Run)

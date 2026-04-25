@@ -48,6 +48,9 @@ And the next auth-bridge slice is now also real for the phase-1 internal path:
 The remaining work is the first full proving flow:
 
 - user-facing hosted login entry in the proving app
+  - now wired in WC2026 through `/auth/apps/start`
+  - hosted app public config now treats `auth_base_url` as an explicit part of
+    the contract instead of guessing the auth origin from the API host
 - guest-adoption continuity
 - Ask Expert thread continuity across guest -> login
 - broader operator posture and later partner availability
