@@ -1,6 +1,6 @@
 # Work In Progress
 
-**Last Updated:** 2026-04-25
+**Last Updated:** 2026-04-26
 **Status:** Post-migration. External runtime integration guide shipped. Knowledge Packs docs shipped. World Cup consolidated into worldcup-server.
 
 ## Current state
@@ -19,6 +19,8 @@
 12. **Public dashboard URL docs aligned** - partner-facing docs now consistently point to `https://nexo.luzia.com` (no `/partners` path references).
 13. **A2A rollout started** - `news-rag`, `sports-rag`, and `travel-rag` now publish `/.well-known/agent.json` and include `task`/`capability`/`artifacts` in webhook envelopes.
 14. **World Cup migration direction clarified** - World Cup-specific product/runtime architecture should consolidate into `worldcup-server`; this repo should keep only reusable generic patterns.
+15. **External app auth bridge documented as phase-1 internal contract** - public docs now explain the Nexo-owned login plus one-time callback model for externally hosted apps. The Nexo-side auth-handoff create/exchange and auth continuation slices are now real for Luzia-owned apps, but public docs should still treat this as narrow/internal availability rather than a broad self-serve partner API.
+16. **Connected companion proving slice now exists in Nexo** - the runtime half of the hosted-app proof is no longer hypothetical: Nexo can now accept browser-facing companion turns from a Micro App surface, resolve an approved linked Connected App companion, and reload the same Nexo-owned companion thread context. The next public-doc truth is no longer "handoff is purely planned" - it is "phase-1 internal, not yet broadly enabled".
 
 ## What shipped recently
 
@@ -40,6 +42,14 @@
 - Update docs when the new Nexo provisioning endpoint ships
   (`POST /api/micro-apps/provision`) - this replaces the 15-call setup pattern
 - Update MCP docs when `provision_app` MCP tool ships
+- Keep the external app auth bridge page truthful as the implementation lands:
+  the Nexo-side auth-handoff endpoints are now real for the internal Luzia
+  path, but public docs should not present them as a broad public partner API
+- Keep the auth bridge doc explicit that:
+  - linked Connected App companion ingress is already proven
+  - create/exchange plus auth continuation now exists internally
+  - user-facing hosted login entry and guest-adoption continuity are still the
+    remaining proving work
 - Consider adding a "Getting Started: Create Your First App" guide that shows
   the one-call provisioning flow
 - Keep operational RAG services healthy (news, sports, travel on Cloud Run)
