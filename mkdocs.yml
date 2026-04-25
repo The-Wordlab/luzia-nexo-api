@@ -47,6 +47,7 @@ nav:
   - Quickstart: quickstart.md
   - API Reference: partner-api-reference.md
   - Capability Discovery: capability-discovery.md
+  - External Runtime Integration: external-runtime-integration.md
   - Micro Apps API: micro-apps-api.md
   - MCP Server: mcp.md
   - Knowledge Packs: knowledge-packs.md

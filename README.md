@@ -58,8 +58,28 @@ Recommended creation grammar:
 6. evolve with `plan_operation` / `apply_operation`
 
 This is the same underlying creation model used by the dashboard Builder chat
-inside `luzia-nexo`. The UI and MCP are two surfaces over the same creation
-contract, not separate products.
+experience. The UI and MCP are two surfaces over the same creation contract,
+not separate products.
+
+You do not need to understand Nexo runtime internals to use this lane. Treat
+Nexo as a product backend you interact with through the dashboard, REST API,
+and MCP tools.
+
+The sharper builder read is:
+
+- Nexo can add a new Luzia-facing capability without the builder learning Nexo
+  internals
+- that capability can have durable state, context, and runtime UI
+- MCP, REST, and runtime entrypoints are the only seams the builder needs
+
+If you already know the exact backend shape you want, there is now a faster
+schema-first REST path as well:
+
+- `POST /api/micro-apps/provision` creates the app, tables, fields, and an
+  optional Knowledge Pack in one call
+- use it for setup scripts, seeded reference apps, and exact-shape bootstraps
+- use MCP prompt planning when the shape should be discovered through language,
+  not specified up front
 
 Use the advanced manual path (`create_app`) only when you already know the
 exact schema you want and intentionally want to start from an empty shell.
@@ -109,7 +129,13 @@ sequenceDiagram
     Luzia-->>User: Final reply
 ```
 
-This webhook flow is the **primary external Connected Apps path**. Personalized Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and tools instead of partner webhooks.
+This webhook flow is the **primary external Connected Apps path**. Personalized
+Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and
+tools instead of partner webhooks.
+
+Taken together, the two lanes mean Nexo is not only an integration surface. It
+is also the backend/runtime layer where Luzia can gain new dynamic capabilities
+with durable state and UI.
 
 ## What's in this repository
 
@@ -140,10 +166,13 @@ make test-all         # Run all tests
 make docs-build       # Build documentation site
 ```
 
-### Local full-stack development (with sibling Nexo runtime)
+### Local full-stack development (optional sibling Nexo runtime)
 
 Most MCP workflows, demo scripts, and integration tests need a running Nexo
 backend. If you have the `luzia-nexo` runtime repo checked out as a sibling:
+
+You still build against Nexo only through the published dashboard/API/MCP
+surfaces. You do not need knowledge of the runtime's internal modules.
 
 ```bash
 # 1. Start the Nexo runtime (in ../luzia-nexo)
@@ -166,7 +195,11 @@ claude mcp add --scope project --transport http nexo-mcp \
   "${NEXO_BASE_URL}/mcp" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 
-# 5. Run demo/integration scripts against local Nexo
+# 5. Create your app
+#    Ask Claude/Codex for the app in natural language:
+#    "Create a world cup predictions app with teams, fixtures, and leaderboard views"
+
+# 6. Run demo/integration scripts against local Nexo
 ./scripts/test-live-demos.sh                    # conversational demo pass
 ./scripts/integration-smoke.sh --webhook-url https://your-webhook.run.app
 ```

@@ -1,7 +1,7 @@
 # Work In Progress
 
-**Last Updated:** 2026-04-24
-**Status:** Post-migration. Football-live retired. Knowledge Packs docs shipped. World Cup consolidated into worldcup-server.
+**Last Updated:** 2026-04-25
+**Status:** Post-migration. External runtime integration guide shipped. Knowledge Packs docs shipped. World Cup consolidated into worldcup-server.
 
 ## Current state
 
@@ -22,6 +22,13 @@
 
 ## What shipped recently
 
+- External runtime integration guide added (`docs/external-runtime-integration.md`):
+  account linking flow, capability sync, context summaries, context bundles,
+  Knowledge Pack sync, worker/job topology, companion services (including
+  Ask Expert pattern), and end-to-end lifecycle reference
+- Partner API reference updated with external sync endpoints and cross-links to
+  the new guide
+- mkdocs.yml navigation updated with External Runtime Integration entry
 - football-live example fully removed (code, docs, tests, CI, docker-compose)
 - Knowledge Packs developer guide added (`docs/knowledge-packs.md`)
 - MCP tools table updated with 6 KP tools

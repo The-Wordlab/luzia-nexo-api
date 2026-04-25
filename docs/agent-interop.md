@@ -2,6 +2,10 @@
 
 Nexo is fully compatible with the two dominant open agent protocols: **Model Context Protocol (MCP)** and **Google's Agent-to-Agent (A2A) protocol**. This means any LLM orchestrator or AI agent that speaks either protocol can discover Nexo's capabilities and delegate tasks to them — without custom integration code.
 
+The deeper product implication is that Nexo is not only exposing headless tools.
+It is exposing app-backed capabilities that can also carry durable state and UI
+surfaces behind the same backend/runtime contract.
+
 Both integrations are **feature-gated** and disabled by default. Enable them on your deployment using the environment variables described in [Configuration](#configuration).
 
 ---
@@ -11,6 +15,10 @@ Both integrations are **feature-gated** and disabled by default. Enable them on 
 **When to use:** You are building an LLM agent or orchestrator (e.g., LangChain, LangGraph, Claude) and want Nexo's capabilities available as callable tools alongside your own tools.
 
 Nexo implements the [Model Context Protocol](https://modelcontextprotocol.io/) Streamable HTTP transport at `/mcp`. Every active Partner Integration registered in Nexo automatically appears as a discoverable MCP tool, and Personalized Apps management tools are exposed alongside it. The tool name is the app's UUID; its description comes from the app's name, description, and declared capabilities.
+
+Treat this as a black-box runtime seam. External agents do not need to know how
+Nexo is implemented internally; they only need the protocol, auth, and the app
+capability they want to use.
 
 ### Endpoint
 
@@ -152,7 +160,14 @@ Nexo implements [Google's Agent-to-Agent (A2A) protocol](https://google.github.i
 GET https://nexo.luzia.com/.well-known/agent.json
 ```
 
-This endpoint is public — no authentication required. It returns an aggregate agent card listing all active skills currently hosted on Nexo. The card is refreshed automatically as apps are approved or deactivated (with a short cache for performance).
+This endpoint is public — no authentication required. It returns an aggregate
+agent card listing all active skills currently hosted on Nexo. The card is
+refreshed automatically as apps are approved or deactivated (with a short cache
+for performance).
+
+This is one visible expression of a broader direction: app deployment in Nexo
+can become skill deployment for agent consumers, while the underlying app may
+still keep runtime UI and durable state inside the same system.
 
 ```bash
 curl "https://nexo.luzia.com/.well-known/agent.json"

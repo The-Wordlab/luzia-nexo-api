@@ -1044,34 +1044,41 @@ See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk
 
 ## External Runtime Integration
 
-External runtimes (such as AI assistants, chat platforms, or automation tools) can integrate with Nexo through account linking, capability discovery, and context bundles.
+External runtimes (AI assistants, companion services, background workers) can integrate with Nexo through account linking, capability sync, context summaries, context bundles, and Knowledge Pack sync.
+
+See the **[External Runtime Integration Guide](external-runtime-integration.md)** for the full end-to-end flow with code examples.
 
 ### Account Linking
 
-Account linking connects an external user identity to a Nexo account. This lets external runtimes act on behalf of the user.
+Connect an external user identity to a Nexo account. See [full flow](external-runtime-integration.md#account-linking).
 
 | Endpoint | Method | Auth | Description |
 |---|---|---|---|
 | `/api/account-linking/runtimes` | GET | Bearer | List registered runtimes |
 | `/api/account-linking/links` | GET | Bearer | List user's linked accounts |
 | `/api/account-linking/links/initiate` | POST | Bearer | Start a new link session |
-| `/api/account-linking/links/{link_id}/verify` | POST | Bearer | Complete verification |
+| `/api/account-linking/links/verify` | POST | Bearer | Complete verification |
 | `/api/account-linking/links/{link_id}` | DELETE | Bearer | Unlink an account |
+
+### Capability & Context Sync
+
+Push capabilities and typed context summaries from your runtime into Nexo. See [capability sync](external-runtime-integration.md#capability-sync) and [context summaries](external-runtime-integration.md#context-summaries).
+
+| Endpoint | Method | Auth | Description |
+|---|---|---|---|
+| `/api/external-sync/capabilities` | PUT | Bearer | Upsert a runtime capability |
+| `/api/external-sync/context-summaries` | PUT | Bearer | Upsert a typed context summary |
 
 ### Context Bundle
 
-The Context Bundle API returns a unified, ranked projection of user context - profile facts, app summaries, capabilities, and external runtime data.
+Pull a unified, ranked projection of user context for LLM grounding. See [context bundles](external-runtime-integration.md#context-bundles).
 
 | Endpoint | Method | Auth | Description |
 |---|---|---|---|
 | `/api/context/bundle` | POST | Bearer | Build a JSON context bundle |
 | `/api/context/bundle.md` | GET | Bearer | Get the bundle as markdown |
 
-The bundle includes items from:
-- **profile** - user facts and preferences
-- **app** - personalized app summaries
-- **capability** - app capabilities from the manifest
-- **external_runtime** - capabilities and typed summaries from linked runtimes
+The bundle includes items from four sources: **profile** facts, **app** summaries, **capability** entries, and **external_runtime** capabilities and typed summaries.
 
 ### Capability Discovery
 

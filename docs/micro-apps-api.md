@@ -6,6 +6,11 @@ For the product model and runtime architecture, see the [Micro Apps Guide](https
 
 Personalized Apps are a first-party structured app runtime inside Nexo. This guide covers the REST API and MCP access for developers who want to create, manage, and query them from the command line or an AI coding assistant.
 
+The strategic read is stronger than "structured CRUD backend": a Nexo app can
+also become a durable Luzia capability with state, runtime UI, and character
+linkage, while you still interact with it only through the external seams in
+this repo.
+
 !!! info "Knowledge Packs"
     Apps that need reference data (team rosters, product catalogs, fixture schedules)
     or derived outputs (standings, leaderboards) can use [Knowledge Packs](knowledge-packs.md).
@@ -17,11 +22,22 @@ Personalized Apps are a first-party structured app runtime inside Nexo. This gui
 
 !!! tip "Same creation model as Builder"
     The recommended MCP / CLI flow is the same underlying creation grammar used
-    by the dashboard Builder chat in `luzia-nexo`:
+    by the dashboard Builder experience:
     clarify -> plan -> review -> provision -> inspect -> evolve.
     If you wrap this flow in a UI, keep prompt suggestions as the canonical
     first-run affordance. If suggestions need fetching, prefer a loading state
     over alternate starter UIs that drift from the dashboard Builder path.
+
+!!! info "Black-box mental model"
+    If you are building from this repo, you do not need to understand Nexo
+    internals. Treat Nexo as the app backend and interact with it through the
+    dashboard, REST API, and MCP tools described here.
+
+!!! tip "Think in capabilities, not internals"
+    A newly provisioned app is not only a backend resource. It can also act as
+    a reusable Luzia capability with durable state and optional runtime UI.
+    Keep your integration centered on app contracts, actions, and runtime URLs,
+    not on `luzia-nexo` implementation details.
 
 !!! warning "Dashboard host vs MCP host"
     Use the dashboard hosts (`https://staging.nexo.luzia.com`, `https://nexo.luzia.com`)
@@ -175,10 +191,66 @@ curl -X POST "https://nexo.luzia.com/api/micro-apps/provision-from-template" \
 
 Pass the full `template` object from the planning step. The response is the created app with its ID.
 
+## Provision a full app in one call
+
+When you already know the backend shape you want, use the one-call provisioning
+endpoint instead of stitching together many ordered REST mutations.
+
+### POST /api/micro-apps/provision
+
+This endpoint creates:
+
+- the app
+- its tables and fields
+- an optional app-owned Knowledge Pack with datasets
+
+It is idempotent when you provide `template_key`: a second call with the same
+`template_key` returns the existing app with HTTP 200 instead of creating a
+duplicate.
+
+```bash
+curl -X POST "https://nexo.luzia.com/api/micro-apps/provision" \
+  -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "WC2026 Predictor",
+    "description": "World Cup predictions app",
+    "icon": "trophy",
+    "template_key": "wc2026_predictor",
+    "tables": [
+      {
+        "key": "predictions",
+        "name": "Predictions",
+        "fields": [
+          { "key": "match_id", "label": "Match", "field_type": "text", "is_required": true },
+          { "key": "home_score", "label": "Home Score", "field_type": "number", "is_required": true },
+          { "key": "away_score", "label": "Away Score", "field_type": "number", "is_required": true }
+        ]
+      }
+    ],
+    "knowledge_pack": {
+      "key": "wc2026_reference",
+      "title": "WC2026 Reference Data",
+      "datasets": [
+        { "key": "teams", "title": "Teams" },
+        { "key": "fixtures", "title": "Fixtures" }
+      ]
+    }
+  }'
+```
+
+Use this path for:
+
+- setup scripts
+- seeded/reference apps
+- exact-shape backend provisioning before attaching a custom frontend
+
 ## Choosing the right path
 
 - Use `template-plan` + `provision-from-template` for the normal recommended
-  creation flow
+  prompt-driven creation flow
+- Use `POST /api/micro-apps/provision` when the exact app shape is already
+  known and should be created transactionally in one call
 - Use `create_app` only if you intentionally want to start from an empty shell
 - Use `template-operation-plan` + `apply-operation` to evolve an existing app
 - Use Knowledge Packs when the app needs app-attached reference data,
@@ -328,6 +400,7 @@ The quick reference below covers the AI-assisted workflow. For the full CRUD API
 | List apps | GET | `/api/micro-apps` |
 | Plan template | POST | `/api/micro-apps/template-plan` |
 | Provision app | POST | `/api/micro-apps/provision-from-template` |
+| Provision full app schema | POST | `/api/micro-apps/provision` |
 | Plan mutation | POST | `/api/micro-apps/template-operation-plan` |
 | Apply mutation | POST | `/api/micro-apps/apply-operation` |
 | Context (markdown) | GET | `/api/micro-apps/context.md` |
@@ -338,7 +411,7 @@ The quick reference below covers the AI-assisted workflow. For the full CRUD API
 ## Constraints
 
 - 10 apps per user
-- 3 tables per app
+- 10 tables per app
 - 30 fields per table
 - 5,000 records per table
 - 6 field types: text, number, boolean, date, select, multi_select
