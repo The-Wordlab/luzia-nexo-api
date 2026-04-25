@@ -95,6 +95,9 @@ Important rule:
 - for gated apps, such as invite-only or code-required entry, the bridge may
   authenticate the user first and return an access state that still requires
   invite completion or approval
+- for gated apps, the bridge should still create or preserve a canonical
+  `pending` membership edge so the user is captured in the app's waiting-list
+  path instead of being blocked anonymously
 
 ## Why not shared cookies or iframe auth
 
