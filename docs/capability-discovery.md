@@ -52,6 +52,23 @@ Every entry in the `entries` array represents one app:
 
 The manifest enables your runtime to discover skills at call time rather than maintaining a static registry.
 
+## Initiative-shaped app families
+
+Some product families are one initiative with multiple related apps or app
+surfaces. In that case, the manifest is still the canonical discovery seam.
+
+Use it like this:
+
+1. fetch the manifest
+2. group entries by `initiative_key`
+3. within an initiative, choose the specific app by `initiative_role` and
+   `intents`
+4. use that entry's `context` and `ui` URLs for grounding and handoff
+
+This avoids inventing a second registry for hybrid app families. If a product
+family grows into multiple apps, `initiative_key` and `initiative_role` are the
+grouping contract you should trust.
+
 ### Example: intent-based routing
 
 ```python
@@ -105,4 +122,7 @@ The `generated_at` timestamp tells you when the snapshot was created. The `versi
 
 ## Relationship to MCP
 
-The [MCP Server](mcp.md) exposes the same app set as callable tools. The manifest endpoint provides discovery metadata (intents, context URLs, UI links) that MCP tool definitions do not carry. Use the manifest for planning and routing; use MCP for execution.
+The [MCP Server](mcp.md) exposes the same app set as callable tools. The
+manifest endpoint provides discovery metadata (intents, initiative grouping,
+context URLs, UI links) that MCP tool definitions do not carry. Use the
+manifest for planning and routing; use MCP for execution.

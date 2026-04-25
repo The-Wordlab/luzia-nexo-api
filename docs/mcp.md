@@ -298,7 +298,17 @@ The manifest lets MCP clients and external runtimes discover what apps and
 capabilities are available without knowing Nexo internals. Each entry includes
 the app family, initiative metadata, character association, context endpoints,
 and UI entrypoints.
-- Not a generic database - use them for reference/grounding data
+
+For initiative-shaped app families, treat the manifest as the routing seam:
+
+1. fetch `capabilities__get_manifest`
+2. group related entries by `initiative_key`
+3. choose the right app within that initiative by `initiative_role` and
+   `intents`
+4. use the manifest's `context` and `ui` URLs for grounding or handoff
+
+Do not wait for a separate initiative-specific MCP tool before building this
+kind of routing. The manifest is the canonical discovery layer for it.
 
 **Typical signal that you need Knowledge Packs:** your prompt depends on
 reference datasets, freshness tracking, or deterministic derived outputs such as
