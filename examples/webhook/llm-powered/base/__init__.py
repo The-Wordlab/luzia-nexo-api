@@ -23,7 +23,7 @@ from base.prompts import (
 
 __all__ = [
     "WebhookRequest",
-    "WebhookResponse", 
+    "WebhookResponse",
     "WebhookProfile",
     "WebhookMessage",
     "WebhookContext",

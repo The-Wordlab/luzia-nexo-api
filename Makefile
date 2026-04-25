@@ -6,7 +6,10 @@ VENV_BIN ?= $(CURDIR)/.venv/bin
 PYTHON ?= $(VENV_BIN)/python
 PYTEST ?= $(VENV_BIN)/pytest
 
-.PHONY: setup-dev check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: setup-dev pre-commit check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+
+pre-commit:
+	$(VENV_BIN)/pre-commit run --all-files
 
 setup-dev:
 	source ~/.zshrc && ./scripts/setup-dev.sh

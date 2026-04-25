@@ -1,0 +1,26 @@
+fail_fast: true
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: fix-byte-order-marker
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: check-yaml
+        args: ["--allow-multiple-documents", "--unsafe"]
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+
+  - repo: local
+    hooks:
+      - id: mkdocs-build
+        name: mkdocs build (strict)
+        entry: bash -c 'if [ -x .venv/bin/mkdocs ]; then .venv/bin/mkdocs build --strict; else echo "mkdocs not installed, skipping (run make setup-dev)"; fi'
+        language: system
+        files: ^(docs/.*\.md|mkdocs\.yml)$
+        pass_filenames: false
