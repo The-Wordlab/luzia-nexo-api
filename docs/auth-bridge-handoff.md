@@ -53,6 +53,7 @@ The remaining work is the first full proving flow:
     the contract instead of guessing the auth origin from the API host
 - guest-adoption continuity
 - Ask Expert thread continuity across guest -> login
+- hosted profile/logout follow-through for the proving app
 - broader operator posture and later partner availability
 
 ## What problem this solves
@@ -189,6 +190,20 @@ example:
 - invite required
 - pending approval
 
+The same exchange or immediate session-read step should expose a minimal hosted
+identity summary so the app can render a standard avatar/profile/logout menu
+without inventing a parallel account source. Minimal fields:
+
+- display name if available
+- email if available
+- avatar URL if available
+- auth/access state
+
+When the proving app benefits from it, that same bridged identity/session data
+can also back a small hosted Profile page. The important rule is that the page
+must still read from the same bridge/session truth rather than inventing a
+second account-fetch contract.
+
 ## Guest continuity
 
 This planned contract should also cover guest-to-user continuity.
@@ -220,6 +235,14 @@ an app where conversation continuity matters, such as Ask Expert in WC2026:
   state
 - the browser-facing runtime path should continue to enter through Nexo rather
   than bypassing it with a direct companion webhook call
+
+That same proving path should include hosted logout:
+
+- a logged-in user can open an avatar/user menu
+- the app can show a minimal bridged identity summary
+- logout clears the hosted session cleanly
+- the app returns to guest mode when the app allows guest usage
+- guest-capable Ask Expert still works after logout
 
 ## Streaming posture
 

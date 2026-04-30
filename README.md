@@ -2,23 +2,28 @@
 
 Build apps on top of Nexo, Luzia's apps runtime.
 
-This repository documents the two external developer lanes:
+Nexo has one unified app model. Every app can have:
 
-- **Connected Apps** - external webhook-backed apps that run on your infrastructure.
-- **Personalized Apps** - structured apps you create and manage through Nexo APIs, MCP, and developer tooling.
+- **Structured data** - tables, records, Knowledge Packs, and derived
+  projections managed through Nexo
+- **A webhook** (optional) - your own backend handles chat and events
+- **Both** - structured data in Nexo plus custom logic behind a webhook
 
-Nexo handles routing, consent-managed profile context, rich UI payloads, streaming, and proactive delivery. This repo is the external examples and documentation companion to the main `luzia-nexo` runtime.
+Nexo handles routing, consent-managed profile context, rich UI payloads,
+streaming, and proactive delivery. Apps published in Nexo are automatically
+discoverable by Luzia at runtime. This repo is the external examples and
+documentation companion to the main `luzia-nexo` runtime.
 
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
 
-**Connected Apps**
+**App with a webhook** (your backend handles chat)
 
-1. Implement a `POST /webhook` endpoint
-2. Return a valid JSON or SSE response envelope
-3. Configure `webhook_url` and `WEBHOOK_SECRET` in Nexo
-4. Send a test message from the dashboard
+1. Create an app via the dashboard, REST API, or MCP
+2. Set `webhook_url` and `signing_secret` on the app
+3. Implement a `POST /webhook` endpoint
+4. Return a valid JSON or SSE response envelope
 
 ```json
 {
@@ -28,9 +33,7 @@ Nexo handles routing, consent-managed profile context, rich UI payloads, streami
 }
 ```
 
-See the [Quickstart guide](https://the-wordlab.github.io/luzia-nexo-api/quickstart/) for the Connected Apps webhook lane.
-
-**Personalized Apps**
+**App without a webhook** (Nexo manages everything)
 
 Create structured apps from the terminal via MCP:
 
@@ -129,19 +132,19 @@ sequenceDiagram
     Luzia-->>User: Final reply
 ```
 
-This webhook flow is the **primary external Connected Apps path**. Personalized
-Apps use the same Nexo runtime, but are managed through Nexo-owned APIs and
-tools instead of partner webhooks.
+This webhook flow applies to any app that has a `webhook_url` configured.
+Apps without a webhook are managed entirely through Nexo APIs and tools.
 
-Taken together, the two lanes mean Nexo is not only an integration surface. It
-is also the backend/runtime layer where Luzia can gain new dynamic capabilities
-with durable state and UI.
+This means Nexo is not only an integration surface. It is the
+backend/runtime layer where Luzia gains new dynamic capabilities with
+durable state and UI - whether those capabilities are built on Nexo's
+structured data, a custom webhook, or both.
 
 ## What's in this repository
 
 | Path | Description |
 |---|---|
-| [`examples/webhook/`](examples/webhook/) | Connected App examples (Python + TypeScript) |
+| [`examples/webhook/`](examples/webhook/) | Webhook app examples (Python + TypeScript) |
 | [`examples/hosted/`](examples/hosted/) | Reference API services for Cloud Run |
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |
@@ -153,10 +156,14 @@ Webhook payloads may include approved profile attributes such as `locale`, `lang
 
 ## Secret boundaries
 
-- `WEBHOOK_SECRET` -- used for Nexo webhook signature verification and as the app-level secret (`X-App-Secret`) for Partner API calls.
-- `EXAMPLES_SHARED_API_SECRET` -- optional hardening for hosted reference services only.
+- `signing_secret` -- one secret per app, used for HMAC-SHA256 signing.
+  Nexo signs outbound webhook calls; your webhook verifies them. Same
+  secret used as `X-App-Secret` for Partner API callbacks.
+- `EXAMPLES_SHARED_API_SECRET` -- optional hardening for hosted reference
+  services only.
 
-For production integrations, use app credentials (`X-App-Id` + `X-App-Secret`) and webhook signing with `WEBHOOK_SECRET`.
+For production webhook integrations, use app credentials (`X-App-Id` +
+`X-App-Secret`) and HMAC signature verification.
 
 ## Development
 

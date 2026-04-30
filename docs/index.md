@@ -11,37 +11,29 @@ The important builder model is black-box:
 - you interact through the dashboard, REST API, MCP, and runtime URLs
 - a Nexo-backed app can become a Luzia capability with durable state and UI
 
-## Two ways to build
+## One app model
 
-### Connected Apps
+Every Nexo app can combine:
 
-Your backend receives webhook requests with conversation context and returns
-responses. You own the infrastructure and the domain logic.
+- **Structured data** - tables, records, Knowledge Packs, and derived
+  projections managed by Nexo
+- **A webhook** (optional) - your backend handles chat messages and events
+  with signed webhook delivery (HMAC-SHA256), sync JSON or streaming SSE
+  responses, rich cards, actions, and prompt suggestions
 
-- Signed webhook delivery (HMAC-SHA256)
-- Sync JSON or streaming SSE responses
-- Rich cards, actions, and prompt suggestions
-- Proactive push events to subscriber threads
+Apps without a webhook are fully managed by Nexo. Apps with a webhook get
+the same structured data features plus your custom backend logic.
 
-[Get started with Connected Apps](quickstart.md){ .md-button .md-button--primary }
+Apps published in Nexo are automatically discoverable by Luzia at runtime -
+no hardcoded skill catalog needed.
 
-### Personalized Apps
-
-Structured apps you create and manage through Nexo APIs or MCP. Nexo owns the
-storage, rendering, and runtime - you define the shape.
-
-- Create apps with tables, fields, and Knowledge Packs
-- Use MCP from Claude Code, Codex, or any AI coding assistant
-- Use one-call provisioning when you already know the exact schema
-- Attach reference data through Knowledge Packs
-- Publish to web or native via domain-verified sessions and launch contracts
-
-[Personalized Apps API](micro-apps-api.md){ .md-button }
+[Webhook quickstart](quickstart.md){ .md-button .md-button--primary }
+[Structured apps API](micro-apps-api.md){ .md-button }
 [MCP Server](mcp.md){ .md-button }
 
 ## Quick start
 
-**Connected App** - implement one webhook endpoint:
+**App with a webhook** - implement one endpoint:
 
 ```bash
 # 1. Clone a starter
@@ -52,10 +44,10 @@ cd examples/webhook/minimal/python
 pip install -r requirements.txt && python server.py
 
 # 3. Point Nexo at your endpoint
-# Dashboard > Apps > Your App > Webhooks > set URL + secret
+# Dashboard > Apps > Your App > Webhook > set URL + signing secret
 ```
 
-**Personalized App** - create from the command line:
+**App without a webhook** - create from the command line:
 
 ```bash
 # 1. Get a developer key from Dashboard > Profile > Developer Access
@@ -105,8 +97,8 @@ See working Connected Apps you can clone, customize, and deploy:
 
 | Topic | Description |
 |---|---|
-| [Quickstart](quickstart.md) | Get a Connected App live in minutes |
-| [Personalized Apps API](micro-apps-api.md) | REST API for structured apps |
+| [Webhook Quickstart](quickstart.md) | Get a webhook app live in minutes |
+| [Structured Apps API](micro-apps-api.md) | REST API for app creation and management |
 | [Knowledge Packs](knowledge-packs.md) | App-attached reference data |
 | [MCP Server](mcp.md) | AI coding assistant integration |
 | [Partner API Reference](partner-api-reference.md) | Full webhook and runtime contract |
@@ -117,11 +109,15 @@ See working Connected Apps you can clone, customize, and deploy:
 | [Hosting](hosting.md) | Deploy to Cloud Run |
 
 !!! tip "Nexo Dashboard"
-    Manage apps, webhook secrets, and live tests at
+    Manage apps, signing secrets, and live tests at
     [nexo.luzia.com](https://nexo.luzia.com).
 
-## Product language
+## Terminology
 
-- **Personalized Apps** is the product name for structured apps in Nexo.
-- **Connected Apps** is the product name for webhook-backed partner apps.
-- In code, you may see the technical term **micro apps** for Personalized Apps.
+- **App** - the unified Nexo app model. Can have structured data, a
+  webhook, or both.
+- **Webhook** - optional. When set, Nexo dispatches chat messages and
+  events to your backend with HMAC-signed requests.
+- **Structured data** - tables, records, Knowledge Packs managed by Nexo.
+- In code, you may see the technical term **micro_apps** for the underlying
+  model.
