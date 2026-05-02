@@ -104,7 +104,7 @@ See working Connected Apps you can clone, customize, and deploy:
 | [Partner API Reference](partner-api-reference.md) | Full webhook and runtime contract |
 | [Capability Discovery](capability-discovery.md) | Dynamic app and skill discovery via the manifest endpoint |
 | [Developer Auth](developer-auth.md) | Developer keys, MCP auth, REST API auth |
-| [External App Auth Bridge (Planned)](auth-bridge-handoff.md) | Planned Nexo-owned login and one-time callback model for externally hosted apps |
+| [External App Auth Bridge](auth-bridge-handoff.md) | Nexo-owned login and one-time callback for hosted apps (Phase 1 internal shipped) |
 | [Demo Catalog](demos.md) | Browse and deploy example apps |
 | [Hosting](hosting.md) | Deploy to Cloud Run |
 
