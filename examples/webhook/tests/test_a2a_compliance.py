@@ -88,7 +88,7 @@ A2A_CASES = _make_params()
 
 
 # ---------------------------------------------------------------------------
-# A2A agent.json contract assertions
+# A2A agent-card.json contract assertions
 # ---------------------------------------------------------------------------
 
 def _assert_agent_json(data: dict[str, Any], demo_key: str) -> None:
