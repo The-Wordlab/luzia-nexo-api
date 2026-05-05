@@ -130,7 +130,7 @@ class TestRoot:
 
     def test_agent_card_endpoint(self):
         client = _make_client()
-        resp = client.get("/.well-known/agent-card.json")
+        resp = client.get("/.well-known/a2a/agent-card")
         assert resp.status_code == 200
         data = resp.json()
         assert data["name"] == "nexo-food-ordering"

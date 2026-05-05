@@ -1,7 +1,7 @@
 """A2A compliance contract tests for webhook examples.
 
 Validates that all importable hosted webhook examples:
-1. Publish /.well-known/agent-card.json with valid structure
+1. Publish /.well-known/a2a/agent-card with valid structure
 2. Include task and capability in response envelopes
 3. Use canonical schema_version and task.status
 
@@ -92,7 +92,7 @@ A2A_CASES = _make_params()
 # ---------------------------------------------------------------------------
 
 def _assert_agent_card(data: dict[str, Any], demo_key: str) -> None:
-    """Assert /.well-known/agent-card.json conforms to A2A discovery spec."""
+    """Assert /.well-known/a2a/agent-card conforms to A2A discovery spec."""
     assert "name" in data, f"[{demo_key}] agent-card.json missing 'name'"
     assert isinstance(data["name"], str), (
         f"[{demo_key}] agent-card.json name must be str"
@@ -151,14 +151,14 @@ def _assert_a2a_envelope(data: dict[str, Any], demo_key: str) -> None:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("demo_key,app_module", A2A_CASES)
 async def test_agent_card_endpoint(demo_key: str, app_module):
-    """Each hosted example publishes /.well-known/agent-card.json."""
+    """Each hosted example publishes /.well-known/a2a/agent-card."""
     async with AsyncClient(
         transport=ASGITransport(app=app_module.app), base_url="http://test"
     ) as client:
-        response = await client.get("/.well-known/agent-card.json")
+        response = await client.get("/.well-known/a2a/agent-card")
 
     assert response.status_code == 200, (
-        f"[{demo_key}] /.well-known/agent-card.json returned {response.status_code}"
+        f"[{demo_key}] /.well-known/a2a/agent-card returned {response.status_code}"
     )
     data = response.json()
     _assert_agent_card(data, demo_key)

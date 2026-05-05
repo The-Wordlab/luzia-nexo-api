@@ -68,7 +68,7 @@ pytest -v
 ## API endpoints
 
 - `GET /` - Service discovery
-- `GET /.well-known/agent-card.json` - A2A-style capability discovery card
+- `GET /.well-known/a2a/agent-card` - A2A-style capability discovery card
 - `GET /health` - Health check
 - `POST /` - Main Nexo webhook endpoint (JSON or SSE)
 - `POST /ingest` - Reserved for future menu/order data ingestion
