@@ -43,7 +43,6 @@ Available single targets:
 - `advanced-py`
 - `minimal-ts`
 - `food-ordering`
-- `travel-planning`
 - `demo-receiver`
 - `hosted-py`
 - `hosted-ts`
@@ -59,55 +58,7 @@ gcloud run services describe nexo-food-ordering \
 
 Then call `POST /` on that URL with a webhook payload.
 
-### B) Deploy only RAG services
-
-Use this when you want retrieval examples without the full showcase set.
-
-1. Create required secrets:
-- `WEBHOOK_SECRET`
-- `NEXO_PGVECTOR_DSN`
-- `FOOTBALL_DATA_API_KEY` (for sports/football)
-
-2. Deploy RAG APIs:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/deploy-rag-examples.sh all
-```
-
-3. Deploy worker jobs for ingest:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/deploy-rag-workers.sh all
-```
-
-4. Configure scheduler (worker mode):
-
-```bash
-SCHEDULER_RUNNER_SA=<service-account-email> \
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/setup-rag-worker-scheduler.sh all
-
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/set-rag-scheduler-mode.sh worker
-```
-
-5. Verify scheduler/worker setup:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/check-rag-scheduler.sh worker
-```
-
-6. Verify worker jobs are aligned with the live RAG services:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/check-rag-worker-sync.sh
-```
-
-### C) Deploy full server-side showcase
+### B) Deploy full server-side showcase
 
 Use this when you want the same broad capability surface shown in the public docs.
 
@@ -159,22 +110,12 @@ Then verify with:
 GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make smoke-live-services
 ```
 
-## RAG model/runtime defaults
-
-Production intent for RAG examples:
-- LLM: Vertex Gemini via ADC
-- Embeddings: Vertex embeddings via ADC
-- Vector store: `pgvector` on Cloud SQL
-
-Chroma and OpenAI are not part of the supported deployed path.
-
 ## Minimal secret matrix by scope
 
 | Scope | Required secrets |
 |---|---|
-| Single non-RAG webhook | `WEBHOOK_SECRET` |
-| RAG only | `WEBHOOK_SECRET`, `NEXO_PGVECTOR_DSN`, `FOOTBALL_DATA_API_KEY` (sports/football only) |
-| Full stack without OpenClaw | RAG secrets + `WEBHOOK_SECRET` |
-| Full stack with OpenClaw | full stack + `OPENCLAW_WEBHOOK_SECRET`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_ORIGIN_HEADER_VALUE` |
+| Single webhook | `WEBHOOK_SECRET` |
+| Full stack without OpenClaw | `WEBHOOK_SECRET` |
+| Full stack with OpenClaw | `WEBHOOK_SECRET` + `OPENCLAW_WEBHOOK_SECRET`, `OPENCLAW_GATEWAY_TOKEN`, `OPENCLAW_ORIGIN_HEADER_VALUE` |
 
 For full secret creation and IAM binding commands, see [Hosting](hosting.md).

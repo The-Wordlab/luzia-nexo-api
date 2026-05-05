@@ -18,7 +18,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -46,65 +46,6 @@ from test_support.fake_vector_store import FakeVectorStoreRegistry
 # ---------------------------------------------------------------------------
 
 
-def _setup_news_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch pgvector-backed retrieval and LLM for the news-RAG example."""
-    del tmp_path
-    fake_store = FakeVectorStoreRegistry()
-    mod._collection = fake_store.get()
-    mod.get_collection = lambda: fake_store.get()
-    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
-    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
-    # Patch retrieve and crawl at the module level so they're intercepted
-    # regardless of when app startup fires
-    sample_hits = [
-        {
-            "text": "Test article content.",
-            "title": "Test Article",
-            "link": "https://example.com/test",
-            "feed": "TestFeed",
-            "published": "2026-03-01",
-            "excerpt": "Test excerpt.",
-            "score": 0.9,
-        }
-    ]
-    mod.retrieve = AsyncMock(return_value=sample_hits)
-    mod.ask_llm = AsyncMock(return_value="Here is a test answer.")
-    mod.crawl_and_index_feeds = AsyncMock(return_value={})
-
-
-def _setup_sports_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch pgvector-backed retrieval and LLM for the sports-RAG example."""
-    del tmp_path
-    import ingest as sports_ingest
-    fake_store = FakeVectorStoreRegistry()
-    sports_ingest._collection_matches = fake_store.get("matches")
-    sports_ingest._collection_articles = fake_store.get("articles")
-    sports_ingest._collection_standings = fake_store.get("standings")
-    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
-    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
-    # Patch LLM call so no network is required
-    mod.call_llm = lambda system, user: "Test sports answer."
-    # Patch search functions to return seed data
-    mod.search_matches = lambda q, n_results=3: []
-    mod.search_articles = lambda q, n_results=3: []
-    mod.search_standings = lambda q, n_results=1: []
-
-
-def _setup_travel_rag(mod: Any, monkeypatch: Any, tmp_path: Path) -> None:
-    """Patch pgvector-backed retrieval and LLM for the travel-RAG example."""
-    del tmp_path
-    fake_store = FakeVectorStoreRegistry()
-    mod._destinations_collection = fake_store.get("destinations")
-    mod._articles_collection = fake_store.get("articles")
-    monkeypatch.setenv("LLM_MODEL", "vertex_ai/gemini-2.5-flash")
-    monkeypatch.setenv("EMBEDDING_MODEL", "vertex_ai/text-embedding-004")
-    # Patch LLM call so no network is required
-    mod.call_llm = lambda system, user: "Test travel answer."
-    # Patch search functions to return empty results
-    mod.search_destinations = lambda q, n_results=4: []
-    mod.search_articles = lambda q, n_results=3: []
-
-
 WEBHOOK_EXAMPLES = [
     {
         "id": "minimal",
@@ -126,30 +67,6 @@ WEBHOOK_EXAMPLES = [
         "endpoint": "/",
         "module": "example_advanced",
         "setup": None,
-    },
-    {
-        "id": "news-rag",
-        "path": EXAMPLES_ROOT / "news-rag/python",
-        "endpoint": "/",
-        "module": "example_news_rag",
-        "setup": _setup_news_rag,
-        "requires": ["litellm", "feedparser"],
-    },
-    {
-        "id": "sports-rag",
-        "path": EXAMPLES_ROOT / "sports-rag/python",
-        "endpoint": "/",
-        "module": "example_sports_rag",
-        "setup": _setup_sports_rag,
-        "requires": ["litellm"],
-    },
-    {
-        "id": "travel-rag",
-        "path": EXAMPLES_ROOT / "travel-rag/python",
-        "endpoint": "/",
-        "module": "example_travel_rag",
-        "setup": _setup_travel_rag,
-        "requires": ["litellm", "feedparser"],
     },
 ]
 

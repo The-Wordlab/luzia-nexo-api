@@ -139,50 +139,6 @@ def test_minimal_example_signing_matches_contract() -> None:
             del sys.modules["server"]
 
 
-def test_news_rag_example_signing_matches_contract() -> None:
-    """News-RAG example uses the same signing algorithm as the contract.
-
-    The news-rag server imports optional runtime dependencies which may not be installed in the
-    test environment, so we verify the algorithm by replicating it directly
-    from the server source rather than importing the whole module.
-    """
-    # Replicate the exact signing code from news-rag/python/server.py
-    secret = "test-secret"
-    timestamp = "1700000000"
-    body = b'{"message":{"content":"hello"}}'
-
-    contract_sig = compute_signature(secret, timestamp, body)
-
-    # Same algorithm as in news-rag server.verify_signature:
-    signed_payload = f"{timestamp}.{body.decode('utf-8', errors='replace')}"
-    expected = "sha256=" + hmac.new(
-        secret.encode("utf-8"),
-        signed_payload.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-    assert contract_sig == expected
-
-
-def test_sports_rag_example_signing_matches_contract() -> None:
-    """Sports-RAG example uses the same signing algorithm as the contract."""
-    secret = "test-secret"
-    timestamp = "1700000000"
-    body = b'{"message":{"content":"score?"}}'
-
-    contract_sig = compute_signature(secret, timestamp, body)
-
-    # Replicate the sports-rag verify logic directly (it mirrors the contract)
-    signed_payload = f"{timestamp}.{body.decode('utf-8')}"
-    expected = "sha256=" + hmac.new(
-        secret.encode("utf-8"),
-        signed_payload.encode("utf-8"),
-        hashlib.sha256,
-    ).hexdigest()
-
-    assert contract_sig == expected
-
-
 # ---------------------------------------------------------------------------
 # Edge cases
 # ---------------------------------------------------------------------------

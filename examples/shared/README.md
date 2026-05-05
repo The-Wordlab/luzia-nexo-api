@@ -96,9 +96,8 @@ filtered = store.query(event_type="breaking_news", since=cutoff)
 The `table_name` parameter lets multiple domains share one DB file:
 
 ```python
-sports_store = EventStore(db_path="events.db", table_name="sports_events")
-news_store   = EventStore(db_path="events.db", table_name="news_events")
-travel_store = EventStore(db_path="events.db", table_name="travel_events")
+store_a = EventStore(db_path="events.db", table_name="domain_a_events")
+store_b = EventStore(db_path="events.db", table_name="domain_b_events")
 ```
 
 ## Adding a New Domain: Step by Step
@@ -145,24 +144,10 @@ travel_store = EventStore(db_path="events.db", table_name="travel_events")
            await asyncio.sleep(60)
    ```
 
-## Reference: sports-rag
-
-`examples/webhook/sports-rag/python/` is the reference implementation:
-
-| File | Role |
-|---|---|
-| `match_state.py` | `MatchStateTracker(BaseStateTracker)` — diffs match API responses |
-| `event_detector.py` | `EventDetector(BaseEventDetector)` — keyword prefilter + LLM for articles |
-| `event_store.py` | `EventStore(_BaseEventStore)` — adds `team` filter for sports queries |
-
 ## Running Tests
 
 ```bash
 # Base class tests
 cd examples/shared
 pytest test_base_event_detection.py -v
-
-# Sports-rag tests (must still pass after any base class changes)
-cd examples/webhook/sports-rag/python
-pytest test_event_detection.py test_sports_rag.py test_event_wiring.py -v
 ```

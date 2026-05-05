@@ -427,7 +427,7 @@ Same pattern, different domain:
 - **Subscriber targeting**: by portfolio holdings, watchlist, sector
 - **Character**: financial advisor personality with appropriate disclaimers
 
-### Travel Companion (extending travel-rag)
+### Travel Companion
 
 - **Data sources**: flight status APIs, weather APIs, travel advisory RSS
 - **Event detection**: flight delays, gate changes, severe weather at destination
@@ -449,7 +449,7 @@ This also means we can ship the PoC as a **reusable pattern** - any partner can 
 
 ### Phase 1: Partner-side event detection + push (PoC scope)
 
-Extend sports-rag with event detection, subscriber management, and Nexo delivery. The partner owns the full pipeline.
+Extend a sports webhook example with event detection, subscriber management, and Nexo delivery. The partner owns the full pipeline.
 
 | Task | Size | Description |
 |---|---|---|
@@ -461,7 +461,7 @@ Extend sports-rag with event detection, subscriber management, and Nexo delivery
 | Subscriber targeting | M | When event detected, query matching subscribers, push to each. |
 | Nexo delivery client | M | Partner calls Nexo notify endpoint for each subscriber. Handles auth, retry, backoff. |
 | Admin endpoint: `GET /admin/events` | S | View recent events for debugging. |
-| **Generalise as a pattern** | M | Extract base classes (`BaseEventDetector`, `BaseIngestPipeline`, `BaseSubscriberManager`) so news-rag and travel-rag can reuse the same pattern with different data sources. |
+| **Generalise as a pattern** | M | Extract base classes (`BaseEventDetector`, `BaseIngestPipeline`, `BaseSubscriberManager`) so other domain examples can reuse the same pattern with different data sources. |
 
 ### Phase 2: Nexo notify endpoint (minimal)
 

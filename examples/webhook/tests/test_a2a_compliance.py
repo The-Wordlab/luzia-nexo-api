@@ -43,7 +43,6 @@ def _load_app_module(path: Path, filename: str, alias: str):
 # Lightweight examples (no pgvector/psycopg deps)
 LIGHTWEIGHT_EXAMPLES = [
     ("food-ordering", "python", "app.py", "a2a_food_ordering"),
-    ("travel-planning", "python", "app.py", "a2a_travel_planning"),
 ]
 
 _loaded_modules: dict[str, Any] = {}

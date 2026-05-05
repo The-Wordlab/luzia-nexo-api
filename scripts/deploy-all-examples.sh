@@ -20,12 +20,7 @@
 #   hosted-py
 #   hosted-ts
 #   demo-receiver
-#   news
-#   sports
-#   travel
-#   football
 #   food-ordering
-#   travel-planning
 
 set -euo pipefail
 
@@ -44,10 +39,10 @@ usage() {
   echo "Usage: $0 <target> [--dry-run]"
   echo ""
   echo "Targets:"
-  echo "  all | hosted | rag"
+  echo "  all | hosted"
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
   echo "  hosted-py | hosted-ts | demo-receiver"
-  echo "  news | sports | travel | football | food-ordering | travel-planning"
+  echo "  food-ordering"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
   echo "Optional env: GCP_REGION (default: europe-west1)"
@@ -133,13 +128,6 @@ deploy_food_ordering() {
     "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
 }
 
-deploy_travel_planning() {
-  deploy_source_service \
-    "nexo-travel-planning" \
-    "${REPO_ROOT}/examples/webhook/travel-planning/python" \
-    "--clear-base-image --set-secrets WEBHOOK_SECRET=WEBHOOK_SECRET:latest --set-env-vars LLM_MODEL=vertex_ai/gemini-2.5-flash,VERTEXAI_PROJECT=${PROJECT_ID},VERTEXAI_LOCATION=${REGION}"
-}
-
 deploy_hosted_py() {
   local cmd="cd \"${REPO_ROOT}\" && GCP_PROJECT_ID=\"${PROJECT_ID}\" GCP_REGION=\"${REGION}\" SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh"
   run_cmd "${cmd}"
@@ -155,12 +143,6 @@ deploy_demo_receiver() {
   run_cmd "${cmd}"
 }
 
-deploy_rag_target() {
-  local rag_target="$1"
-  local cmd="cd \"${REPO_ROOT}\" && GCP_PROJECT_ID=\"${PROJECT_ID}\" GCP_REGION=\"${REGION}\" ./scripts/deploy-rag-examples.sh ${rag_target}"
-  run_cmd "${cmd}"
-}
-
 run_target() {
   case "$1" in
     all)
@@ -173,16 +155,11 @@ run_target() {
       deploy_minimal_ts
       deploy_openclaw_bridge
       deploy_food_ordering
-      deploy_travel_planning
-      deploy_rag_target all
       ;;
     hosted)
       deploy_demo_receiver
       deploy_hosted_py
       deploy_hosted_ts
-      ;;
-    rag)
-      deploy_rag_target all
       ;;
     minimal-py) deploy_minimal_py ;;
     structured-py) deploy_structured_py ;;
@@ -190,11 +167,9 @@ run_target() {
     minimal-ts) deploy_minimal_ts ;;
     openclaw-bridge) deploy_openclaw_bridge ;;
     food-ordering) deploy_food_ordering ;;
-    travel-planning) deploy_travel_planning ;;
     hosted-py) deploy_hosted_py ;;
     hosted-ts) deploy_hosted_ts ;;
     demo-receiver) deploy_demo_receiver ;;
-    news|sports|travel|football) deploy_rag_target "$1" ;;
     *) echo "ERROR: unknown target '$1'"; usage ;;
   esac
 }

@@ -1,8 +1,7 @@
 """Cross-repo webhook contract tests.
 
-Validates that all supported Python webhook examples (food-ordering,
-travel-planning) return correct canonical envelopes and
-reject invalid requests correctly.
+Validates that all supported Python webhook examples (food-ordering)
+return correct canonical envelopes and reject invalid requests correctly.
 
 Uses pytest parametrize to run the same contract checks against each webhook.
 All external calls are mocked — no network, LLM, or database access required.
@@ -78,7 +77,6 @@ sys.path.insert(0, str(REPO_ROOT / "examples"))
 from test_support.fake_vector_store import FakeVectorStoreRegistry
 
 FOOD_PATH = WEBHOOK_ROOT / "food-ordering" / "python"
-TRAVEL_PATH = WEBHOOK_ROOT / "travel-planning" / "python"
 
 # ---------------------------------------------------------------------------
 # Contract constants
@@ -236,61 +234,12 @@ class _FoodFixture:
         return hasattr(mod, "STREAMING_ENABLED")
 
 
-class _TravelFixture:
-    """Loads the travel-planning webhook and patches async call_llm."""
-
-    _module_name = "contract_travel"
-
-    @classmethod
-    def load(cls) -> tuple[TestClient, Any]:
-        sys.path.insert(0, str(TRAVEL_PATH))
-        try:
-            mod = _load_module(TRAVEL_PATH, cls._module_name, "app.py")
-            mod.WEBHOOK_SECRET = ""
-            client = TestClient(mod.app, raise_server_exceptions=False)
-            return client, mod
-        finally:
-            sys.path.remove(str(TRAVEL_PATH))
-
-    @classmethod
-    def unload(cls) -> None:
-        _unload_module(cls._module_name)
-
-    @staticmethod
-    def mock_llm(mod: Any, return_value: str = "ok") -> Any:
-        """Travel uses async call_llm; mock as AsyncMock."""
-        return patch.object(mod, "call_llm", new=AsyncMock(return_value=return_value))
-
-    @staticmethod
-    def mock_stream(mod: Any, text: str = "ok"):
-        async def _fake(*_a, **_kw):
-            yield f"event: content_delta\ndata: {json.dumps({'type': 'content_delta', 'text': text})}\n\n"
-        return patch.object(mod, "stream_llm", side_effect=_fake)
-
-    @staticmethod
-    def happy_payload() -> dict:
-        return _make_payload("Plan a trip to Barcelona for 5 days")
-
-    @staticmethod
-    def intent_payload() -> dict:
-        return _make_payload("Check my travel budget")
-
-    @staticmethod
-    def has_llm(mod: Any) -> bool:
-        return hasattr(mod, "call_llm")
-
-    @staticmethod
-    def has_streaming(mod: Any) -> bool:
-        return hasattr(mod, "STREAMING_ENABLED")
-
-
 # ---------------------------------------------------------------------------
 # Parametrize: all four webhooks
 # ---------------------------------------------------------------------------
 
 WEBHOOK_FIXTURES = [
     pytest.param(_FoodFixture, id="food-ordering"),
-    pytest.param(_TravelFixture, id="travel-planning"),
 ]
 
 

@@ -111,10 +111,6 @@ echo "--- Conversational tests ---"
 get_test_message() {
   case "$1" in
     food-ordering)    echo "Show me the menu" ;;
-    travel-planning)  echo "Plan a weekend trip to Barcelona" ;;
-    news-rag)         echo "What are the latest headlines?" ;;
-    sports-rag)       echo "Tell me about recent football matches" ;;
-    travel-rag)       echo "What are top destinations in Europe?" ;;
     *)                echo "Hello" ;;
   esac
 }

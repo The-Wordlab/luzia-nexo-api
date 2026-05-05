@@ -28,80 +28,6 @@
   },
   "apps": [
     {
-      "demo_key": "news-rag",
-      "name": "News RAG",
-      "description": "RAG-powered news assistant - crawls RSS feeds, answers questions with source cards",
-      "config_json": {
-        "demo_key": "news-rag",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "newspaper",
-        "demo_color": "#6366F1",
-        "demo_order": 6,
-        "prompt_suggestions": [
-          "What are the top headlines today?",
-          "Summarize the latest AI and tech news",
-          "Give me a concise Europe politics update"
-        ]
-      },
-      "webhook_url_env": "DEMO_NEWS_RAG_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8090",
-      "card_trigger_rules": []
-    },
-    {
-      "demo_key": "sports-rag",
-      "name": "Sports RAG",
-      "description": "Broad sports flagship - match results, standings, fixtures, and sports news with structured cards",
-      "config_json": {
-        "demo_key": "sports-rag",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "trophy",
-        "demo_color": "#F97316",
-        "demo_order": 7,
-        "prompt_suggestions": [
-          "What are tonight's key fixtures across sports?",
-          "Who scored in today's matches?",
-          "What are tonight's key fixtures?"
-        ],
-        "showcase_family": "sports",
-        "showcase_role": "primary"
-      },
-      "webhook_url_env": "DEMO_SPORTS_RAG_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8091",
-      "card_trigger_rules": []
-    },
-    {
-      "demo_key": "travel-rag",
-      "name": "Travel RAG",
-      "description": "RAG-powered travel assistant - destination profiles, itineraries, and travel blog articles with rich cards",
-      "config_json": {
-        "demo_key": "travel-rag",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "map-pin",
-        "demo_color": "#14B8A6",
-        "demo_order": 8,
-        "prompt_suggestions": [
-          "Best time to visit Paris?",
-          "Top activities in Bali",
-          "Give me a 3-day Lisbon itinerary"
-        ]
-      },
-      "webhook_url_env": "DEMO_TRAVEL_RAG_WEBHOOK_URL",
-      "webhook_url_default": "http://localhost:8092",
-      "card_trigger_rules": []
-    },
-    {
       "demo_key": "food-ordering",
       "name": "Food Ordering",
       "description": "Food commerce flagship - discover restaurants, build a basket with dietary and budget constraints, prepare checkout, and track delivery",
@@ -130,34 +56,6 @@
       },
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-food-ordering-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": []
-    },
-    {
-      "demo_key": "travel-planning",
-      "name": "Travel Planning",
-      "description": "Travel flagship - itinerary planning, flight comparison, booking handoff, budget tracking, and disruption replanning",
-      "config_json": {
-        "demo_key": "travel-planning",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "demo_icon": "map",
-        "demo_color": "#0EA5E9",
-        "demo_order": 14,
-        "prompt_suggestions": [
-          "Plan a budget trip to Japan for 10 days",
-          "Compare flights to Lisbon next month",
-          "Prepare booking handoff for my Barcelona trip",
-          "My flight got cancelled - help me rebook",
-          "What's my trip budget looking like?"
-        ],
-        "showcase_family": "travel",
-        "showcase_role": "flagship"
-      },
-      "webhook_url_env": "DEMO_TRAVEL_PLANNING_WEBHOOK_URL",
-      "webhook_url_default": "https://nexo-travel-planning-v3me5awkta-ew.a.run.app",
       "card_trigger_rules": []
     }
   ],

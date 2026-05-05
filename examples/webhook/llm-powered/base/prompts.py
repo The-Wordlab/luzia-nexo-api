@@ -40,6 +40,5 @@ def get_prompt_for_scenario(scenario: str) -> str:
         "ecommerce": ECOMMERCE_ASSISTANT_PROMPT,
         "ecommerce_support": ECOMMERCE_ASSISTANT_PROMPT,
         "travel": TRAVEL_ASSISTANT_PROMPT,
-        "travel_planner": TRAVEL_ASSISTANT_PROMPT,
     }
     return prompts.get(scenario.lower(), "You are a helpful assistant.")

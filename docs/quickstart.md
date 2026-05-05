@@ -296,21 +296,12 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
 
 For starter chips before any message is sent, publish prompt suggestions from `GET /.well-known/agent-card.json` under `capabilities.items[].metadata.prompt_suggestions`.
 
-### Add RAG
-
-If your integration has a knowledge base (news, product catalog, documentation), add retrieval-augmented generation. See the production examples:
-
-- [News Feed RAG](examples-showcase.md#news-feed-rag) -- RSS + vector retrieval + LLM + source cards
-- [Sports Feed RAG](examples-showcase.md#sports-feed-rag) -- Live match data + intent detection + streaming
-- [Travel RAG](examples-showcase.md#travel-rag) -- Destination guides + itinerary advice
-
 ### Add vertical orchestration
 
 For multi-step flows beyond Q&A, start from the flagship vertical examples:
 
 - [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) -- Morning briefings, schedule actions, follow-up reminders
 - [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) -- Discovery, basket building, checkout approval, delivery tracking
-- [Travel Planning](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/travel-planning/python) -- Itinerary planning, flight comparison, booking handoff, budget guidance, disruption replanning
 
 ### Add live event push
 

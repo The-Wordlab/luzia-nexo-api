@@ -98,10 +98,8 @@ Cloud Run services read secrets from Secret Manager. Create them before deployin
 |---|---|---|
 | `WEBHOOK_SECRET` | Standard webhook services | Shared HMAC signing secret with Nexo (recommended value: `nexo-example-secret`) |
 | `OPENCLAW_WEBHOOK_SECRET` | openclaw-bridge | Dedicated OpenClaw webhook signing secret (recommended value: `nexo-openclaw-secret`) |
-| `FOOTBALL_DATA_API_KEY` | sports-rag | [football-data.org](https://www.football-data.org/client/register) (free tier: 10 req/min) |
 | `OPENCLAW_GATEWAY_TOKEN` | openclaw-bridge | Token for your OpenClaw gateway |
 | `OPENCLAW_ORIGIN_HEADER_VALUE` | openclaw-bridge | Shared origin key header value for reverse-proxy allowlisting |
-| `NEXO_PGVECTOR_DSN` | RAG services | Cloud SQL DSN for pgvector storage |
 
 ```bash
 # Create each secret
@@ -109,7 +107,7 @@ echo -n "your-value" | gcloud secrets create SECRET_NAME --data-file=-
 
 # Grant Cloud Run access
 PROJECT_NUM=$(gcloud projects describe $GCP_PROJECT_ID --format='value(projectNumber)')
-for SECRET in WEBHOOK_SECRET OPENCLAW_WEBHOOK_SECRET FOOTBALL_DATA_API_KEY OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE NEXO_PGVECTOR_DSN; do
+for SECRET in WEBHOOK_SECRET OPENCLAW_WEBHOOK_SECRET OPENCLAW_GATEWAY_TOKEN OPENCLAW_ORIGIN_HEADER_VALUE; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
     --role="roles/secretmanager.secretAccessor" --quiet
@@ -141,7 +139,7 @@ OPENCLAW_BASE_URL=https://your-openclaw-gateway \
 ./scripts/deploy-all-examples.sh all
 ```
 
-This deploys hosted services, core webhook examples, flagship orchestration webhooks, OpenClaw bridge, and all RAG services.
+This deploys hosted services, core webhook examples, flagship orchestration webhooks, and OpenClaw bridge.
 
 ### Full live smoke test (all deployed services)
 
@@ -154,8 +152,6 @@ GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make smoke-live-servic
 Notes:
 - Reads `WEBHOOK_SECRET` from Secret Manager.
 - Validates signed webhook flows (including OpenClaw bridge).
-- By default also triggers RAG ingest endpoints (`RUN_INGEST=true`).
-- To skip ingest triggers: `RUN_INGEST=false make smoke-live-services`.
 
 ### End-to-end secret alignment with Nexo (required)
 
@@ -219,146 +215,6 @@ Public docs never include raw secret values. We only document:
 - where they are used
 - how to validate behavior via expected status codes (`401/403/200`)
 
-### Deploy RAG partner examples
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/deploy-rag-examples.sh all
-```
-
-Individual targets: `news`, `sports`, `travel`, `football`.
-
-Each example service has a `cloudbuild.yaml` that handles the full build-push-deploy pipeline on Cloud Run.
-
-### Automated indexing (worker behavior via Cloud Scheduler)
-
-Worker mode is the production default for Cloud Run deployments in this repository.
-Cloud Scheduler triggers Cloud Run Jobs workers on a cadence. This avoids public ingest
-endpoint scheduling and keeps indexing topology consistent.
-
-Create/update all worker schedules:
-
-```bash
-SCHEDULER_RUNNER_SA=<service-account-email> \
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/setup-rag-worker-scheduler.sh all
-```
-
-Default schedules:
-- `news`: every 30 minutes
-- `sports`: every 5 minutes
-- `travel`: hourly
-- `football`: every 5 minutes
-
-Set scheduler mode to worker-only:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/set-rag-scheduler-mode.sh worker
-```
-
-### Model provider policy (partner APIs)
-
-For RAG partner APIs:
-- Production default: Gemini on Vertex via ADC (`LLM_MODEL=vertex_ai/...`, `EMBEDDING_MODEL=vertex_ai/...`)
-- Development default: Gemini on Vertex via ADC (`LLM_MODEL=vertex_ai/...`, `EMBEDDING_MODEL=vertex_ai/...`)
-
-Cloud Run production path uses service-account ADC, not a Gemini API key.
-
-Local ADC setup:
-
-```bash
-gcloud auth application-default login
-export GOOGLE_CLOUD_PROJECT=<your-project-id>
-export GOOGLE_CLOUD_LOCATION=<your-region>
-```
-
-### Optional: dedicated worker jobs (private topology path)
-
-Worker mode already uses dedicated Cloud Run Jobs workers. For completeness, legacy endpoint
-mode still exists for compatibility, but should not be used for production by default.
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/deploy-rag-workers.sh all
-```
-
-Then schedule those jobs through Cloud Scheduler -> Run Jobs API:
-
-```bash
-SCHEDULER_RUNNER_SA=<service-account-email> \
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> \
-./scripts/setup-rag-worker-scheduler.sh all
-```
-
-Validate scheduler drift:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh worker
-```
-
-Legacy endpoint mode checks are still available:
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> ./scripts/check-rag-scheduler.sh endpoint
-```
-
-### Vector storage on Cloud Run (current production setup)
-
-RAG services on Cloud Run are configured for durable `pgvector` on Cloud SQL Postgres.
-
-Current pattern:
-1. One Cloud SQL Postgres database: `nexo_platform`
-2. One logical schema per RAG service: `rag_news`, `rag_sports`, `rag_travel`, `rag_football`
-3. One DSN secret (`NEXO_PGVECTOR_DSN`) mounted into each service as `PGVECTOR_DSN`
-4. Service-specific schema selected with `PGVECTOR_SCHEMA`
-
-Cloud Run deploy env for each RAG service now includes:
-- `VECTOR_STORE_BACKEND=pgvector`
-- `VECTOR_STORE_DURABLE=true`
-- `PGVECTOR_SCHEMA=<service schema>`
-- Cloud SQL connector attachment via `--add-cloudsql-instances`
-
-Security posture:
-- Prefer Cloud SQL connector-only access for workloads.
-- Keep `authorizedNetworks` empty in steady state.
-
-Each RAG `/health` endpoint returns:
-- `vector_store.backend`
-- `vector_store.durable`
-- `vector_store.is_cloud_run`
-- `vector_store.warning`
-
-Expected production values:
-- `backend = "pgvector"`
-- `durable = true`
-- `warning = null`
-
-Local development should mirror production with pgvector:
-- `VECTOR_STORE_BACKEND=pgvector`
-- `VECTOR_STORE_DURABLE=true`
-- `PGVECTOR_DSN=postgresql://postgres:postgres@localhost:55432/nexo_rag`
-
-### Cloud SQL setup for pgvector
-
-The following DB bootstrap is required once per environment:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-CREATE SCHEMA IF NOT EXISTS rag_news;
-CREATE SCHEMA IF NOT EXISTS rag_sports;
-CREATE SCHEMA IF NOT EXISTS rag_travel;
-CREATE SCHEMA IF NOT EXISTS rag_football;
-```
-
-Each service user should be scoped to its own schema wherever possible.
-
-### Required secrets for pgvector RAG deploys
-
-Add this secret in addition to existing webhook/API secrets:
-
-| Secret Manager key | Description |
-|---|---|
-| `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services when `VECTOR_STORE_BACKEND=pgvector` |
-
 ### Example deployment inventory
 
 Regenerate this table when needed:
@@ -378,10 +234,6 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 | nexo-webhook-minimal-ts | europe-west1 | `https://nexo-webhook-minimal-ts-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-openclaw-bridge | europe-west1 | `https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app` | `/` |
 | nexo-food-ordering | europe-west1 | `https://nexo-food-ordering-v3me5awkta-ew.a.run.app` | `/` |
-| nexo-travel-planning | europe-west1 | `https://nexo-travel-planning-v3me5awkta-ew.a.run.app` | `/` |
-| nexo-news-rag | europe-west1 | `https://nexo-news-rag-v3me5awkta-ew.a.run.app` | `/health` |
-| nexo-sports-rag | europe-west1 | `https://nexo-sports-rag-v3me5awkta-ew.a.run.app` | `/health` |
-| nexo-travel-rag | europe-west1 | `https://nexo-travel-rag-v3me5awkta-ew.a.run.app` | `/health` |
 
 ### Secrets inventory (example)
 
@@ -389,8 +241,6 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 |---|---|
 | `WEBHOOK_SECRET` | HMAC-SHA256 signing secret for standard webhook demos (`nexo-example-secret`) |
 | `OPENCLAW_WEBHOOK_SECRET` | HMAC-SHA256 signing secret for openclaw-bridge (`nexo-openclaw-secret`) |
-| `NEXO_PGVECTOR_DSN` | Cloud SQL DSN used by RAG services with `VECTOR_STORE_BACKEND=pgvector` |
-| `FOOTBALL_DATA_API_KEY` | football-data.org API key for live match/standings data |
 | `OPENCLAW_GATEWAY_TOKEN` | OpenClaw gateway bearer token for openclaw-bridge |
 | `EXAMPLES_SHARED_API_SECRET` | Optional auth secret for hosted python/typescript examples (not required by default) |
 

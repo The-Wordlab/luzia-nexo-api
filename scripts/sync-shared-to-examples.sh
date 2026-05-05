@@ -17,11 +17,7 @@ fi
 
 EXAMPLES=(
   food-ordering
-  news-rag
-  travel-rag
-  sports-rag
   routines
-  travel-planning
 )
 
 for example in "${EXAMPLES[@]}"; do

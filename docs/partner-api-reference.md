@@ -907,7 +907,7 @@ A partner that sends events continuously:
 3. **Score significance** — not everything deserves a push
 4. **Call this endpoint** with the event, card, and target subscribers
 
-See [examples-showcase.md](examples-showcase.md) for a working implementation in the sports-rag example.
+See [examples-showcase.md](examples-showcase.md) for working implementation patterns.
 
 ---
 

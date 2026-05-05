@@ -52,4 +52,3 @@ Operational cleanup completed:
 - demo-apps.json manifest entry removed
 - football-live example directory deleted from this repo
 - all docs, tests, CI, and docker-compose references cleaned up
-- sports-rag deep_dives cross-reference removed

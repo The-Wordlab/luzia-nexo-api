@@ -280,10 +280,6 @@ URL_ADVANCED_PY="$(service_url nexo-webhook-advanced-py)"
 URL_MINIMAL_TS="$(service_url nexo-webhook-minimal-ts)"
 URL_OPENCLAW_BRIDGE="$(service_url nexo-openclaw-bridge)"
 URL_FOOD_ORDERING="$(service_url nexo-food-ordering)"
-URL_TRAVEL_PLANNING="$(service_url nexo-travel-planning)"
-URL_NEWS_RAG="$(service_url nexo-news-rag)"
-URL_SPORTS_RAG="$(service_url nexo-sports-rag)"
-URL_TRAVEL_RAG="$(service_url nexo-travel-rag)"
 
 echo "== Discovery/health checks =="
 http_get_check "demo-receiver health" "${URL_DEMO_RECEIVER}/health" "ok"
@@ -295,10 +291,6 @@ http_get_check "advanced-py root" "${URL_ADVANCED_PY}/" "webhook-advanced-python
 http_get_check "minimal-ts root" "${URL_MINIMAL_TS}/" "webhook-minimal-typescript"
 http_get_check "openclaw-bridge root" "${URL_OPENCLAW_BRIDGE}/" "webhook-openclaw-bridge-typescript"
 http_get_check "food-ordering health" "${URL_FOOD_ORDERING}/health" "status"
-http_get_check "travel-planning health" "${URL_TRAVEL_PLANNING}/health" "status"
-http_get_check "news-rag health" "${URL_NEWS_RAG}/health" "status"
-http_get_check "sports-rag health" "${URL_SPORTS_RAG}/health" "status"
-http_get_check "travel-rag health" "${URL_TRAVEL_RAG}/health" "status"
 
 echo
 echo "== Functional checks =="
@@ -344,48 +336,8 @@ http_post_signed_prompt_suggestions_check \
   "${URL_FOOD_ORDERING}/" \
   '{"event":"message_created","message":{"role":"user","content":"show vegan options"},"profile":{"display_name":"Mark"}}'
 
-http_post_signed_prompt_suggestions_check \
-  "travel-planning webhook" \
-  "${URL_TRAVEL_PLANNING}/" \
-  '{"event":"message_created","message":{"role":"user","content":"plan 3 days in Lisbon"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "news-rag webhook" \
-  "${URL_NEWS_RAG}/" \
-  '{"event":"message_created","message":{"role":"user","content":"top world headlines now"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "sports-rag webhook" \
-  "${URL_SPORTS_RAG}/" \
-  '{"event":"message_created","message":{"role":"user","content":"important football results"},"profile":{"display_name":"Mark"}}'
-
-http_post_signed_prompt_suggestions_check \
-  "travel-rag webhook" \
-  "${URL_TRAVEL_RAG}/" \
-  '{"event":"message_created","message":{"role":"user","content":"suggest a city break"},"profile":{"display_name":"Mark"}}'
-
 http_get_check "demo-receiver events endpoint" "${URL_DEMO_RECEIVER}/v1/events/smoke-demo" "events"
 http_get_expect_code_check "demo-receiver ingest endpoint (method check)" "${URL_DEMO_RECEIVER}/v1/ingest/smoke-demo" "405" "Method Not Allowed"
-
-if [[ "${RUN_INGEST}" == "true" ]]; then
-  echo
-  echo "== RAG ingest checks =="
-  http_post_signed_check \
-    "news-rag ingest trigger" \
-    "${URL_NEWS_RAG}/ingest" \
-    '{}' \
-    "ingest"
-  http_post_signed_check \
-    "sports-rag live ingest trigger" \
-    "${URL_SPORTS_RAG}/ingest/live" \
-    '{}' \
-    "summary"
-  http_post_signed_check \
-    "travel-rag ingest trigger" \
-    "${URL_TRAVEL_RAG}/ingest" \
-    '{}' \
-    "summary"
-fi
 
 echo
 echo "== Summary =="
