@@ -484,7 +484,7 @@ async def test_agent_card_endpoint_returns_capabilities(app):
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
-        response = await client.get("/.well-known/agent.json")
+        response = await client.get("/.well-known/agent-card.json")
 
     assert response.status_code == 200
     data = response.json()

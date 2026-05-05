@@ -20,7 +20,7 @@ On startup the server seeds 12 destination profiles (Paris, Tokyo, Barcelona, NY
 | Method | Path | Description |
 |--------|------|-------------|
 | POST | `/` | Main Nexo webhook - RAG answer + destination cards |
-| GET | `/.well-known/agent.json` | A2A-style capability discovery card |
+| GET | `/.well-known/agent-card.json` | A2A-style capability discovery card |
 | POST | `/ingest` | Trigger destination seed + RSS feed re-crawl |
 | GET | `/health` | Liveness probe with index stats |
 

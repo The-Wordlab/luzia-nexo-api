@@ -101,7 +101,7 @@ http://<your-host>:8080/
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/` | Main Nexo webhook — receives a message, does RAG, returns answer |
-| `GET` | `/.well-known/agent.json` | A2A-style capability discovery card |
+| `GET` | `/.well-known/agent-card.json` | A2A-style capability discovery card |
 | `POST` | `/ingest` | Trigger an immediate re-crawl of all feeds (runs in background) |
 | `GET` | `/health` | Liveness probe — returns index stats |
 

@@ -65,7 +65,7 @@ pytest -q
 ## Endpoints
 
 - `GET /` - Service discovery
-- `GET /.well-known/agent.json` - A2A-style capability discovery card
+- `GET /.well-known/agent-card.json` - A2A-style capability discovery card
 - `GET /health` - Health check
 - `POST /` - Main webhook endpoint (JSON or SSE)
 - `POST /ingest` - Placeholder for future data ingestion

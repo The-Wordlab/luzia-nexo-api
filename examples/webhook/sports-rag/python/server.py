@@ -868,7 +868,7 @@ async def lifespan(app: FastAPI):  # type: ignore[type-arg]
 app = FastAPI(title="nexo-sports-rag-webhook", lifespan=lifespan)
 
 
-@app.get("/.well-known/agent.json")
+@app.get("/.well-known/agent-card.json")
 async def agent_card() -> JSONResponse:
     """Publish capability metadata for A2A-style discovery."""
     return JSONResponse(AGENT_CARD)

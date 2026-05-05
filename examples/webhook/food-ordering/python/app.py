@@ -1048,7 +1048,7 @@ async def stream_llm_chunks(system_prompt: str, user_message: str) -> AsyncItera
 # ---------------------------------------------------------------------------
 
 
-@app.get("/.well-known/agent.json")
+@app.get("/.well-known/agent-card.json")
 async def agent_card():
     """Publish capability metadata for A2A-style discovery."""
     return JSONResponse(AGENT_CARD)
@@ -1062,7 +1062,7 @@ async def root():
         "description": "Food commerce webhook -- restaurant discovery, basket building, checkout approval, delivery tracking, and reorder.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
-            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
+            {"path": "/.well-known/agent-card.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
             {"path": "/ingest", "method": "POST", "description": "Placeholder for future data ingestion"},
         ],

@@ -61,7 +61,7 @@ unreachable, because the match seed data is hardcoded.
 
 ## Endpoints
 
-### `GET /.well-known/agent.json`
+### `GET /.well-known/agent-card.json`
 
 Publishes A2A-style capability metadata for discovery and contract introspection.
 

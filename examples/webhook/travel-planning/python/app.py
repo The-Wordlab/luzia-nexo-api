@@ -655,7 +655,7 @@ async def stream_llm(system_prompt: str, user_message: str) -> AsyncIterator[str
 # ---------------------------------------------------------------------------
 
 
-@app.get("/.well-known/agent.json")
+@app.get("/.well-known/agent-card.json")
 async def agent_card():
     """Publish capability metadata for A2A-style discovery."""
     return JSONResponse(AGENT_CARD)
@@ -669,7 +669,7 @@ async def root():
         "description": "Travel flagship webhook -- itinerary planning, flight comparison, booking handoff, budget tracking, and disruption replanning.",
         "routes": [
             {"path": "/", "method": "POST", "description": "Main Nexo webhook endpoint (JSON or SSE)"},
-            {"path": "/.well-known/agent.json", "method": "GET", "description": "Capability discovery metadata"},
+            {"path": "/.well-known/agent-card.json", "method": "GET", "description": "Capability discovery metadata"},
             {"path": "/health", "method": "GET", "description": "Health check"},
             {"path": "/ingest", "method": "POST", "description": "Placeholder for future data ingestion"},
         ],

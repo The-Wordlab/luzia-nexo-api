@@ -649,7 +649,7 @@ class TestHealthEndpoint:
 class TestAgentCard:
     def test_agent_card_has_capability(self, monkeypatch) -> None:
         client = _make_client(monkeypatch)
-        resp = client.get("/.well-known/agent.json")
+        resp = client.get("/.well-known/agent-card.json")
         assert resp.status_code == 200
         data = resp.json()
         assert data["name"] == "nexo-sports-rag"
