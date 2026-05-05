@@ -91,12 +91,16 @@ A2A_CASES = _make_params()
 # A2A agent-card.json contract assertions
 # ---------------------------------------------------------------------------
 
-def _assert_agent_json(data: dict[str, Any], demo_key: str) -> None:
+def _assert_agent_card(data: dict[str, Any], demo_key: str) -> None:
     """Assert /.well-known/agent-card.json conforms to A2A discovery spec."""
-    assert "name" in data, f"[{demo_key}] agent.json missing 'name'"
-    assert isinstance(data["name"], str), f"[{demo_key}] agent.json name must be str"
+    assert "name" in data, f"[{demo_key}] agent-card.json missing 'name'"
+    assert isinstance(data["name"], str), (
+        f"[{demo_key}] agent-card.json name must be str"
+    )
 
-    assert "capabilities" in data, f"[{demo_key}] agent.json missing 'capabilities'"
+    assert "capabilities" in data, (
+        f"[{demo_key}] agent-card.json missing 'capabilities'"
+    )
     caps = data["capabilities"]
     assert isinstance(caps, dict), f"[{demo_key}] capabilities must be dict"
     assert "items" in caps, f"[{demo_key}] capabilities missing 'items'"
@@ -146,7 +150,7 @@ def _assert_a2a_envelope(data: dict[str, Any], demo_key: str) -> None:
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("demo_key,app_module", A2A_CASES)
-async def test_agent_json_endpoint(demo_key: str, app_module):
+async def test_agent_card_endpoint(demo_key: str, app_module):
     """Each hosted example publishes /.well-known/agent-card.json."""
     async with AsyncClient(
         transport=ASGITransport(app=app_module.app), base_url="http://test"
@@ -157,7 +161,7 @@ async def test_agent_json_endpoint(demo_key: str, app_module):
         f"[{demo_key}] /.well-known/agent-card.json returned {response.status_code}"
     )
     data = response.json()
-    _assert_agent_json(data, demo_key)
+    _assert_agent_card(data, demo_key)
 
 
 @pytest.mark.asyncio

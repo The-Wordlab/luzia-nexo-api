@@ -166,8 +166,8 @@ The app backend exchanges the one-time code with Nexo and sets its own app
 session.
 
 The server-side credential for this exchange should be the **same existing app
-secret** already used for Partner API webhook signing and `X-App-Secret`
-authentication.
+secret** already used for Partner API webhook signing and signed app-header
+authentication (`X-App-Id`, `X-App-Secret`, `X-Timestamp`, `X-Signature`).
 
 Do not use a developer key for this runtime flow.
 
@@ -340,7 +340,7 @@ The intended model is:
 The same app secret should cover:
 
 - webhook signing and verification
-- `X-App-Secret` server-to-server calls
+- signed app-header server-to-server calls
 - auth-bridge exchange and secure enrichment
 
 This means the dashboard should present it as one app runtime secret, not as

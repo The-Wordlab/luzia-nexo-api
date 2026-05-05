@@ -1,6 +1,6 @@
 # WIP
 
-**Updated:** 2026-05-02
+**Updated:** 2026-05-05
 
 ## Status
 
@@ -12,9 +12,11 @@ framing and will be updated incrementally.
 ## Current state
 
 - One unified app model framing in README and docs/index.md
-- Auth bridge doc updated with hosted profile/logout follow-through
+- Auth bridge doc updated with hosted profile/logout follow-through and the
+  signed app-header exchange contract (`/api/apps/structured/apps/{connected_app_id}/auth-handoffs/exchange`)
 - All webhook examples are app-type agnostic (no code changes needed)
 - Signing contract unchanged (X-App-Id + X-App-Secret + HMAC)
+- A2A example compliance tests now use canonical agent-card naming
 - RAG examples (news, sports, travel) deployed and healthy on Cloud Run
 - Provisioning endpoint (`POST /api/apps/structured/provision`) documented
 - MCP provision_app tool documented
