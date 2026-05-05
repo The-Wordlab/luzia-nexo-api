@@ -54,7 +54,7 @@ this repo.
 Send your developer key in the `X-Api-Key` header:
 
 ```bash
-curl -H "X-Api-Key: nexo_uak_..." https://nexo.luzia.com/api/micro-apps
+curl -H "X-Api-Key: nexo_uak_..." https://nexo.luzia.com/api/apps/structured
 ```
 
 Get your key from the Nexo dashboard → Profile → Developer Access.
@@ -96,12 +96,12 @@ export TOKEN="eyJhbGciOiJIUzI1NiIs..."
 
 ## List apps
 
-### GET /api/micro-apps
+### GET /api/apps/structured
 
 Returns all Personalized Apps owned by the authenticated user.
 
 ```bash
-curl "https://nexo.luzia.com/api/micro-apps" \
+curl "https://nexo.luzia.com/api/apps/structured" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
@@ -129,12 +129,12 @@ manual schema control.
 
 ### Step 1: Plan a template
 
-### POST /api/micro-apps/template-plan
+### POST /api/apps/structured/template-plan
 
 Turn a natural-language prompt into a structured template preview. The response shows what would be created - tables, fields, views, seed data - without actually creating anything.
 
 ```bash
-curl -X POST "https://nexo.luzia.com/api/micro-apps/template-plan" \
+curl -X POST "https://nexo.luzia.com/api/apps/structured/template-plan" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -178,10 +178,10 @@ Review the template. If it looks right, provision.
 
 ### Step 2: Provision the app
 
-### POST /api/micro-apps/provision-from-template
+### POST /api/apps/structured/provision-from-template
 
 ```bash
-curl -X POST "https://nexo.luzia.com/api/micro-apps/provision-from-template" \
+curl -X POST "https://nexo.luzia.com/api/apps/structured/provision-from-template" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -196,7 +196,7 @@ Pass the full `template` object from the planning step. The response is the crea
 When you already know the backend shape you want, use the one-call provisioning
 endpoint instead of stitching together many ordered REST mutations.
 
-### POST /api/micro-apps/provision
+### POST /api/apps/structured/provision
 
 This endpoint creates:
 
@@ -209,7 +209,7 @@ It is idempotent when you provide `template_key`: a second call with the same
 duplicate.
 
 ```bash
-curl -X POST "https://nexo.luzia.com/api/micro-apps/provision" \
+curl -X POST "https://nexo.luzia.com/api/apps/structured/provision" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -249,7 +249,7 @@ Use this path for:
 
 - Use `template-plan` + `provision-from-template` for the normal recommended
   prompt-driven creation flow
-- Use `POST /api/micro-apps/provision` when the exact app shape is already
+- Use `POST /api/apps/structured/provision` when the exact app shape is already
   known and should be created transactionally in one call
 - Use `create_app` only if you intentionally want to start from an empty shell
 - Use `template-operation-plan` + `apply-operation` to evolve an existing app
@@ -267,12 +267,12 @@ Use the operation plan/apply pattern to modify an app's schema or settings.
 For guided/stateful apps, that now includes app-level state/schedule/capability
 metadata, semantic table/field/view metadata, and record-level workflow metadata.
 
-### POST /api/micro-apps/template-operation-plan
+### POST /api/apps/structured/template-operation-plan
 
 Plan a mutation on an existing app:
 
 ```bash
-curl -X POST "https://nexo.luzia.com/api/micro-apps/template-operation-plan" \
+curl -X POST "https://nexo.luzia.com/api/apps/structured/template-operation-plan" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -281,12 +281,12 @@ curl -X POST "https://nexo.luzia.com/api/micro-apps/template-operation-plan" \
   }'
 ```
 
-### POST /api/micro-apps/apply-operation
+### POST /api/apps/structured/apply-operation
 
 Execute the planned mutation:
 
 ```bash
-curl -X POST "https://nexo.luzia.com/api/micro-apps/apply-operation" \
+curl -X POST "https://nexo.luzia.com/api/apps/structured/apply-operation" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}" \
   -H "Content-Type: application/json" \
   -d '{
@@ -297,12 +297,12 @@ curl -X POST "https://nexo.luzia.com/api/micro-apps/apply-operation" \
 
 ## Context endpoint
 
-### GET /api/micro-apps/context.md
+### GET /api/apps/structured/context.md
 
 Returns a compact markdown summary of all the user's apps, tables, fields, and recent records. Designed for LLM context injection (~300-800 tokens).
 
 ```bash
-curl "https://nexo.luzia.com/api/micro-apps/context.md" \
+curl "https://nexo.luzia.com/api/apps/structured/context.md" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
@@ -319,7 +319,7 @@ Recent:
 - Apr 9: Uber, R$18.50, transport (João)
 ```
 
-A JSON variant is available at `GET /api/micro-apps/context`:
+A JSON variant is available at `GET /api/apps/structured/context`:
 
 ```json
 {
@@ -347,12 +347,12 @@ update fields, views, settings, runtime handoff, or log declarations.
 
 ## Surface rendering
 
-### GET /api/micro-apps/{id}/surface
+### GET /api/apps/structured/{id}/surface
 
 Render a compact card for embedding in chat:
 
 ```bash
-curl "https://nexo.luzia.com/api/micro-apps/$APP_ID/surface?surface=chat_card" \
+curl "https://nexo.luzia.com/api/apps/structured/$APP_ID/surface?surface=chat_card" \
   -H "X-Api-Key: ${NEXO_DEVELOPER_KEY}"
 ```
 
@@ -397,15 +397,15 @@ The quick reference below covers the AI-assisted workflow. For the full CRUD API
 | Operation | Method | Endpoint |
 |---|---|---|
 | Authenticate | POST | `/api/auth/token` |
-| List apps | GET | `/api/micro-apps` |
-| Plan template | POST | `/api/micro-apps/template-plan` |
-| Provision app | POST | `/api/micro-apps/provision-from-template` |
-| Provision full app schema | POST | `/api/micro-apps/provision` |
-| Plan mutation | POST | `/api/micro-apps/template-operation-plan` |
-| Apply mutation | POST | `/api/micro-apps/apply-operation` |
-| Context (markdown) | GET | `/api/micro-apps/context.md` |
-| Context (JSON) | GET | `/api/micro-apps/context` |
-| Render surface | GET | `/api/micro-apps/{id}/surface` |
+| List apps | GET | `/api/apps/structured` |
+| Plan template | POST | `/api/apps/structured/template-plan` |
+| Provision app | POST | `/api/apps/structured/provision-from-template` |
+| Provision full app schema | POST | `/api/apps/structured/provision` |
+| Plan mutation | POST | `/api/apps/structured/template-operation-plan` |
+| Apply mutation | POST | `/api/apps/structured/apply-operation` |
+| Context (markdown) | GET | `/api/apps/structured/context.md` |
+| Context (JSON) | GET | `/api/apps/structured/context` |
+| Render surface | GET | `/api/apps/structured/{id}/surface` |
 | MCP tools | POST | `/mcp` |
 
 ## Constraints

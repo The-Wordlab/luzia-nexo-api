@@ -38,7 +38,7 @@ That proves the runtime half of the external-app shape:
 
 And the next auth-bridge slice is now also real for the phase-1 internal path:
 
-- `POST /api/micro-apps/{app_id}/auth-handoffs`
+- `POST /api/apps/structured/{app_id}/auth-handoffs`
 - `POST /api/apps/{connected_app_id}/auth-handoffs/exchange`
 - Nexo auth pages preserve bridge state and continue automatically after
   login/register

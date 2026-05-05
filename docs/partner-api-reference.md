@@ -169,7 +169,7 @@ Return HTTP `200`:
 - `extensions` - partner-specific data passed through transparently.
 
 For demo discovery and onboarding, hosted examples should also publish starter
-prompt chips from `GET /.well-known/agent.json` under
+prompt chips from `GET /.well-known/agent-card.json` under
 `capabilities.items[].metadata.prompt_suggestions`.
 
 #### Task lifecycle
@@ -944,12 +944,12 @@ curl "${NEXO_BASE_URL}/api/capabilities/manifest" \
       "capability_summary": "Track shared household bills and expenses",
       "intents": ["expense-tracker.create", "expense-tracker.query"],
       "context": {
-        "markdown_url": "/api/micro-apps/550e8400-.../context.md",
-        "json_url": "/api/micro-apps/550e8400-.../context"
+        "markdown_url": "/api/apps/structured/550e8400-.../context.md",
+        "json_url": "/api/apps/structured/550e8400-.../context"
       },
       "ui": {
-        "dashboard_url": "https://nexo.luzia.com/dashboard/micro-apps/550e8400-...",
-        "runtime_url": "https://nexo.luzia.com/dashboard/micro-apps/550e8400-.../runtime",
+        "dashboard_url": "https://nexo.luzia.com/dashboard/apps/550e8400-...",
+        "runtime_url": "https://nexo.luzia.com/dashboard/apps/550e8400-.../runtime",
         "webview_url": "https://nexo.luzia.com/micro-apps/550e8400-.../webview",
         "public_app_url": null
       }

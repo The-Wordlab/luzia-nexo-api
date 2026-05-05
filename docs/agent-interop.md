@@ -157,7 +157,7 @@ Nexo implements [Google's Agent-to-Agent (A2A) protocol](https://google.github.i
 ### Agent card (public discovery)
 
 ```
-GET https://nexo.luzia.com/.well-known/agent.json
+GET ${NEXO_BASE_URL}/.well-known/agent-card.json
 ```
 
 This endpoint is public — no authentication required. It returns an aggregate
@@ -165,12 +165,27 @@ agent card listing all active skills currently hosted on Nexo. The card is
 refreshed automatically as apps are approved or deactivated (with a short cache
 for performance).
 
+Use `NEXO_BASE_URL` as the backend/API base URL for the environment:
+
+- local: `http://localhost:8000`
+- staging: `https://nexo-cdn-alb.staging.thewordlab.net`
+- production: `https://luzia-nexo.thewordlab.net`
+
+The dashboard hosts are where operators create, approve, and publish apps, and
+where developers mint keys. The aggregate A2A card should be served by the
+backend/API host. If a vanity public host proxies that route later, treat it
+as a proxy to the same backend-owned runtime truth, not a second generated
+card.
+
 This is one visible expression of a broader direction: app deployment in Nexo
 can become skill deployment for agent consumers, while the underlying app may
 still keep runtime UI and durable state inside the same system.
 
+Publishing or approving an app in the dashboard should therefore be read as
+publishing or withdrawing an agent capability from this aggregate surface.
+
 ```bash
-curl "https://nexo.luzia.com/.well-known/agent.json"
+curl "${NEXO_BASE_URL}/.well-known/agent-card.json"
 ```
 
 Example response:
@@ -179,24 +194,24 @@ Example response:
 {
   "name": "Luzia Nexo",
   "description": "AI partner orchestration platform",
-  "url": "https://nexo.luzia.com",
+  "url": "https://luzia-nexo.thewordlab.net",
   "version": "1.0",
   "authentication": {
     "schemes": ["apiKey"]
   },
   "skills": [
     {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "name": "News Research",
-      "description": "Real-time news search and summarization with source attribution",
+      "id": "nutrition.log_food",
+      "name": "Log Food",
+      "description": "Log a food item to the user's daily tracker",
       "inputModes": ["text"],
       "outputModes": ["text", "data"],
       "metadata": { "nexo_app_id": "550e8400-e29b-41d4-a716-446655440000" }
     },
     {
-      "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
-      "name": "Live Sports",
-      "description": "Live match scores, standings, and sports news",
+      "id": "wc2026.ask_expert",
+      "name": "Ask World Cup Expert",
+      "description": "Answer World Cup questions using the app's current context",
       "inputModes": ["text"],
       "outputModes": ["text", "data"],
       "metadata": { "nexo_app_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7" }
@@ -386,7 +401,10 @@ MCP is always enabled. A2A is opt-in:
 | `A2A_SERVER_ENABLED` | `false` | Set to `true` to enable A2A endpoints at `/a2a/*` |
 | `A2A_SERVER_API_KEY` | `""` | API key required in `X-Api-Key` header for A2A message/task endpoints |
 
-The agent card at `/.well-known/agent.json` is always public once `A2A_SERVER_ENABLED=true`, regardless of the API key setting. Discovery must be unauthenticated per the A2A specification.
+The aggregate agent card is always public once `A2A_SERVER_ENABLED=true`,
+regardless of the API key setting. The canonical path is
+`/.well-known/agent-card.json` (A2A 1.0). Discovery must be unauthenticated
+per the A2A specification.
 
 ### Example: enabling A2A on a Cloud Run deployment
 
@@ -402,7 +420,7 @@ gcloud run services update nexo-backend \
 | | MCP | A2A |
 |---|---|---|
 | **Best for** | LLM tool invocation — the model decides which tool to call | Agent delegation — one agent hands off a task to another |
-| **Discovery** | Tool listing via MCP protocol | Public agent card at `/.well-known/agent.json` |
+| **Discovery** | Tool listing via MCP protocol | Public aggregate agent card at `/.well-known/agent-card.json` |
 | **Session state** | Optional `session_id` parameter | Optional `session_id` in metadata |
 | **Streaming** | Streamable HTTP transport | SSE (`/a2a/message/stream`) |
 | **Rich output** | Structured JSON result | Task with messages and artifacts |

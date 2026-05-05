@@ -196,7 +196,7 @@ During app creation:
 ### Use Connect Website when
 
 - the app should be associated with an owned domain
-- you need `/.well-known/nexo.txt` verification for hosted access
+- you need `/nexo.json` verification for hosted access
 
 ### Use public share when
 
@@ -327,7 +327,6 @@ Connected Apps tools let you manage webhook-backed partner integrations via MCP.
 | `connected_apps__create_app` | Create a new Connected App in an org | `org_id`, `name`, `webhook_url` |
 | `connected_apps__show_app` | Get full details for a Connected App | `app_id` |
 | `connected_apps__update_app` | Update a Connected App's config | `app_id`, `name`, `webhook_url`, ... |
-| `connected_apps__get_webhook_diagnostics` | Webhook readiness diagnostics | `app_id` |
 | `connected_apps__check_webhook_health` | Health probe against the partner webhook | `app_id` |
 | `connected_apps__sync_capabilities` | Pull capability metadata from partner agent card | `app_id` |
 | `connected_apps__list_capabilities` | Return synced capability metadata | `app_id` |
@@ -779,7 +778,7 @@ Once connected, use this sequence to build Personalized Apps:
 2. **Provision:** `provision_app` with the plan template creates the app, tables, fields, views, and seed data
 3. **Verify:** `show_app` to inspect what was created
 4. **Evolve:** `plan_operation` + `apply_operation` for incremental changes (add fields, records, views)
-5. **Review:** Check the result in the dashboard (`/dashboard/micro-apps`) and standalone webview (`/micro-apps/{id}/webview`)
+5. **Review:** Check the result in the dashboard (`/dashboard/apps`) and standalone webview (`/micro-apps/{id}/webview`)
 
 **Tips by client:**
 

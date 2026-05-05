@@ -62,7 +62,7 @@ curl -X POST "${NEXO_BASE_URL}/api/auth/key-exchange" \
 # Response: { "access_token": "eyJ...", "token_type": "bearer", "expires_in": 3600 }
 
 # Use JWT for subsequent calls
-curl "${NEXO_BASE_URL}/api/micro-apps/" \
+curl "${NEXO_BASE_URL}/api/apps/structured/" \
   -H "Authorization: Bearer eyJ..."
 ```
 

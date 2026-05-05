@@ -18,6 +18,11 @@ repos:
 
   - repo: local
     hooks:
+      - id: import-placement
+        name: check import placement (py/js/ts)
+        entry: python scripts/check_import_placement.py
+        language: python
+        files: \.(py|js|jsx|ts|tsx)$
       - id: mkdocs-build
         name: mkdocs build (strict)
         entry: bash -c 'if [ -x .venv/bin/mkdocs ]; then .venv/bin/mkdocs build --strict; else echo "mkdocs not installed, skipping (run make setup-dev)"; fi'

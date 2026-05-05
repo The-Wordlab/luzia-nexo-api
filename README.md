@@ -14,6 +14,12 @@ streaming, and proactive delivery. Apps published in Nexo are automatically
 discoverable by Luzia at runtime. This repo is the external examples and
 documentation companion to the main `luzia-nexo` runtime.
 
+Treat the dashboard as the operator and publishing control plane for
+apps-as-agents: create/configure/approve/publish there. Public aggregate A2A
+discovery should be served by the Nexo backend/API host for the environment.
+This repo documents that seam and ships examples, but it does not own a second
+aggregate agent card.
+
 **[Documentation](https://the-wordlab.github.io/luzia-nexo-api/)** | **[Dashboard](https://nexo.luzia.com)**
 
 ## Quick start
@@ -78,7 +84,7 @@ The sharper builder read is:
 If you already know the exact backend shape you want, there is now a faster
 schema-first REST path as well:
 
-- `POST /api/micro-apps/provision` creates the app, tables, fields, and an
+- `POST /api/apps/structured/provision` creates the app, tables, fields, and an
   optional Knowledge Pack in one call
 - use it for setup scripts, seeded reference apps, and exact-shape bootstraps
 - use MCP prompt planning when the shape should be discovered through language,

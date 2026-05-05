@@ -89,7 +89,7 @@ This is also how to read Nexo strategically as a builder:
 
 ## Browse examples
 
-See working Connected Apps you can clone, customize, and deploy:
+See working example apps you can clone, customize, and deploy:
 
 [Demo Catalog](demos.md){ .md-button }
 

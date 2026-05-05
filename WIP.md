@@ -16,7 +16,7 @@ framing and will be updated incrementally.
 - All webhook examples are app-type agnostic (no code changes needed)
 - Signing contract unchanged (X-App-Id + X-App-Secret + HMAC)
 - RAG examples (news, sports, travel) deployed and healthy on Cloud Run
-- Provisioning endpoint (`POST /api/micro-apps/provision`) documented
+- Provisioning endpoint (`POST /api/apps/structured/provision`) documented
 - MCP provision_app tool documented
 - Knowledge Packs developer guide shipped
 
@@ -27,3 +27,6 @@ framing and will be updated incrementally.
   provisioning
 - Keep auth bridge doc truthful (phase-1 internal, not broad partner API)
 - Keep operational RAG services healthy
+- Clean legacy mid-file imports in examples/scripts incrementally now that a
+  diff-aware import-placement guard is in place for new Python and JS/TS
+  changes; keep only explicit documented exceptions
