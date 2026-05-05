@@ -607,14 +607,28 @@ def build_order_status_card(status_index: int = 0) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
+def _extract_text_from_parts(message: dict[str, Any]) -> str:
+    """Extract text from A2A-style message.parts list."""
+    parts = message.get("parts")
+    if not isinstance(parts, list):
+        return ""
+    for part in parts:
+        if isinstance(part, dict) and part.get("type") == "text":
+            return part.get("text", "")
+    return ""
+
+
 def _get_display_name(data: dict[str, Any]) -> str:
-    profile = data.get("profile") or {}
+    profile = _get_profile(data)
     name = profile.get("display_name") or profile.get("name") or ""
     return name.strip()
 
 
 def _get_profile(data: dict[str, Any]) -> dict[str, Any]:
-    profile = data.get("profile") or {}
+    # A2A shape: profile lives in message.metadata.profile
+    message = data.get("message") or {}
+    metadata = message.get("metadata") or {}
+    profile = metadata.get("profile") or data.get("profile") or {}
     return profile if isinstance(profile, dict) else {}
 
 
@@ -670,6 +684,12 @@ def _extract_location_hint(data: dict[str, Any]) -> str | None:
 
 
 def _get_locale(data: dict[str, Any]) -> str:
+    # A2A shape: locale in message.metadata.locale
+    message = data.get("message") or {}
+    metadata = message.get("metadata") or {}
+    metadata_locale = metadata.get("locale") or ""
+    if metadata_locale:
+        return str(metadata_locale).strip()
     profile = _get_profile(data)
     locale = (
         profile.get("locale")
@@ -1102,12 +1122,23 @@ async def webhook(request: Request):
     _require_signature(request, raw_body)
 
     data = json.loads(raw_body)
+
+    # Extract user text from A2A message.parts or legacy message.content
     message = data.get("message", {})
-    query = message.get("content", "")
+    query = _extract_text_from_parts(message)
+    if not query:
+        query = message.get("content", "")
     if not query:
         return JSONResponse({"error": "Empty message"}, status_code=400)
 
-    thread_id = data.get("thread", {}).get("id", "")
+    # Extract thread ID from A2A contextId or legacy thread.id
+    metadata = message.get("metadata") or {}
+    thread_id = (
+        message.get("contextId")
+        or (metadata.get("thread") or {}).get("id")
+        or (data.get("thread") or {}).get("id")
+        or ""
+    )
     session = await sessions.get(thread_id) if sessions else {}
 
     intent = detect_intent(query)

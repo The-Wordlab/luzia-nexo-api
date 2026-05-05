@@ -67,7 +67,22 @@ function extractOpenClawDelta(eventType, data) {
   return "";
 }
 
+function extractTextFromParts(message) {
+  const parts = message?.parts;
+  if (!Array.isArray(parts)) return "";
+  for (const part of parts) {
+    if (part?.type === "text" && typeof part?.text === "string" && part.text.trim()) {
+      return part.text.trim();
+    }
+  }
+  return "";
+}
+
 function buildOpenClawInput(payload) {
+  // A2A shape: message.parts[0].text
+  const partsText = extractTextFromParts(payload?.message);
+  if (partsText) return partsText;
+  // Legacy shape: message.content
   const content = payload?.message?.content ?? "";
   if (typeof content !== "string" || !content.trim()) {
     return "";
@@ -93,7 +108,15 @@ function isStreamRequested(payload, headers = {}) {
 
 function buildRequestContext(payload) {
   const input = buildOpenClawInput(payload);
-  const threadId = payload?.thread?.id ? String(payload.thread.id) : "anonymous";
+  // A2A shape: message.contextId or message.metadata.thread.id
+  // Legacy shape: thread.id
+  const message = payload?.message ?? {};
+  const metadata = message?.metadata ?? {};
+  const threadId =
+    (message.contextId ? String(message.contextId) : "") ||
+    (metadata?.thread?.id ? String(metadata.thread.id) : "") ||
+    (payload?.thread?.id ? String(payload.thread.id) : "") ||
+    "anonymous";
   const sessionKey = `nexo:thread:${threadId}`;
   return { input, threadId, sessionKey };
 }
@@ -221,7 +244,7 @@ export async function processWebhook(raw, headers = {}, opts = {}) {
 
   const { input, threadId, sessionKey: defaultSessionKey } = buildRequestContext(payload);
   if (!input) {
-    return { status: 400, body: { error: "Missing message.content" } };
+    return { status: 400, body: { error: "Missing message text (parts or content)" } };
   }
 
   const openclawToken = resolveOpenClawToken(headers, opts);

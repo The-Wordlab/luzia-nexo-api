@@ -107,6 +107,49 @@ test("processWebhook normalizes OpenClaw base URL when /v1/responses is already 
   assert.equal(calls[0].url, "https://nexo-1.luzia.com/openclaw/v1/responses");
 });
 
+test("processWebhook accepts A2A Message shape with parts and contextId", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    calls.push({ url, init });
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ output_text: "Hi from OpenClaw" }),
+      text: async () => "",
+    };
+  };
+
+  const payload = JSON.stringify({
+    message: {
+      messageId: "msg-1",
+      contextId: "thread-a2a",
+      role: "user",
+      parts: [{ type: "text", text: "hello A2A" }],
+      metadata: {
+        app: { id: "app-1" },
+        thread: { id: "thread-a2a" },
+        profile: { display_name: "Alice" },
+        locale: "en",
+      },
+    },
+  });
+
+  const result = await processWebhook(payload, {}, {
+    openclawToken: "gateway-token",
+    openclawAgentId: "main",
+    openclawBaseUrl: "http://127.0.0.1:18789",
+    fetchImpl,
+  });
+
+  assert.equal(result.status, 200);
+  assert.equal(calls.length, 1);
+  // Input should be extracted from parts
+  const body = JSON.parse(calls[0].init.body);
+  assert.equal(body.input, "hello A2A");
+  // Session key should use contextId
+  assert.equal(calls[0].init.headers["x-openclaw-session-key"], "nexo:thread:thread-a2a");
+});
+
 test("processWebhook extracts text from chat-completions style fallback", async () => {
   const fetchImpl = async () => ({
     ok: true,

@@ -1,27 +1,42 @@
 """Minimal webhook receiver example.
 
 Purpose: smallest possible webhook contract implementation.
+
+Request format (A2A Message shape):
+    {
+      "message": {
+        "parts": [{"type": "text", "text": "..."}],
+        "metadata": {
+          "profile": {"display_name": "Alice", "locale": "en", ...},
+          "locale": "en"
+        }
+      }
+    }
+
+Legacy format (flat shape) is also accepted for backward compatibility.
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import json
 import os
+import sys
+from pathlib import Path
+
+# Add shared utilities to path
+_here = Path(__file__).resolve().parent
+for _ancestor in [_here.parent.parent, _here]:
+    if (_ancestor / "shared").is_dir():
+        sys.path.insert(0, str(_ancestor))
+        break
 
 from fastapi import FastAPI
 from fastapi import HTTPException, Request
 from pydantic import BaseModel
 
-
-class MessageIn(BaseModel):
-    content: str | None = ""
-
-
-class WebhookPayload(BaseModel):
-    event: str | None = None
-    message: MessageIn | None = None
-    profile: dict | None = None
+from shared.envelope import parse_request
 
 
 class ContentPartOut(BaseModel):
@@ -128,12 +143,16 @@ async def root() -> dict:
 
 
 @app.post("/webhook", response_model=WebhookResponseOut)
-async def receive_webhook(payload: WebhookPayload, request: Request) -> WebhookResponseOut:
+async def receive_webhook(request: Request) -> WebhookResponseOut:
     raw_body = await request.body()
     _require_signature(request, raw_body)
+
+    data = json.loads(raw_body) if raw_body else {}
+    parsed = parse_request(data)
+
     # Parse optional profile fields defensively and ignore unknown additions.
-    display_name, locale, dietary = _extract_profile_context(payload.profile)
-    content = payload.message.content if payload.message else ""
+    display_name, locale, dietary = _extract_profile_context(parsed["profile"])
+    content = parsed["text"]
     return WebhookResponseOut(
         schema_version="2026-03",
         task=TaskOut(id="task-1", status="completed"),

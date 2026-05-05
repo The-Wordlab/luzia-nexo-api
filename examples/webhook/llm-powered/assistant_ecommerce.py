@@ -73,17 +73,19 @@ class EcommerceAssistant(BaseWebhookApp):
 
     async def handle_message(self, request: WebhookRequest) -> WebhookResponse:
         """Handle incoming message with LLM."""
-        user_message = request.message.content or ""
+        user_message = request.get_text()
 
         if not user_message:
-            name = request.profile.name if request.profile else None
+            profile = request.get_profile()
+            name = profile.name if profile else None
             greeting = f"Hi{name}! How can I help you today?" if name else "Hi! How can I help you today?"
             return build_response_with_suggestions(
                 greeting,
                 DEFAULT_PROMPT_SUGGESTIONS,
             )
 
-        profile_context = self._get_profile_context(request.profile)
+        profile = request.get_profile()
+        profile_context = self._get_profile_context(profile)
 
         history = self._build_history(request)
 
@@ -91,7 +93,7 @@ class EcommerceAssistant(BaseWebhookApp):
             response = self.chain.invoke({
                 "message": user_message,
                 "history": history,
-                "name": request.profile.name if request.profile else None,
+                "name": profile.name if profile else None,
             })
 
             text = response.content
@@ -112,12 +114,13 @@ class EcommerceAssistant(BaseWebhookApp):
 
     def _build_history(self, request: WebhookRequest) -> list[dict[str, str]]:
         """Build conversation history from webhook request."""
-        if not request.history_tail:
+        history = request.get_history()
+        if not history:
             return []
 
         return [
             {"role": msg.role, "content": msg.content}
-            for msg in request.history_tail[-5:]
+            for msg in history[-5:]
         ]
 
     def _get_suggestions(self, message: str, context) -> list[str] | None:

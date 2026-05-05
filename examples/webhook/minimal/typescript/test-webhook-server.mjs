@@ -65,6 +65,42 @@ test("processWebhook uses optional profile context defensively", () => {
   });
 });
 
+test("processWebhook accepts A2A Message shape", () => {
+  const result = processWebhook(
+    JSON.stringify({
+      message: {
+        parts: [{ type: "text", text: "recommend lunch" }],
+        metadata: {
+          profile: {
+            display_name: "Leo",
+            locale: "en",
+            dietary_preferences: "vegetarian",
+          },
+          locale: "en",
+        },
+      },
+    }),
+  );
+  assert.equal(result.status, 200);
+  assert.deepEqual(result.body, {
+    schema_version: "2026-03",
+    status: "completed",
+    content_parts: [
+      {
+        type: "text",
+        text: "Leo, you said: recommend lunch (locale=en, dietary=vegetarian)",
+      },
+    ],
+    metadata: {
+      prompt_suggestions: [
+        "Help me plan dinner",
+        "Track my order status",
+        "Show options under $20",
+      ],
+    },
+  });
+});
+
 test("processWebhook returns 400 for invalid JSON", () => {
   const result = processWebhook("not-json");
   assert.equal(result.status, 400);

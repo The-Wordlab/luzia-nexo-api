@@ -12,9 +12,31 @@ A standalone FastAPI webhook example for the Nexo Partner Agent API demonstratin
 
 All capabilities are simulated - no real restaurant API or payment integration required.
 
+## Request format
+
+Nexo sends an A2A Message-shaped payload:
+
+```json
+{
+  "message": {
+    "parts": [{"type": "text", "text": "show me vegetarian options"}],
+    "contextId": "thread-uuid",
+    "metadata": {
+      "app": {"id": "uuid", "name": "Food Ordering"},
+      "thread": {"id": "thread-uuid"},
+      "profile": {"display_name": "Alice", "locale": "en", "preferences": {"dietary": "vegetarian"}},
+      "locale": "en",
+      "history_tail": []
+    }
+  }
+}
+```
+
+The legacy flat shape (`message.content`, top-level `profile`, `thread.id`) is also accepted for backward compatibility.
+
 ## Optional profile context
 
-This example now reads optional consent-scoped profile fields defensively:
+This example reads optional consent-scoped profile fields defensively:
 
 - `profile.display_name` for greeting
 - `profile.preferences.dietary` or `profile.dietary_restrictions` to bias menu browse results

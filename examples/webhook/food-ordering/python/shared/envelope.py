@@ -1,6 +1,11 @@
-"""Response envelope builder for Nexo partner webhooks.
+"""Response envelope builder and request parsing for Nexo partner webhooks.
 
-Usage:
+Request parsing:
+    parsed = parse_request(data)
+    user_text = parsed["text"]
+    profile   = parsed["profile"]
+
+Response building:
     envelope = build_envelope(
         cards=[news_card("Title", "https://...", snippet="...")],
         actions=[action("read_more", "Read more")],
@@ -10,7 +15,71 @@ Usage:
 
 from __future__ import annotations
 
+from typing import Any
+
 SCHEMA_VERSION = "2026-03"
+
+
+# ---------------------------------------------------------------------------
+# Request parsing (A2A Message shape with legacy fallback)
+# ---------------------------------------------------------------------------
+
+
+def parse_request(data: dict[str, Any]) -> dict[str, Any]:
+    """Extract fields from the incoming Nexo webhook payload.
+
+    Supports A2A Message shape (message.parts, message.metadata) and
+    falls back to legacy flat shape (message.content, top-level profile).
+
+    Returns a dict with normalised keys:
+        text, profile, locale, thread_id, app, history_tail, context, event
+    """
+    message = data.get("message") or {}
+    metadata = message.get("metadata") or {}
+
+    text = _extract_text_from_parts(message)
+    if not text:
+        text = message.get("content") or ""
+
+    profile = metadata.get("profile") or data.get("profile") or {}
+    locale = (
+        metadata.get("locale")
+        or profile.get("locale")
+        or profile.get("language")
+        or ""
+    )
+    thread_id = (
+        message.get("contextId")
+        or (metadata.get("thread") or {}).get("id")
+        or (data.get("thread") or {}).get("id")
+        or ""
+    )
+    app = metadata.get("app") or data.get("app") or {}
+    history_tail = metadata.get("history_tail") or data.get("history_tail") or []
+    context = data.get("context") or {}
+    event = data.get("event") or ""
+
+    return {
+        "text": text,
+        "profile": profile,
+        "locale": locale,
+        "thread_id": thread_id,
+        "app": app,
+        "history_tail": history_tail,
+        "context": context,
+        "event": event,
+    }
+
+
+def _extract_text_from_parts(message: dict[str, Any]) -> str:
+    """Extract text from A2A-style message.parts list."""
+    parts = message.get("parts")
+    if not isinstance(parts, list):
+        return ""
+    for part in parts:
+        if isinstance(part, dict) and part.get("type") == "text":
+            return part.get("text", "")
+    return ""
 
 
 def build_envelope(

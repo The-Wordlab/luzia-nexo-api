@@ -64,6 +64,29 @@ node --test test-openclaw-bridge-server.mjs
 
 ## Local curl (JSON mode)
 
+A2A Message shape (current):
+
+```bash
+curl -X POST "http://localhost:8082/webhook" \
+  -H "Content-Type: application/json" \
+  -H "X-Bridge-Key: your_bridge_access_key" \
+  -d '{
+    "message": {
+      "messageId": "msg-1",
+      "contextId": "thread-1",
+      "role": "user",
+      "parts": [{"type": "text", "text": "hello"}],
+      "metadata": {
+        "app": {"id": "app-1", "name": "Demo"},
+        "thread": {"id": "thread-1"},
+        "locale": "en"
+      }
+    }
+  }'
+```
+
+Legacy flat shape (backward compatible):
+
 ```bash
 curl -X POST "http://localhost:8082/webhook" \
   -H "Content-Type: application/json" \
@@ -87,12 +110,11 @@ curl -N -X POST "http://localhost:8082/webhook" \
   -H "X-Bridge-Key: your_bridge_access_key" \
   -H "X-OpenClaw-Session-Key: demo:frontend-session-123" \
   -d '{
-    "event":"message_received",
-    "app":{"id":"app-1","name":"Demo"},
-    "thread":{"id":"thread-1","customer_id":"cust-1"},
-    "message":{"id":"msg-1","seq":1,"role":"user","content":"hello","content_json":{}},
-    "history_tail":[],
-    "timestamp":"2026-03-04T12:00:00Z"
+    "message": {
+      "contextId": "thread-1",
+      "parts": [{"type": "text", "text": "hello"}],
+      "metadata": {}
+    }
   }'
 ```
 

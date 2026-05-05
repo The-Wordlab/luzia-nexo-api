@@ -272,6 +272,27 @@ async def test_main_webhook_no_action_for_plain_message(open_app):
     ]
 
 
+async def test_main_webhook_a2a_message_shape(open_app):
+    """A2A Message shape: text in message.parts, context still at top level."""
+    async with AsyncClient(
+        transport=ASGITransport(app=open_app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/",
+            json={
+                "message": {
+                    "parts": [{"type": "text", "text": "Hello there"}],
+                    "metadata": {},
+                },
+            },
+        )
+    assert response.status_code == 200
+    data = response.json()
+    _assert_rich_success(data)
+    reply = _response_text(data)
+    assert "Hello there" in reply
+
+
 # ---------------------------------------------------------------------------
 # Retry behavior - metadata.retry_after included on failure
 # ---------------------------------------------------------------------------

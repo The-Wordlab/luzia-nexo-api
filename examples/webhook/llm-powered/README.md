@@ -2,6 +2,13 @@
 
 Reusable base classes for building LLM-powered Nexo webhook examples.
 
+## Request format
+
+Nexo sends an A2A Message-shaped payload. Use `request.get_text()`,
+`request.get_profile()`, `request.get_locale()`, `request.get_history()`,
+and `request.get_thread_id()` to extract fields from either the A2A shape
+or the legacy flat shape.
+
 ## What's inside
 
 ```

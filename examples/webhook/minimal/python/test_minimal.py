@@ -97,6 +97,36 @@ def test_webhook_with_valid_signature(monkeypatch) -> None:
     }
 
 
+def test_webhook_a2a_message_shape() -> None:
+    """A2A Message shape: text in message.parts, profile in message.metadata."""
+    resp = client.post(
+        "/webhook",
+        json={
+            "message": {
+                "parts": [{"type": "text", "text": "recommend dinner"}],
+                "metadata": {
+                    "profile": {
+                        "display_name": "Mia",
+                        "locale": "en",
+                        "dietary_preferences": "vegan",
+                    },
+                    "locale": "en",
+                },
+            },
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["schema_version"] == "2026-03"
+    assert data["task"]["status"] == "completed"
+    assert data["content_parts"] == [
+        {
+            "type": "text",
+            "text": "Mia, you said: recommend dinner (locale=en, dietary=vegan)",
+        }
+    ]
+
+
 def test_webhook_with_invalid_signature(monkeypatch) -> None:
     monkeypatch.setenv("WEBHOOK_SECRET", "test-secret")
     body = '{"message":{"content":"hi"}}'

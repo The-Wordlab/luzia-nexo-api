@@ -39,10 +39,28 @@ export function processWebhook(raw, headers = {}, secret = "") {
     return { status: 400, body: { error: "Invalid JSON" } };
   }
 
-  const content = data.message?.content ?? "";
-  const profile = data.profile ?? {};
+  // A2A shape: text in message.parts, profile in message.metadata
+  const message = data.message ?? {};
+  const metadata = message.metadata ?? {};
+
+  // Extract text: try A2A parts first, fall back to legacy content
+  let content = "";
+  if (Array.isArray(message.parts)) {
+    for (const part of message.parts) {
+      if (part?.type === "text" && typeof part?.text === "string") {
+        content = part.text;
+        break;
+      }
+    }
+  }
+  if (!content) {
+    content = message.content ?? "";
+  }
+
+  // Extract profile: A2A metadata.profile or legacy top-level profile
+  const profile = metadata.profile ?? data.profile ?? {};
   const displayName = profile.display_name ?? profile.name ?? null;
-  const locale = profile.locale ?? profile.language ?? null;
+  const locale = metadata.locale ?? profile.locale ?? profile.language ?? null;
   const dietary = profile.dietary_preferences ?? null;
 
   let text = displayName ? `${displayName}, you said: ${content}` : `Echo: ${content}`;

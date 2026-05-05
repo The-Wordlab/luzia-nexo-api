@@ -7,74 +7,51 @@ Demonstrates four concepts beyond the intermediate tier:
 1. Connector action routing
    The main webhook inspects ``context.intent`` and dispatches to a
    dedicated action handler (order_status, schedule_appointment) before
-   composing the final reply.  Partners that integrate real connectors
-   (e.g., a CRM, booking system, or order management platform) follow
-   the same pattern: route on intent, call the connector, embed the
-   result in the reply.
+   composing the final reply.
 
 2. Failure / retry behavior
    The ``schedule_appointment`` action simulates transient failures.
-   When a failure occurs the server returns ``success: false``,
-   a ``retry_after`` delay in seconds, and a
-   ``cards[0].type = "retry_suggestion"`` so the frontend
-   can surface a "try again" prompt to the user.
 
 3. Idempotency via an action log
-   Every action call includes an ``action_id``.  The server keeps an
-   in-memory ``action_log`` dict keyed on ``action_id``.  Repeated
-   calls with the same id return the cached result immediately
-   (``cached: true``) without re-executing the action.  In production
-   you would store this in a database or Redis.
+   Every action call includes an ``action_id``.
 
 4. HMAC signature validation
-   Same pattern as the webhook-basics and intermediate tiers.
-   Validation is skipped when ``WEBHOOK_SECRET`` is unset so that
-   developers can iterate locally without managing secrets.
 
-Contract
---------
+Request format (A2A Message shape):
+  POST /
+      Body:  {
+                 "message": {
+                   "parts": [{"type": "text", "text": "..."}],
+                   "metadata": {...}
+                 }
+             }
 
-POST /
-    Body:  {
-               "message": {"content": "..."},
-               "context": {                          # optional
-                   "intent": "order_status" | "schedule_appointment",
-                   "action_id": "...",               # required for idempotency
-                   <action-specific fields>
-               }
-           }
-    Reply: {
-               "schema_version": "2026-03",
-               "task": {"id": "<stable task id>", "status": "completed"},
-               "content_parts": [{"type": "text", "text": "<text>"}],
-               "cards": [...],                        # optional
-               "metadata": {                          # optional
-                   "prompt_suggestions": [...],       # optional
-                   "retry_after": 30                  # only on failure
-               }
-           }
+  Legacy flat shape is also accepted for backward compatibility.
 
 POST /actions/{action_type}
     Body:  {"action_id": "...", <action-specific fields>}
-    Reply: {"success": true|false, "action_id": "...", <result fields>,
-            "cached": true}  # only when serving a cached result
-
-    Known action_type values:
-        order_status          -> tracking data
-        schedule_appointment  -> confirmation or failure with retry_after
-
-    Unknown action_type -> HTTP 404
 """
 
 import hashlib
 import hmac
 import os
 import random
+import sys
 import uuid
+from pathlib import Path
 from typing import Any
+
+# Add shared utilities to path
+_here = Path(__file__).resolve().parent
+for _ancestor in [_here.parent.parent, _here]:
+    if (_ancestor / "shared").is_dir():
+        sys.path.insert(0, str(_ancestor))
+        break
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+from shared.envelope import parse_request
 
 app = FastAPI(title="advanced-connector-webhook")
 
@@ -381,8 +358,8 @@ async def receive_webhook(request: Request) -> JSONResponse:
     except Exception:
         data = {}
 
-    message: dict[str, Any] = data.get("message") or {}
-    context: dict[str, Any] = data.get("context") or {}
+    parsed = parse_request(data)
+    context: dict[str, Any] = parsed["context"]
 
     intent: str = context.get("intent", "")
     action_id: str = context.get("action_id", str(uuid.uuid4()))
@@ -417,7 +394,7 @@ async def receive_webhook(request: Request) -> JSONResponse:
         return JSONResponse(response_body)
 
     # Plain message - no connector action needed
-    content: str = message.get("content", "")
+    content: str = parsed["text"]
     reply_text = f'Received: "{content}"' if content else "Hello! How can I help you?"
     return JSONResponse(
         {

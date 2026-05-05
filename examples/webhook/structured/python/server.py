@@ -5,42 +5,50 @@ Intermediate webhook server.
 Demonstrates three concepts beyond webhook-basics:
 
 1. Profile-aware personalisation
-   Reads profile.name and profile.locale from the incoming payload and
-   tailors the reply text accordingly. This mirrors the real Nexo webhook
-   contract where every POST includes a ``profile`` object.
+   Reads profile from the A2A message metadata and tailors the reply text
+   accordingly.
 
 2. Locale-aware greetings
-   When profile.locale is a supported language code (es, fr, pt, it) the
+   When the user's locale is a supported language code (es, fr, pt, it) the
    server greets the user in that language. Unknown locales fall back to
    English.
 
 3. Card hints
    When the optional ``context`` field signals a specific intent the server
-   attaches structured ``cards`` in the response. Partners
-   can use this pattern to attach inline cards (suggestions, product
-   carousels, consent prompts) alongside the plain-text reply.
+   attaches structured ``cards`` in the response.
 
-Contract:
+Request format (A2A Message shape):
   POST /   with JSON body {
-               "message": {"content": "..."},
-               "profile": {"name": "...", "locale": "..."},   # optional
-               "context": {"intent": "..."}                    # optional
+               "message": {
+                 "parts": [{"type": "text", "text": "..."}],
+                 "metadata": {
+                   "profile": {"name": "...", "locale": "..."},
+                   "locale": "en"
+                 }
+               }
            }
-  ->       {
-               "schema_version": "2026-03",
-               "task": {"id": "tsk_structured", "status": "completed"},
-               "content_parts": [{"type": "text", "text": "<personalised text>"}],
-               "cards": [...]  # optional
-           }
+
+Legacy flat shape is also accepted for backward compatibility.
 """
 
 import hashlib
 import hmac
 import os
+import sys
+from pathlib import Path
 from typing import Any
+
+# Add shared utilities to path
+_here = Path(__file__).resolve().parent
+for _ancestor in [_here.parent.parent, _here]:
+    if (_ancestor / "shared").is_dir():
+        sys.path.insert(0, str(_ancestor))
+        break
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+
+from shared.envelope import parse_request
 
 app = FastAPI(title="intermediate-webhook")
 
@@ -203,11 +211,10 @@ async def receive_webhook(request: Request) -> JSONResponse:
     except Exception:
         data = {}
 
-    message: dict[str, Any] = data.get("message") or {}
-    profile: dict[str, Any] = data.get("profile") or {}
-    context: dict[str, Any] = data.get("context") or {}
-
-    content: str = message.get("content", "")
+    parsed = parse_request(data)
+    profile: dict[str, Any] = parsed["profile"]
+    context: dict[str, Any] = parsed["context"]
+    content: str = parsed["text"]
 
     reply = _build_reply(content, profile)
     cards = _build_cards(context)

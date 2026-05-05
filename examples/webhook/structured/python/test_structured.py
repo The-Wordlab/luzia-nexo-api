@@ -156,6 +156,31 @@ async def test_reply_default_english_when_no_locale(open_app):
     assert "hello" in reply or "hi" in reply or "welcome" in reply
 
 
+async def test_reply_with_a2a_message_shape(open_app):
+    """A2A Message shape: text in message.parts, profile in message.metadata."""
+    async with AsyncClient(
+        transport=ASGITransport(app=open_app), base_url="http://test"
+    ) as client:
+        response = await client.post(
+            "/",
+            json={
+                "message": {
+                    "parts": [{"type": "text", "text": "Hello"}],
+                    "metadata": {
+                        "profile": {"name": "Alice", "locale": "es"},
+                        "locale": "es",
+                    },
+                },
+            },
+        )
+    assert response.status_code == 200
+    data = response.json()
+    _assert_rich_success(data)
+    reply = _response_text(data)
+    assert "Alice" in reply
+    assert "hola" in reply.lower()
+
+
 async def test_graceful_fallback_when_profile_missing(open_app):
     """When profile is absent entirely, server returns 200 with generic text."""
     async with AsyncClient(
