@@ -49,7 +49,7 @@ def test_hosted_demo_discovery_exposes_starter_prompt_suggestions(
     try:
         module = _load_module(path, filename, module_name)
         response = TestClient(module.app, raise_server_exceptions=False).get(
-            "/.well-known/agent-card.json"
+            "/.well-known/a2a/agent-card"
         )
         assert response.status_code == 200, example_id
         data = response.json()

@@ -6,7 +6,9 @@
  *   1. Bootstrap (postMessage from Nexo launch page)
  *   2. Standalone (slug-native domain-verified session via nexo.json)
  *
- * Auth bridge extension (opt-in via `authBridge: { enabled: true }`):
+ * Hosted-login / auth bridge extension:
+ *   - CDN-hosted apps always get the hosted Nexo auth/profile/onboarding URLs
+ *   - `authBridge: { enabled: true }` additionally enables:
  *   - Device key management for thread recovery
  *   - Session meta persistence
  *   - Guest-to-authenticated transitions via cookie-based session
@@ -16,7 +18,7 @@
  *   await nexo.initStandalone("http://localhost:8000");
  *   const data = await nexo.get<MyType>("/api/apps/structured/tables/123/records");
  *
- * Usage (with auth bridge):
+ * Usage (with server-backed auth bridge):
  *   const nexo = createNexoClient({
  *     storagePrefix: "myapp",
  *     authBridge: { enabled: true, serviceBaseUrl: "https://myapp.example.com" },
@@ -272,9 +274,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     const slug = siteConfig?.slug;
     if (!slug) return null;
 
-    const authBaseUrl = authBridgeEnabled
-      ? resolveAuthBaseUrlFromSiteConfig(siteConfig, hostOptions)
-      : null;
+    const authBaseUrl = resolveAuthBaseUrlFromSiteConfig(siteConfig, hostOptions);
 
     return { slug, apiBaseUrl, authBaseUrl };
   }

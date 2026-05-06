@@ -11,6 +11,8 @@
 import { useState } from "react";
 import type { AgentChatOptions, Personality } from "../chat-types";
 
+const DEFAULT_LUZIA_AVATAR = "./luzia/avatars/luzia-avatar.svg";
+
 export interface AgentChatFabProps {
   /** Agent chat connection options. */
   chatOptions: AgentChatOptions;
@@ -40,17 +42,18 @@ export interface AgentChatFabProps {
 }
 
 function isUrl(s: string): boolean {
-  return s.startsWith("http") || s.startsWith("/") || s.startsWith("data:");
+  return (
+    s.startsWith("http") ||
+    s.startsWith("/") ||
+    s.startsWith("./") ||
+    s.startsWith("../") ||
+    s.startsWith("data:")
+  );
 }
 
 function FabIcon({ avatar }: { avatar?: string }) {
   if (!avatar) {
-    // Default: chat bubble icon
-    return (
-      <svg className="nexo-chat-fab__icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    );
+    return null;
   }
 
   if (isUrl(avatar)) {
@@ -77,7 +80,7 @@ export function AgentChatFab({
   const resolvedAvatar =
     avatar ??
     personality?.assets?.avatarLight ??
-    undefined;
+    DEFAULT_LUZIA_AVATAR;
 
   // Hidden in webview mode - native app owns chat
   if (shellMode === "webview") return null;

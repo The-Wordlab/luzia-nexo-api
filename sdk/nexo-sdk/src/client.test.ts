@@ -534,6 +534,49 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     expect(replaceStateMock).toHaveBeenCalled();
   });
 
+  it("builds hosted login URLs for well-known CDN hosts without auth bridge enabled", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        origin: "https://apps.luzia.com",
+        host: "apps.luzia.com",
+        hostname: "apps.luzia.com",
+        pathname: "/nutrition/",
+        search: "",
+        hash: "",
+      },
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        slug: "nutrition",
+      }),
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        access_token: "guest-token",
+        user_id: "guest-user",
+        app_id: "app-1",
+      }),
+    } as unknown as Response);
+
+    const client = createNexoClient({ storagePrefix: "cdnlogin" });
+    const config = await client.initStandalone("http://localhost:8000");
+
+    expect(config.apiBaseUrl).toBe("https://luzia-nexo.thewordlab.net");
+    expect(config.authBaseUrl).toBe("https://nexo.luzia.com");
+
+    const loginUrl = new URL(client.buildNexoLoginUrl());
+    expect(loginUrl.origin).toBe("https://nexo.luzia.com");
+    expect(loginUrl.pathname).toBe("/apps/nutrition/auth");
+    expect(loginUrl.searchParams.get("return_to")).toBe("https://apps.luzia.com/nutrition/");
+  });
+
   it("derives slug from nexo.json for token-param standalone sessions", async () => {
     vi.stubGlobal("window", {
       location: {

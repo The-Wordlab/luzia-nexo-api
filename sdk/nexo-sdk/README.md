@@ -1,13 +1,14 @@
 # @luzia/nexo-sdk - Mirror
 
-This is a downstream mirror of the Nexo SDK from `luzia-nexo/apps/nexo-sdk`.
+This is a downstream mirror of the Nexo SDK from
+`luzia-nexo-apps/apps/nexo-sdk`.
 
 **Do not edit files in this directory.** All changes must be made in the source
 repo and synced here via the sync script.
 
 ## Source of truth
 
-`luzia-nexo/apps/nexo-sdk/src/` is the authoritative source.
+`luzia-nexo-apps/apps/nexo-sdk/src/` is the authoritative source.
 
 ## Sync
 

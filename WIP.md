@@ -17,7 +17,11 @@ as separate public surfaces.
   - webhook app examples (`minimal`, `structured`, `advanced`, `food-ordering`, `openclaw-bridge`)
   - hosted reference APIs (`hosted/python`, `hosted/typescript`)
   - integration utilities (`identity-bridge`, `partner-api/proactive`)
-  - SDK mirror (`sdk/nexo-sdk`) synced from `../luzia-nexo/apps/nexo-sdk`
+- SDK mirror (`sdk/nexo-sdk`) synced from
+  `../luzia-nexo-apps/apps/nexo-sdk`
+  - treat `luzia-nexo-apps` as the only source of truth for hosted app SDK
+    transport and site-config changes
+  - do not hand-edit the mirror here; resync it when the source SDK changes
 - External-runtime public docs now use `agent` / `app agent` naming for
   app-specific intelligence instead of older legacy terminology
 - Identity Bridge positioning now follows the slug-scoped hosted utility model:
@@ -33,6 +37,9 @@ as separate public surfaces.
 ## Next
 
 - Keep the public example inventory lean and accurate as examples evolve
+- Keep the checked-in SDK mirror synced from `../luzia-nexo-apps/apps/nexo-sdk`
+  whenever hosted app transport, auth/profile/onboarding URLs, or site-config
+  behavior changes
 - Decide whether lightweight public app-shell consumers should live under
   `examples/apps/` on top of the mirrored SDK
 - Shape the first partner-facing identity-bridge example around the

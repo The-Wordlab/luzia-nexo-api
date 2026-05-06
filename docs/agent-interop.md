@@ -63,9 +63,9 @@ Each tool exposes a consistent input schema:
         "type": "string",
         "description": "The user message to send to this skill"
       },
-      "session_id": {
+      "contextId": {
         "type": "string",
-        "description": "An opaque session identifier to correlate multi-turn conversations"
+        "description": "A stable conversation identifier for multi-turn exchanges"
       }
     },
     "required": ["message"]
@@ -73,7 +73,7 @@ Each tool exposes a consistent input schema:
 }
 ```
 
-Providing a stable `session_id` across calls lets Nexo maintain conversation context within a thread. If omitted, each call is treated as a fresh turn.
+Providing a stable `contextId` across calls lets Nexo maintain conversation context within a thread. If omitted, each call is treated as a fresh turn.
 
 Tool results are returned as structured JSON text containing the assistant reply, any source attribution, and a `pending` flag for async capabilities.
 
@@ -157,7 +157,7 @@ Nexo implements [Google's Agent-to-Agent (A2A) protocol](https://google.github.i
 ### Agent card (public discovery)
 
 ```
-GET ${NEXO_BASE_URL}/.well-known/agent-card.json
+GET ${NEXO_BASE_URL}/.well-known/a2a/agent-card
 ```
 
 This endpoint is public — no authentication required. It returns an aggregate
@@ -185,7 +185,7 @@ Publishing or approving an app in the dashboard should therefore be read as
 publishing or withdrawing an agent capability from this aggregate surface.
 
 ```bash
-curl "${NEXO_BASE_URL}/.well-known/agent-card.json"
+curl "${NEXO_BASE_URL}/.well-known/a2a/agent-card"
 ```
 
 Example response:
@@ -242,23 +242,23 @@ A2A tasks move through the following states:
 | `failed` | Task encountered an error |
 | `input-required` | Task is paused waiting for user input (reserved for future use) |
 
-### POST /a2a/message/send
+### POST /a2a/messages
 
-Synchronous single-turn request. Nexo routes the message to the skill identified by `metadata.skill_id`, waits for the webhook response, and returns a completed (or failed) task.
+Synchronous single-turn request. Nexo routes the message to the skill identified by `message.metadata.skill_id`, waits for the webhook response, and returns a completed (or failed) task.
 
 **Request body:**
 
 ```json
 {
   "message": {
+    "contextId": "optional-session-id-for-multi-turn",
     "role": "user",
     "parts": [
       { "type": "text", "text": "What are today's top stories?" }
-    ]
-  },
-  "metadata": {
-    "skill_id": "550e8400-e29b-41d4-a716-446655440000",
-    "session_id": "optional-session-id-for-multi-turn"
+    ],
+    "metadata": {
+      "skill_id": "550e8400-e29b-41d4-a716-446655440000"
+    }
   }
 }
 ```
@@ -267,8 +267,8 @@ Synchronous single-turn request. Nexo routes the message to the skill identified
 |---|---|---|
 | `message.role` | yes | Must be `"user"` |
 | `message.parts` | yes | Array of parts. At least one must be `{"type":"text","text":"..."}` |
-| `metadata.skill_id` | yes | UUID of the Nexo app to route to (from the agent card) |
-| `metadata.session_id` | no | Stable identifier to correlate multi-turn exchanges |
+| `message.contextId` | no | Stable identifier to correlate multi-turn exchanges |
+| `message.metadata.skill_id` | yes | UUID of the Nexo app to route to (from the agent card) |
 
 **Response:**
 
@@ -276,8 +276,12 @@ Synchronous single-turn request. Nexo routes the message to the skill identified
 {
   "task": {
     "id": "a4f1c2d3-...",
-    "status": "completed",
-    "messages": [
+    "contextId": "news-session-001",
+    "status": {
+      "state": "completed",
+      "timestamp": "2026-05-06T15:30:00Z"
+    },
+    "history": [
       {
         "role": "agent",
         "parts": [
@@ -293,51 +297,57 @@ Synchronous single-turn request. Nexo routes the message to the skill identified
 **curl example:**
 
 ```bash
-curl -X POST "https://nexo.luzia.com/a2a/message/send" \
+curl -X POST "https://nexo.luzia.com/a2a/messages" \
   -H "X-Api-Key: YOUR_A2A_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "message": {
+      "contextId": "news-session-001",
       "role": "user",
-      "parts": [{"type": "text", "text": "What are today'\''s top stories?"}]
-    },
-    "metadata": {
-      "skill_id": "YOUR_SKILL_ID"
+      "parts": [{"type": "text", "text": "What are today'\''s top stories?"}],
+      "metadata": {
+        "skill_id": "YOUR_SKILL_ID"
+      }
     }
   }'
 ```
 
-### POST /a2a/message/stream
+### POST /a2a/messages:stream
 
-Streaming variant using Server-Sent Events (SSE). The connection emits `task_update` events as the task progresses from `working` to `completed`.
+Streaming variant using Server-Sent Events (SSE). The connection emits A2A
+`status_update` and `artifact_update` events as the task progresses from
+`working` to `completed`.
 
-Same request body as `/a2a/message/send`.
+Same request body as `/a2a/messages`.
 
 **SSE event stream:**
 
 ```
-event: task_update
-data: {"id":"a4f1c2d3-...","status":"working","messages":[],"artifacts":[]}
+event: status_update
+data: {"taskId":"a4f1c2d3-...","contextId":"user-session-xyz","status":{"state":"working","timestamp":"2026-05-06T15:30:00Z"}}
 
-event: task_update
-data: {"id":"a4f1c2d3-...","status":"completed","messages":[{"role":"agent","parts":[{"type":"text","text":"Here are today'\''s top stories..."}]}],"artifacts":[]}
+event: artifact_update
+data: {"taskId":"a4f1c2d3-...","contextId":"user-session-xyz","artifact":{"artifactId":"artifact-1","parts":[{"type":"text","text":"Team A are favourites tonight."}]},"append":true,"lastChunk":false}
+
+event: status_update
+data: {"taskId":"a4f1c2d3-...","contextId":"user-session-xyz","status":{"state":"completed","timestamp":"2026-05-06T15:30:01Z"}}
 ```
 
 **curl example:**
 
 ```bash
-curl -X POST "https://nexo.luzia.com/a2a/message/stream" \
+curl -X POST "https://nexo.luzia.com/a2a/messages:stream" \
   -H "X-Api-Key: YOUR_A2A_API_KEY" \
   -H "Content-Type: application/json" \
   -H "Accept: text/event-stream" \
   -d '{
     "message": {
+      "contextId": "user-session-xyz",
       "role": "user",
-      "parts": [{"type": "text", "text": "Who won last night'\''s match?"}]
-    },
-    "metadata": {
-      "skill_id": "YOUR_SKILL_ID",
-      "session_id": "user-session-xyz"
+      "parts": [{"type": "text", "text": "Who won last night'\''s match?"}],
+      "metadata": {
+        "skill_id": "YOUR_SKILL_ID"
+      }
     }
   }'
 ```
@@ -360,33 +370,45 @@ curl "https://nexo.luzia.com/a2a/tasks/a4f1c2d3-1234-5678-abcd-ef0123456789" \
 ```json
 {
   "id": "a4f1c2d3-1234-5678-abcd-ef0123456789",
-  "status": "completed",
-  "messages": [...],
+  "contextId": "user-session-xyz",
+  "status": {
+    "state": "completed",
+    "timestamp": "2026-05-06T15:30:01Z"
+  },
+  "history": [...],
   "artifacts": []
 }
 ```
 
 ### Multi-turn conversations
 
-Pass a consistent `session_id` in `metadata` across requests to the same skill. Nexo correlates requests to a single conversation thread, preserving context across turns:
+Pass a consistent `contextId` across requests to the same skill. Nexo correlates requests to a single conversation thread, preserving context across turns:
 
 ```bash
 # Turn 1
-curl -X POST "https://nexo.luzia.com/a2a/message/send" \
+curl -X POST "https://nexo.luzia.com/a2a/messages" \
   -H "X-Api-Key: YOUR_A2A_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": {"role":"user","parts":[{"type":"text","text":"Plan a 3-day trip to Lisbon"}]},
-    "metadata": {"skill_id": "YOUR_SKILL_ID", "session_id": "trip-planner-001"}
+    "message": {
+      "contextId": "trip-planner-001",
+      "role":"user",
+      "parts":[{"type":"text","text":"Plan a 3-day trip to Lisbon"}],
+      "metadata": {"skill_id": "YOUR_SKILL_ID"}
+    }
   }'
 
 # Turn 2 — Nexo remembers the previous turn
-curl -X POST "https://nexo.luzia.com/a2a/message/send" \
+curl -X POST "https://nexo.luzia.com/a2a/messages" \
   -H "X-Api-Key: YOUR_A2A_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "message": {"role":"user","parts":[{"type":"text","text":"Add a day trip to Sintra"}]},
-    "metadata": {"skill_id": "YOUR_SKILL_ID", "session_id": "trip-planner-001"}
+    "message": {
+      "contextId": "trip-planner-001",
+      "role":"user",
+      "parts":[{"type":"text","text":"Add a day trip to Sintra"}],
+      "metadata": {"skill_id": "YOUR_SKILL_ID"}
+    }
   }'
 ```
 
@@ -403,7 +425,7 @@ MCP is always enabled. A2A is opt-in:
 
 The aggregate agent card is always public once `A2A_SERVER_ENABLED=true`,
 regardless of the API key setting. The canonical path is
-`/.well-known/agent-card.json` (A2A 1.0). Discovery must be unauthenticated
+`/.well-known/a2a/agent-card` (A2A 1.0). Discovery must be unauthenticated
 per the A2A specification.
 
 ### Example: enabling A2A on a Cloud Run deployment
@@ -420,9 +442,9 @@ gcloud run services update nexo-backend \
 | | MCP | A2A |
 |---|---|---|
 | **Best for** | LLM tool invocation — the model decides which tool to call | Agent delegation — one agent hands off a task to another |
-| **Discovery** | Tool listing via MCP protocol | Public aggregate agent card at `/.well-known/agent-card.json` |
-| **Session state** | Optional `session_id` parameter | Optional `session_id` in metadata |
-| **Streaming** | Streamable HTTP transport | SSE (`/a2a/message/stream`) |
+| **Discovery** | Tool listing via MCP protocol | Public aggregate agent card at `/.well-known/a2a/agent-card` |
+| **Session state** | Optional `session_id` parameter | Optional `message.contextId` |
+| **Streaming** | Streamable HTTP transport | SSE (`/a2a/messages:stream`) |
 | **Rich output** | Structured JSON result | Task with messages and artifacts |
 | **Frameworks** | LangChain, LangGraph, Claude, any MCP client | Any A2A client, LangGraph Agent Server |
 

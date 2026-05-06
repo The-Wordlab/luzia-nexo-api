@@ -169,7 +169,7 @@ Return HTTP `200`:
 - `extensions` - partner-specific data passed through transparently.
 
 For demo discovery and onboarding, hosted examples should also publish starter
-prompt chips from `GET /.well-known/agent-card.json` under
+prompt chips from `GET /.well-known/a2a/agent-card` under
 `capabilities.items[].metadata.prompt_suggestions`.
 
 #### Task lifecycle

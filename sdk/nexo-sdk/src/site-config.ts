@@ -1,12 +1,86 @@
 /**
  * Load and resolve nexo.json site configuration.
  *
- * nexo.json is the public config file served alongside the app. It maps
- * hostnames to Nexo API URLs so one build works across local dev, staging,
- * production, and CDN domains.
+ * nexo.json is the public config file served alongside the app. The SDK knows
+ * the standard Nexo stage/prod hosts already, so apps only need nexo.json for
+ * their slug plus any explicit local/custom-host overrides.
  */
 
 import type { NexoSiteConfig, NexoSiteEnvironmentConfig } from "./types";
+
+type KnownEnvironmentName = "local" | "staging" | "production";
+
+const KNOWN_ENVIRONMENT_CONFIG: Record<KnownEnvironmentName, NexoSiteEnvironmentConfig> = {
+  local: {
+    api_base_url: "http://localhost:8000",
+    auth_base_url: "http://localhost:3000",
+  },
+  staging: {
+    api_base_url: "https://nexo-cdn-alb.staging.thewordlab.net",
+    auth_base_url: "https://staging.nexo.luzia.com",
+  },
+  production: {
+    api_base_url: "https://luzia-nexo.thewordlab.net",
+    auth_base_url: "https://nexo.luzia.com",
+  },
+};
+
+function normalizeEnvironmentName(envHint: string | null): KnownEnvironmentName | null {
+  switch ((envHint || "").toLowerCase()) {
+    case "local":
+    case "localhost":
+    case "development":
+    case "dev":
+      return "local";
+    case "staging":
+    case "stage":
+      return "staging";
+    case "production":
+    case "prod":
+      return "production";
+    default:
+      return null;
+  }
+}
+
+function resolveKnownEnvironmentName(
+  options: { host: string; envHint: string | null },
+): KnownEnvironmentName | null {
+  const hinted = normalizeEnvironmentName(options.envHint);
+  if (hinted) return hinted;
+
+  const host = options.host.toLowerCase();
+  if (
+    host === "localhost" ||
+    host.startsWith("localhost:") ||
+    host === "127.0.0.1" ||
+    host.startsWith("127.0.0.1:")
+  ) {
+    return "local";
+  }
+  if (
+    host === "apps.staging.luzia.com" ||
+    host === "nexo-apps.staging.thewordlab.net" ||
+    host === "staging.nexo.luzia.com"
+  ) {
+    return "staging";
+  }
+  if (
+    host === "apps.luzia.com" ||
+    host === "nexo-apps.thewordlab.net" ||
+    host === "nexo.luzia.com"
+  ) {
+    return "production";
+  }
+  return null;
+}
+
+function resolveKnownEnvironmentConfig(
+  options: { host: string; envHint: string | null },
+): NexoSiteEnvironmentConfig | null {
+  const environment = resolveKnownEnvironmentName(options);
+  return environment ? KNOWN_ENVIRONMENT_CONFIG[environment] : null;
+}
 
 function getVersionHint(): string | null {
   if (typeof window === "undefined") return null;
@@ -35,15 +109,18 @@ function resolveEnvironmentConfig(
   config: NexoSiteConfig | null,
   options: { host: string; envHint: string | null },
 ): NexoSiteEnvironmentConfig | null {
-  const { host, envHint } = options;
-  if (!config?.environments) return null;
+  const { host } = options;
+  const environment = resolveKnownEnvironmentName(options);
+  if (!config?.environments) {
+    return resolveKnownEnvironmentConfig(options);
+  }
 
-  if (envHint) {
-    const envConfig = config.environments[envHint];
+  if (environment) {
+    const envConfig = config.environments[environment];
     if (envConfig) return envConfig;
   }
 
-  return config.environments[host] ?? null;
+  return config.environments[host] ?? resolveKnownEnvironmentConfig(options);
 }
 
 export function resolveApiBaseUrlFromSiteConfig(
@@ -71,6 +148,16 @@ export function extractTrustedOriginsFromSiteConfig(
   config: NexoSiteConfig | null,
 ): Set<string> {
   const origins = new Set<string>();
+  const knownOrigins = Object.values(KNOWN_ENVIRONMENT_CONFIG)
+    .map((env) => env.api_base_url)
+    .filter((value): value is string => typeof value === "string");
+  for (const originCandidate of knownOrigins) {
+    try {
+      origins.add(new URL(originCandidate).origin);
+    } catch {
+      // Ignore invalid URLs in SDK defaults.
+    }
+  }
   if (!config?.environments) return origins;
 
   for (const env of Object.values(config.environments)) {

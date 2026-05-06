@@ -294,7 +294,7 @@ Return `cards` and `actions` alongside `content_parts` to give users structured 
 
 `metadata.prompt_suggestions` renders as contextual clickable chips in chat.
 
-For starter chips before any message is sent, publish prompt suggestions from `GET /.well-known/agent-card.json` under `capabilities.items[].metadata.prompt_suggestions`.
+For starter chips before any message is sent, publish prompt suggestions from `GET /.well-known/a2a/agent-card` under `capabilities.items[].metadata.prompt_suggestions`.
 
 ### Add vertical orchestration
 

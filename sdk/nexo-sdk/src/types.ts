@@ -26,7 +26,7 @@ export interface NexoClientConfig {
   slug: string;
   accessToken: string;
   userId: string;
-  /** Base URL of the Nexo auth service (optional, auth bridge only). */
+  /** Base URL of the Nexo hosted auth/profile/onboarding service. */
   authBaseUrl?: string | null;
   /** Current auth mode - guest or authenticated. Defaults to "guest". */
   authMode?: "guest" | "authenticated";
@@ -40,7 +40,7 @@ export interface NexoClientConfig {
 export interface NexoSiteEnvironmentConfig {
   app_id?: string;
   api_base_url?: string;
-  /** Base URL of the Nexo auth service for this environment. */
+  /** Base URL of the Nexo hosted auth service for this environment. */
   auth_base_url?: string;
 }
 

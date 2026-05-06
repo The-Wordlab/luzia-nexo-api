@@ -10,7 +10,9 @@
  * - Suggestion extraction from responses
  * - Initial prompt suggestion bootstrap from the per-app agent card
  *
- * The hook talks to POST /a2a/messages:stream?format=chatify.
+ * The hook talks to POST /api/a2a/messages:stream?format=chatify on the
+ * configured API origin. The backend also serves canonical root /a2a routes,
+ * but API-only origins like the public ALB commonly forward /api/* only.
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -130,6 +132,10 @@ function extractSuggestionsFromContext(payload: ThreadContextPayload): string[] 
   return parseSuggestions(latest.content_json);
 }
 
+function buildApiA2aPath(path: string): string {
+  return `/api/a2a${path}`;
+}
+
 export function useAgentChat(options: AgentChatOptions | null): AgentChatResult {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
@@ -166,7 +172,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
       try {
         const resp = await fetch(
-          `${apiBaseUrl}/a2a/tasks/${storedId}?historyLength=50`,
+          `${apiBaseUrl}${buildApiA2aPath(`/tasks/${storedId}`)}?historyLength=50`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         );
         if (!resp.ok) {
@@ -275,7 +281,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
       try {
         const resp = await fetch(
-          `${options.apiBaseUrl}/a2a/messages:stream?format=chatify`,
+          `${options.apiBaseUrl}${buildApiA2aPath("/messages:stream")}?format=chatify`,
           {
             method: "POST",
             headers: {

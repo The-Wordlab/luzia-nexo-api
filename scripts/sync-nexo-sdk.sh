@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Sync the Nexo SDK mirror from the source repo.
 #
-# Source: ../luzia-nexo/apps/nexo-sdk/
+# Source: ../luzia-nexo-apps/apps/nexo-sdk/
 # Target: sdk/nexo-sdk/
 #
 # This copies the entire SDK package so consumers in this repo can
@@ -15,12 +15,12 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-SOURCE_SDK="${REPO_ROOT}/../luzia-nexo/apps/nexo-sdk"
+SOURCE_SDK="${REPO_ROOT}/../luzia-nexo-apps/apps/nexo-sdk"
 TARGET_SDK="${REPO_ROOT}/sdk/nexo-sdk"
 
 if [ ! -d "$SOURCE_SDK" ]; then
   echo "Error: Source SDK not found at $SOURCE_SDK"
-  echo "Make sure luzia-nexo is checked out as a sibling directory."
+  echo "Make sure luzia-nexo-apps is checked out as a sibling directory."
   exit 1
 fi
 
