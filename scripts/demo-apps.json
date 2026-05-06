@@ -1,89 +1,48 @@
 {
-  "organization": {
-    "slug": "demo",
-    "name": "Demo Organization",
-    "description": "Organisation holding all stakeholder demo apps"
-  },
-  "character": {
-    "slug": "nexo",
-    "name": "Nexo",
-    "description": "Your AI assistant powered by Luzia",
-    "system_prompt": "You are Nexo, an AI assistant powered by Luzia. You are helpful, friendly, and capable of assisting with a wide variety of tasks. Be conversational and helpful.",
-    "greeting": "Hi! I'm Nexo, your AI assistant. How can I help you today?",
-    "suggestions": [
-      "Help me write something",
-      "Explain a topic",
-      "Brainstorm ideas"
-    ],
-    "assets": {
-      "avatarSmall": "/luzia/logos/nexo-octopus-avatar.png",
-      "avatarLight": "/luzia/logos/nexo-octopus-avatar.png",
-      "avatarDark": "/luzia/logos/nexo-octopus-avatar.png",
-      "avatarStatic": "/luzia/logos/nexo-octopus-avatar.png"
-    },
-    "brand": {
-      "primaryColor": "#4264FC",
-      "font": "Plus Jakarta Sans"
-    }
-  },
+  "_doc": "App definitions for Nexo. Seeded via API (idempotent upsert). Platform essentials (admin, org, NEXO personality) are owned by luzia-nexo/seed_prod_data.py. Worldcup apps are seeded from worldcup-server.",
   "apps": [
     {
-      "demo_key": "food-ordering",
+      "slug": "food-ordering",
       "name": "Food Ordering",
-      "description": "Food commerce flagship - discover restaurants, build a basket with dietary and budget constraints, prepare checkout, and track delivery",
-      "config_json": {
-        "demo_key": "food-ordering",
-        "integration_mode": "webhook",
-        "integration": {
-          "mode": "webhook"
-        },
-        "disclaimer": false,
-        "requested_scopes": [
-          "basic",
-          "preferences"
-        ],
-        "demo_default_persona": "sarah",
-        "demo_icon": "utensils",
-        "demo_color": "#F97316",
-        "demo_order": 13,
-        "prompt_suggestions": [
-          "Show me nearby vegetarian delivery and explain what profile context you would use",
-          "Build me a dinner order under EUR 25 and prepare checkout",
-          "Track my delivery and suggest a quick reorder"
-        ],
-        "showcase_family": "food",
-        "showcase_role": "flagship"
-      },
+      "description": "Discover restaurants, build orders with dietary and budget constraints, and track delivery",
+      "icon": "utensils",
+      "kind": "webhook",
       "webhook_url_env": "DEMO_FOOD_ORDERING_WEBHOOK_URL",
       "webhook_url_default": "https://nexo-food-ordering-v3me5awkta-ew.a.run.app",
-      "card_trigger_rules": []
-    }
-  ],
-  "open_claw": {
-    "_comment": "Optional Open CLAW demo app - only seeded when DEMO_OPENCLAW_ENABLED=true",
-    "demo_key": "open-claw",
-    "name_env": "DEMO_OPENCLAW_APP_NAME",
-    "name_default": "Open CLAW Demo",
-    "description": "Open CLAW bridge showcase - webhook mode with seeded credentials",
-    "config_json": {
-      "demo_key": "open-claw",
-      "demo_icon": "cpu",
-      "demo_color": "#0EA5E9",
-      "demo_order": 11,
-      "integration_mode": "webhook",
-      "integration": {
-        "mode": "webhook",
-        "template": "open_claw"
+      "capabilities": {
+        "example_invocations": [
+          "Show me nearby vegetarian delivery",
+          "Build me a dinner order under 25 euros",
+          "Track my delivery"
+        ],
+        "intents": [
+          {
+            "intent": "food.browse_menu",
+            "name": "Browse Menu",
+            "description": "Search restaurants and browse menus with dietary filters",
+            "example_invocations": ["Show me vegetarian options nearby", "What Italian places deliver?"],
+            "confirmation_policy": "auto-apply"
+          },
+          {
+            "intent": "food.build_order",
+            "name": "Build Order",
+            "description": "Add items to an order with budget and dietary constraints",
+            "example_invocations": ["Build me a dinner under 25 euros", "Add a margherita pizza"],
+            "confirmation_policy": "confirm-first"
+          },
+          {
+            "intent": "food.track_delivery",
+            "name": "Track Delivery",
+            "description": "Check delivery status and estimated arrival time",
+            "example_invocations": ["Where's my food?", "Track my delivery"],
+            "confirmation_policy": "auto-apply"
+          }
+        ]
       },
-      "disclaimer": false,
-      "prompt_suggestions": [
-        "Help me plan my week",
-        "Draft an email to my team about the project update",
-        "Give me 3 practical options for improving productivity"
-      ]
-    },
-    "webhook_url_env": "DEMO_OPENCLAW_WEBHOOK_URL",
-    "webhook_url_default": "http://localhost:8082/webhook",
-    "webhook_secret_env": "DEMO_OPENCLAW_WEBHOOK_SECRET"
-  }
+      "config": {
+        "requested_scopes": ["basic", "preferences"],
+        "showcase_family": "food"
+      }
+    }
+  ]
 }
