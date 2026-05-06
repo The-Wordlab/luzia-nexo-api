@@ -120,10 +120,7 @@ Project: ${PROJECT_ID}
 Region:  ${REGION}
 
 Next steps:
-1. Deploy the demo receiver via Cloud Build:
-   GCP_PROJECT_ID=${PROJECT_ID} GCP_REGION=${REGION} make deploy-demo-receiver
-
-2. Deploy hosted example services:
+1. Deploy hosted example services:
    GCP_PROJECT_ID=${PROJECT_ID} GCP_REGION=${REGION} make deploy-examples
 EOF
 }

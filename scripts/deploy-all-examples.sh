@@ -19,7 +19,6 @@
 #   openclaw-bridge
 #   hosted-py
 #   hosted-ts
-#   demo-receiver
 #   food-ordering
 
 set -euo pipefail
@@ -41,7 +40,7 @@ usage() {
   echo "Targets:"
   echo "  all | hosted"
   echo "  minimal-py | structured-py | advanced-py | minimal-ts | openclaw-bridge"
-  echo "  hosted-py | hosted-ts | demo-receiver"
+  echo "  hosted-py | hosted-ts"
   echo "  food-ordering"
   echo ""
   echo "Required env: GCP_PROJECT_ID"
@@ -138,15 +137,9 @@ deploy_hosted_ts() {
   run_cmd "${cmd}"
 }
 
-deploy_demo_receiver() {
-  local cmd="cd \"${REPO_ROOT}\" && GCP_PROJECT_ID=\"${PROJECT_ID}\" GCP_REGION=\"${REGION}\" SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh"
-  run_cmd "${cmd}"
-}
-
 run_target() {
   case "$1" in
     all)
-      deploy_demo_receiver
       deploy_hosted_py
       deploy_hosted_ts
       deploy_minimal_py
@@ -157,7 +150,6 @@ run_target() {
       deploy_food_ordering
       ;;
     hosted)
-      deploy_demo_receiver
       deploy_hosted_py
       deploy_hosted_ts
       ;;
@@ -169,7 +161,6 @@ run_target() {
     food-ordering) deploy_food_ordering ;;
     hosted-py) deploy_hosted_py ;;
     hosted-ts) deploy_hosted_ts ;;
-    demo-receiver) deploy_demo_receiver ;;
     *) echo "ERROR: unknown target '$1'"; usage ;;
   esac
 }

@@ -45,19 +45,18 @@ extra_css:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
+  - Developer Auth: developer-auth.md
   - API Reference: partner-api-reference.md
   - Capability Discovery: capability-discovery.md
-  - External App Auth Bridge (Planned): auth-bridge-handoff.md
+  - Hosted App Auth & Profile: auth-bridge-handoff.md
   - External Runtime Integration: external-runtime-integration.md
   - Micro Apps API: micro-apps-api.md
   - MCP Server: mcp.md
   - Knowledge Packs: knowledge-packs.md
   - "Tutorial: Create App from Terminal": tutorial-create-app-from-terminal.md
-  - Internal Apps: internal-apps.md
   - GCP Deploy Playbook: gcp-deploy-playbook.md
   - Hosting (Optional): hosting.md
   - Demo Catalog: demos.md
   - Examples Showcase: examples-showcase.md
-  - World Cup Migration: worldcup-migration.md
   - Live Streaming Architecture (Advanced): design-live-streaming.md
   - Agent Interop (MCP & A2A): agent-interop.md

@@ -15,8 +15,8 @@ This guide covers the full integration flow:
 7. [Worker/job topology](#workerjob-topology) - scheduled sync patterns
 8. [Companion services](#companion-services) - app-specific intelligence
 
-If your runtime also needs a Nexo-owned login and return flow for an externally
-hosted frontend, see [External App Auth Bridge (Planned)](auth-bridge-handoff.md).
+If your runtime also needs Nexo-owned app-scoped login, profile, or onboarding
+for an externally hosted frontend, see [Hosted App Auth & Profile](auth-bridge-handoff.md).
 
 ## Prerequisites
 

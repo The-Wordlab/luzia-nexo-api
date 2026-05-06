@@ -43,7 +43,6 @@ Available single targets:
 - `advanced-py`
 - `minimal-ts`
 - `food-ordering`
-- `demo-receiver`
 - `hosted-py`
 - `hosted-ts`
 - `openclaw-bridge` (requires OpenClaw secrets)

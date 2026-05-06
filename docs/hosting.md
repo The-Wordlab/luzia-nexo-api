@@ -119,12 +119,6 @@ To update a secret value later:
 echo -n "new-value" | gcloud secrets versions add SECRET_NAME --data-file=-
 ```
 
-### Deploy the demo receiver
-
-```bash
-GCP_PROJECT_ID=<your-project-id> GCP_REGION=<your-region> make deploy-demo-receiver
-```
-
 ### Deploy hosted example services
 
 ```bash
@@ -139,7 +133,7 @@ OPENCLAW_BASE_URL=https://your-openclaw-gateway \
 ./scripts/deploy-all-examples.sh all
 ```
 
-This deploys hosted services, core webhook examples, flagship orchestration webhooks, and OpenClaw bridge.
+This deploys hosted reference services, core webhook examples, flagship orchestration webhooks, and OpenClaw bridge.
 
 ### Full live smoke test (all deployed services)
 
@@ -225,7 +219,6 @@ gcloud run services list --region=europe-west1 --format='table(metadata.name,sta
 
 | Service | Region | URL | Health |
 |---|---|---|---|
-| nexo-demo-receiver | europe-west1 | `https://nexo-demo-receiver-v3me5awkta-ew.a.run.app` | - |
 | nexo-examples-py | europe-west1 | `https://nexo-examples-py-v3me5awkta-ew.a.run.app` | - |
 | nexo-examples-ts | europe-west1 | `https://nexo-examples-ts-v3me5awkta-ew.a.run.app` | - |
 | nexo-webhook-minimal-py | europe-west1 | `https://nexo-webhook-minimal-py-v3me5awkta-ew.a.run.app` | `/webhook` |

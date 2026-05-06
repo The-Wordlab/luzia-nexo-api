@@ -271,7 +271,6 @@ if [[ -z "$OPENCLAW_WEBHOOK_SECRET" ]]; then
 fi
 
 echo "Resolving service URLs..."
-URL_DEMO_RECEIVER="$(service_url nexo-demo-receiver)"
 URL_EXAMPLES_PY="$(service_url nexo-examples-py)"
 URL_EXAMPLES_TS="$(service_url nexo-examples-ts)"
 URL_MINIMAL_PY="$(service_url nexo-webhook-minimal-py)"
@@ -282,7 +281,6 @@ URL_OPENCLAW_BRIDGE="$(service_url nexo-openclaw-bridge)"
 URL_FOOD_ORDERING="$(service_url nexo-food-ordering)"
 
 echo "== Discovery/health checks =="
-http_get_check "demo-receiver health" "${URL_DEMO_RECEIVER}/health" "ok"
 http_get_check "examples-py health" "${URL_EXAMPLES_PY}/health" "status"
 http_get_check "examples-ts health" "${URL_EXAMPLES_TS}/health" "status"
 http_get_check "minimal-py root" "${URL_MINIMAL_PY}/" "webhook-minimal-python"
@@ -335,9 +333,6 @@ http_post_signed_prompt_suggestions_check \
   "food-ordering webhook" \
   "${URL_FOOD_ORDERING}/" \
   '{"event":"message_created","message":{"role":"user","content":"show vegan options"},"profile":{"display_name":"Mark"}}'
-
-http_get_check "demo-receiver events endpoint" "${URL_DEMO_RECEIVER}/v1/events/smoke-demo" "events"
-http_get_expect_code_check "demo-receiver ingest endpoint (method check)" "${URL_DEMO_RECEIVER}/v1/ingest/smoke-demo" "405" "Method Not Allowed"
 
 echo
 echo "== Summary =="

@@ -1,6 +1,7 @@
 # Demo Catalog
 
-See what you can build with Nexo. Every example below is a production-ready Connected App or reference-service pattern you can clone, customize, and deploy.
+See what you can build with Nexo. Every example below is a production-ready
+integration pattern you can clone, customize, and deploy.
 
 - **Clone** any example and run it locally
 - **Test** against live deployed instances immediately
@@ -17,15 +18,28 @@ The folder split is by **contract type**:
 
 Both are deployable and production-ready.
 
-## Live deployed demos
+## Public inventory
 
-| Demo | Contract | Capability | Live URL | Source |
+### Webhook app examples
+
+| Example | Contract | Capability | Live URL | Source |
 |---|---|---|---|---|
 | Food Ordering | Webhook | Discovery, basket, checkout, tracking, reorder | [nexo-food-ordering](https://nexo-food-ordering-v3me5awkta-ew.a.run.app/) | [food-ordering/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) |
 | OpenClaw Bridge | Webhook | Nexo webhook to OpenClaw `/v1/responses` adapter | [nexo-openclaw-bridge](https://nexo-openclaw-bridge-v3me5awkta-ew.a.run.app/) | [openclaw-bridge/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/openclaw-bridge/typescript) |
+
+### Hosted reference APIs
+
+| Example | Contract | Capability | Live URL | Source |
+|---|---|---|---|---|
 | Hosted Python API | Reference API | Minimal authenticated reference API | [nexo-examples-py](https://nexo-examples-py-v3me5awkta-ew.a.run.app/) | [hosted/python](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/python) |
 | Hosted TypeScript API | Reference API | Minimal authenticated reference API | [nexo-examples-ts](https://nexo-examples-ts-v3me5awkta-ew.a.run.app/) | [hosted/typescript](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/typescript) |
-| Demo Receiver | Reference API | Webhook contract receiver for smoke testing | [nexo-demo-receiver](https://nexo-demo-receiver-v3me5awkta-ew.a.run.app/) | [hosted/demo-receiver](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/hosted/demo-receiver) |
+
+### Integration utilities
+
+| Example | Contract | Purpose | Source |
+|---|---|---|---|
+| Identity Bridge | Signed partner-to-Nexo REST | Partner-owned login and account linking that hands off into Nexo-hosted app auth/profile/onboarding | [identity-bridge](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/identity-bridge) |
+| Proactive Partner API scripts | Partner API | Push events/messages into Nexo threads from bash, Python, or TypeScript | [partner-api/proactive](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/partner-api/proactive) |
 
 ## Webhook examples
 

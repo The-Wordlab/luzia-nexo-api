@@ -4,8 +4,8 @@ This page documents the **Partner Integration** contract: external webhook-backe
 
 If you are building first-party structured apps through Nexo itself, use the [Personalized Apps API](micro-apps-api.md) guide instead.
 
-If you need Nexo to host login and then return control to an externally hosted
-app frontend, see [External App Auth Bridge (Planned)](auth-bridge-handoff.md).
+If you need Nexo to host app-scoped login, profile, or onboarding for an
+externally hosted frontend, see [Hosted App Auth & Profile](auth-bridge-handoff.md).
 
 ## Webhooks (primary integration path)
 

@@ -152,6 +152,7 @@ structured data, a custom webhook, or both.
 |---|---|
 | [`examples/webhook/`](examples/webhook/) | Webhook app examples (Python + TypeScript) |
 | [`examples/hosted/`](examples/hosted/) | Reference API services for Cloud Run |
+| [`examples/identity-bridge/`](examples/identity-bridge/) | Partner-owned login and identity-linking example that hands off into Nexo-hosted app-scoped auth/profile |
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |
 | [`docs/`](docs/) | Documentation source ([published site](https://the-wordlab.github.io/luzia-nexo-api/)) |

@@ -122,7 +122,7 @@ def resolve_webhook_url(app_def: dict) -> str | None:
     if env_var:
         return os.environ.get(env_var, app_def.get("webhook_url_default"))
 
-    # Template with env var expansion (for shared demo receiver)
+    # Template with env var expansion for shared hosted endpoints
     template = app_def.get("webhook_url_template")
     if template:
         expanded = _expand_env_vars(template)

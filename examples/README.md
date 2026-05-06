@@ -2,6 +2,22 @@
 
 Runnable Nexo integration examples.
 
+## Current public inventory
+
+- `webhook/minimal` - smallest valid webhook example in Python and TypeScript
+- `webhook/structured` - richer envelope example with cards and locale-aware hints
+- `webhook/advanced` - idempotency, retries, and action-routing webhook example
+- `webhook/food-ordering` - flagship multi-step commerce webhook example
+- `webhook/openclaw-bridge` - adapter between Nexo webhooks and OpenClaw `/v1/responses`
+- `partner-api/proactive` - partner-initiated event delivery examples
+- `hosted/python` - hosted reference API for Python consumers
+- `hosted/typescript` - hosted reference API for TypeScript consumers
+- `identity-bridge` - partner-owned login and identity-linking reference flow that hands off into Nexo-hosted `/apps/{slug}/auth`, `/apps/{slug}/profile`, and `/apps/{slug}/onboarding`
+
+This repository does not own first-party app shells. Public lightweight app
+consumers, when needed, should stay thin and sit on top of the mirrored SDK,
+not replace the webhook/reference examples.
+
 ## Docker Compose quickstart
 
 Run all webhook examples with one command:
@@ -52,12 +68,12 @@ Folders:
 - `webhook/minimal`
 - `webhook/structured`
 - `webhook/advanced`
-- `webhook/llm-powered` -- reusable base classes for LLM-powered webhooks (see its README)
 - `webhook/openclaw-bridge`
+- `webhook/food-ordering`
 - `partner-api/proactive`
 - `hosted/python`
 - `hosted/typescript`
-- `hosted/demo-receiver`
+- `identity-bridge`
 
 Run all example tests from the repo root:
 

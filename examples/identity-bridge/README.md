@@ -1,9 +1,22 @@
 # Nexo Partner Identity Bridge - Example
 
-A reference implementation showing how a partner with phone-based authentication
-(e.g. WhatsApp OTP) links their users into Nexo. The partner server authenticates
-the user locally, then calls Nexo's Identity Bridge API with HMAC-signed requests
-to create or retrieve a Nexo identity for that phone number.
+A reference implementation showing how a partner-owned auth system links users
+into Nexo. The partner server authenticates the user locally, then calls
+Nexo's Identity Bridge API with HMAC-signed requests to create or retrieve a
+Nexo identity for that user.
+
+This example focuses on the **server-side bridge** layer. In the intended app
+integration, the partner login should still converge on Nexo's app-scoped
+hosted utility routes:
+
+- `/apps/{slug}/auth`
+- `/apps/{slug}/profile`
+- `/apps/{slug}/onboarding`
+
+That keeps login, profile, and onboarding behavior consistent with other Nexo
+apps while still letting the partner own the first-step authentication surface.
+The bridge is the identity handoff, not a replacement for the hosted Nexo app
+utility model.
 
 ## Architecture
 

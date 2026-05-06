@@ -6,7 +6,7 @@ VENV_BIN ?= $(CURDIR)/.venv/bin
 PYTHON ?= $(VENV_BIN)/python
 PYTEST ?= $(VENV_BIN)/pytest
 
-.PHONY: setup-dev pre-commit check-toolchain check-mermaid test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-demo-receiver deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: setup-dev pre-commit check-toolchain check-mermaid test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 pre-commit:
 	$(VENV_BIN)/pre-commit run --all-files
@@ -20,10 +20,6 @@ check-toolchain:
 check-mermaid:
 	@if [ ! -x "$(PYTHON)" ]; then echo "ERROR: $(PYTHON) not found. Run 'make setup-dev' first."; exit 1; fi
 	$(PYTHON) scripts/check_mermaid.py
-
-test-demo-receiver:
-	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
-	cd examples/hosted/demo-receiver && $(PYTEST) -q
 
 test-examples:
 	source ~/.zshrc && ./scripts/test-examples.sh
@@ -41,16 +37,13 @@ test-hosted-examples:
 test-sdk:
 	cd sdk/javascript && source ~/.zshrc && pnpm install --no-frozen-lockfile && pnpm test
 
-test-all: test-demo-receiver test-examples test-rag-examples test-contracts test-hosted-examples test-sdk
+test-all: test-examples test-rag-examples test-contracts test-hosted-examples test-sdk
 
 gcp-bootstrap:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh
 
 gcp-bootstrap-check:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh >/dev/null
-
-deploy-demo-receiver:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-demo-receiver ./examples/hosted/demo-receiver/deploy/cloudrun/deploy.sh
 
 deploy-examples-py:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SERVICE_NAME=nexo-examples-py ./examples/hosted/python/deploy/cloudrun/deploy.sh
