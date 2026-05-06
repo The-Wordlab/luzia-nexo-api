@@ -15,17 +15,11 @@ jobs:
       - name: Install python deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r examples/hosted/demo-receiver/requirements.txt
           pip install -r examples/webhook/minimal/python/requirements.txt
           pip install -r examples/webhook/structured/python/requirements.txt
           pip install -r examples/webhook/advanced/python/requirements.txt
-          pip install -r examples/webhook/routines/python/requirements.txt
           pip install -r examples/webhook/food-ordering/python/requirements.txt
           pip install -r examples/hosted/python/requirements.txt
-      - name: Run demo receiver tests
-        run: |
-          cd examples/hosted/demo-receiver
-          pytest -q
       - name: Run minimal webhook tests
         run: |
           cd examples/webhook/minimal/python
@@ -37,10 +31,6 @@ jobs:
       - name: Run advanced webhook tests
         run: |
           cd examples/webhook/advanced/python
-          pytest -q
-      - name: Run routines webhook tests
-        run: |
-          cd examples/webhook/routines/python
           pytest -q
       - name: Run food ordering webhook tests
         run: |

@@ -24,14 +24,6 @@ make test-examples
 
 The `examples/` folder contains webhook and Partner API examples you can adapt directly.
 
-Useful shortcuts:
-
-```bash
-make deploy-rag-examples
-make setup-rag-production
-make check-rag-worker-scheduler
-```
-
 ## Docker (recommended example)
 
 These containers can run in any environment that supports Docker (local machine, VM, Kubernetes, Cloud Run, ECS, etc.). GCP below is only one optional deployment example.
@@ -60,7 +52,7 @@ docker run --rm -p 8080:8080 -e EXAMPLES_SHARED_API_SECRET=dev-secret nexo-examp
 
 All GCP deployments use Cloud Build. There is no Terraform in this repository.
 
-For a minimal, decision-based path (single service vs RAG-only vs full stack),
+For a minimal, decision-based path (single service vs full example surface),
 start with [GCP Deploy Playbook](gcp-deploy-playbook.md), then return here for
 full secret/IAM detail.
 

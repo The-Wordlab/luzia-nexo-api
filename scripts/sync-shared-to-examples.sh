@@ -17,7 +17,6 @@ fi
 
 EXAMPLES=(
   food-ordering
-  routines
 )
 
 for example in "${EXAMPLES[@]}"; do

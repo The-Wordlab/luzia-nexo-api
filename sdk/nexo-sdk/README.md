@@ -21,13 +21,16 @@ This copies the source TypeScript files from the sibling repo. The mirror is
 intentionally checked in so consumers can use it without needing the source
 repo.
 
+Re-run this sync any time the source SDK changes before publishing public app
+examples from this repo.
+
 ## Usage
 
 Apps in this repo can import from the mirror:
 
 ```typescript
-import { useCompanionChat } from "../sdk/nexo-sdk/src/useCompanionChat";
-import type { ChatMessage } from "../sdk/nexo-sdk/src/chat-types";
+import { NexoAppShell } from "@luzia/nexo-sdk/react";
+import type { AgentChatOptions } from "@luzia/nexo-sdk/react";
 ```
 
 Or via the `file:` dependency in package.json:

@@ -1,0 +1,87 @@
+/*
+ * @luzia/nexo-sdk shared theme
+ *
+ * LDS-aligned design tokens for Nexo-hosted apps.
+ * Import this in your app's main CSS before app-specific tokens.
+ *
+ * Usage:
+ *   @import "@luzia/nexo-sdk/src/theme.css";
+ *
+ * Then use tokens in your app CSS:
+ *   background: var(--nexo-surface);
+ *   border-radius: var(--nexo-radius-card);
+ */
+
+/* ── Primitives ──────────────────────────────────────────────────── */
+
+:root {
+  /* Brand */
+  --nexo-brand-50: #4264FC;
+  --nexo-brand-30: #98B7E3;
+  --nexo-brand-10: #E7F2FF;
+  --nexo-brand-90: #112255;
+
+  /* Green accent */
+  --nexo-green-30: #C7EA77;
+  --nexo-green-50: #AEE038;
+  --nexo-green-70: #30842D;
+  --nexo-green-90: #1A5C18;
+
+  /* Neutral */
+  --nexo-neutral-0: #FFFFFF;
+  --nexo-neutral-10: #F5F5F5;
+  --nexo-neutral-20: #EEEEEE;
+  --nexo-neutral-40: #8E8E8E;
+  --nexo-neutral-50: #666666;
+  --nexo-neutral-90: #1A1A1A;
+  --nexo-neutral-100: #000000;
+
+  /* Semantic */
+  --nexo-success: #00B23B;
+  --nexo-error: #E22F2F;
+
+  /* ── Variables (light) ──────────────────────────────────────── */
+  --nexo-bg: var(--nexo-neutral-0);
+  --nexo-surface: var(--nexo-neutral-10);
+  --nexo-text: var(--nexo-neutral-90);
+  --nexo-text-secondary: var(--nexo-neutral-50);
+  --nexo-text-tertiary: var(--nexo-neutral-40);
+  --nexo-border: var(--nexo-neutral-20);
+  --nexo-accent: var(--nexo-brand-50);
+  --nexo-accent-on: var(--nexo-neutral-0);
+
+  /* Primary CTA: dark button with white text (Luzia convention) */
+  --nexo-cta-bg: var(--nexo-neutral-90);
+  --nexo-cta-fg: var(--nexo-neutral-0);
+
+  /* ── Typography ─────────────────────────────────────────────── */
+  --nexo-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+
+  /* ── Radius ─────────────────────────────────────────────────── */
+  --nexo-radius-sm: 8px;
+  --nexo-radius-card: 12px;
+  --nexo-radius-lg: 16px;
+  --nexo-radius-pill: 1000px;
+
+  /* ── Spacing ────────────────────────────────────────────────── */
+  --nexo-space-xs: 4px;
+  --nexo-space-sm: 8px;
+  --nexo-space-md: 12px;
+  --nexo-space-lg: 16px;
+  --nexo-space-xl: 24px;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────────── */
+
+.dark {
+  --nexo-bg: var(--nexo-neutral-100);
+  --nexo-surface: #282828;
+  --nexo-text: var(--nexo-neutral-0);
+  --nexo-text-secondary: #A0A0A0;
+  --nexo-text-tertiary: var(--nexo-neutral-40);
+  --nexo-border: #363636;
+  --nexo-accent: var(--nexo-brand-50);
+  --nexo-accent-on: var(--nexo-neutral-0);
+  --nexo-cta-bg: var(--nexo-neutral-0);
+  --nexo-cta-fg: var(--nexo-neutral-100);
+}

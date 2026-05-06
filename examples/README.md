@@ -16,7 +16,11 @@ Runnable Nexo integration examples.
 
 This repository does not own first-party app shells. Public lightweight app
 consumers, when needed, should stay thin and sit on top of the mirrored SDK,
-not replace the webhook/reference examples.
+not replace the webhook/reference examples. Keep that mirror current with:
+
+```bash
+./scripts/sync-nexo-sdk.sh
+```
 
 ## Docker Compose quickstart
 

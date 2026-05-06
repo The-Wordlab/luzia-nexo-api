@@ -21,7 +21,6 @@ make setup-dev
 
 # Core local confidence gate
 make test-examples
-make test-rag-examples
 make test-contracts
 make test-hosted-examples
 

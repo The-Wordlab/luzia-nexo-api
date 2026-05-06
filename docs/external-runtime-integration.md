@@ -573,4 +573,4 @@ canonical reference implementation. It demonstrates:
 - [Capability Discovery](capability-discovery.md) - the capability manifest
 - [Knowledge Packs](knowledge-packs.md) - reference data management
 - [API Reference](partner-api-reference.md) - full endpoint reference
-- [Live Streaming Architecture](design-live-streaming.md) - push event patterns
+- [Examples Showcase](examples-showcase.md) - current maintained example surfaces

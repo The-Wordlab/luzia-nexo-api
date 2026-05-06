@@ -1,0 +1,691 @@
+/*
+ * @luzia/nexo-sdk chat component styles.
+ *
+ * Import alongside theme.css:
+ *   @import "@luzia/nexo-sdk/src/chat.css";
+ *
+ * Components use --nexo-* tokens from theme.css plus chat-specific
+ * tokens that can be overridden per-app.
+ */
+
+/* ── Chat-specific tokens ────────────────────────────────────────── */
+
+:root {
+  --nexo-chat-user-bg: var(--nexo-accent);
+  --nexo-chat-user-fg: var(--nexo-accent-on);
+  --nexo-chat-assistant-bg: var(--nexo-surface);
+  --nexo-chat-assistant-border: var(--nexo-border);
+  --nexo-chat-assistant-fg: var(--nexo-text);
+  --nexo-chat-panel-bg: var(--nexo-bg);
+  --nexo-chat-panel-border: var(--nexo-border);
+  --nexo-chat-panel-shadow: 0 32px 80px rgba(15, 23, 42, 0.28);
+  --nexo-chat-overlay: rgba(15, 23, 42, 0.56);
+  --nexo-chat-input-bg: var(--nexo-surface);
+  --nexo-chat-input-border: var(--nexo-border);
+  --nexo-chat-suggestion-bg: color-mix(
+    in srgb,
+    var(--nexo-accent) 8%,
+    var(--nexo-bg)
+  );
+  --nexo-chat-suggestion-hover: color-mix(
+    in srgb,
+    var(--nexo-accent) 14%,
+    var(--nexo-bg)
+  );
+  --nexo-chat-suggestion-border: color-mix(
+    in srgb,
+    var(--nexo-accent) 22%,
+    var(--nexo-border)
+  );
+  --nexo-chat-icon-bg: color-mix(
+    in srgb,
+    var(--nexo-accent) 12%,
+    var(--nexo-bg)
+  );
+  --nexo-chat-icon-border: color-mix(
+    in srgb,
+    var(--nexo-accent) 20%,
+    var(--nexo-border)
+  );
+  --nexo-chat-icon-fg: var(--nexo-accent);
+  --nexo-chat-fab-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+}
+
+/* ── Chat bubble ─────────────────────────────────────────────────── */
+
+.nexo-chat-bubble {
+  display: flex;
+  gap: var(--nexo-space-sm);
+  max-width: 85%;
+}
+
+.nexo-chat-bubble--user {
+  margin-left: auto;
+}
+
+.nexo-chat-bubble--assistant {
+  margin-right: auto;
+}
+
+.nexo-chat-bubble__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--nexo-radius-pill);
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.nexo-chat-bubble__content {
+  padding: 10px var(--nexo-space-lg);
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.nexo-chat-bubble--user .nexo-chat-bubble__content {
+  background: var(--nexo-chat-user-bg);
+  color: var(--nexo-chat-user-fg);
+  border-bottom-right-radius: 6px;
+}
+
+.nexo-chat-bubble--assistant .nexo-chat-bubble__content {
+  background: var(--nexo-bubble-accent, var(--nexo-chat-assistant-bg));
+  color: var(--nexo-chat-assistant-fg);
+  border: 1px solid var(--nexo-chat-assistant-border);
+  border-bottom-left-radius: 6px;
+}
+
+.nexo-chat-bubble__typing {
+  display: inline-block;
+  width: 20px;
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0 4px,
+    transparent 4px 8px
+  );
+  opacity: 0.4;
+  animation: nexo-typing 1s steps(3) infinite;
+}
+
+@keyframes nexo-typing {
+  to {
+    opacity: 0.8;
+  }
+}
+
+/* ── Suggestion chips ────────────────────────────────────────────── */
+
+.nexo-suggestion-chips {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nexo-space-sm);
+}
+
+.nexo-suggestion-chip {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px var(--nexo-space-lg);
+  border-radius: 16px;
+  border: 1px solid var(--nexo-chat-suggestion-border);
+  background: var(--nexo-chat-suggestion-bg);
+  color: var(--nexo-text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.nexo-suggestion-chip:hover:not(:disabled) {
+  background: var(--nexo-chat-suggestion-hover);
+}
+
+.nexo-suggestion-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Chat overlay + panel ────────────────────────────────────────── */
+
+.nexo-chat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--nexo-chat-overlay);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: nexo-fade-in 200ms ease-out;
+}
+
+@keyframes nexo-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nexo-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (min-width: 640px) {
+  .nexo-chat-overlay {
+    align-items: center;
+  }
+}
+
+.nexo-chat-panel {
+  position: relative;
+  width: 100%;
+  max-width: var(--nexo-chat-panel-max-width, 32rem);
+  height: min(85dvh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--nexo-chat-panel-bg);
+  border: 1px solid var(--nexo-chat-panel-border);
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--nexo-chat-panel-shadow);
+  overflow: hidden;
+  animation: nexo-slide-up 300ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+@media (min-width: 640px) {
+  .nexo-chat-panel {
+    border-radius: 28px;
+    animation: nexo-fade-in 200ms ease-out;
+  }
+}
+
+.nexo-chat-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--nexo-space-lg) 20px;
+  border-bottom: 1px solid var(--nexo-chat-panel-border);
+  flex-shrink: 0;
+}
+
+.nexo-chat-panel__header-title {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--nexo-text);
+}
+
+.nexo-chat-panel__header-icon {
+  color: var(--nexo-chat-icon-fg);
+  flex-shrink: 0;
+}
+
+.nexo-chat-panel__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+}
+
+.nexo-chat-panel__icon-button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--nexo-text-secondary);
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.nexo-chat-panel__icon-button:hover {
+  color: var(--nexo-text);
+  background: color-mix(in srgb, var(--nexo-chat-icon-fg) 8%, var(--nexo-bg));
+}
+
+.nexo-chat-panel__icon-button--close {
+  background: var(--nexo-surface);
+  border-color: var(--nexo-chat-panel-border);
+  color: var(--nexo-text);
+}
+
+.nexo-chat-panel__messages {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nexo-space-sm);
+  padding: var(--nexo-space-lg);
+  scroll-behavior: smooth;
+}
+
+.nexo-chat-panel__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--nexo-space-lg);
+  padding: 28px 0 20px;
+  text-align: center;
+}
+
+.nexo-chat-panel__empty-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--nexo-radius-pill);
+  background: var(--nexo-chat-icon-bg);
+  border: 1px solid var(--nexo-chat-icon-border);
+  color: var(--nexo-chat-icon-fg);
+}
+
+.nexo-chat-panel__empty-copy {
+  display: grid;
+  gap: var(--nexo-space-xs);
+  max-width: 30rem;
+}
+
+.nexo-chat-panel__empty-title {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--nexo-text);
+}
+
+.nexo-chat-panel__empty-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--nexo-text-secondary);
+}
+
+.nexo-chat-panel__thinking {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+  width: fit-content;
+  padding: 12px var(--nexo-space-lg);
+  border-radius: 18px;
+  border: 1px solid var(--nexo-chat-assistant-border);
+  background: var(--nexo-chat-assistant-bg);
+  color: var(--nexo-text-secondary);
+}
+
+.nexo-chat-panel__spinner {
+  flex-shrink: 0;
+  animation: nexo-spin 0.8s linear infinite;
+  color: var(--nexo-chat-icon-fg);
+}
+
+@keyframes nexo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.nexo-chat-panel__error {
+  font-size: 13px;
+  color: var(--nexo-error);
+  padding: var(--nexo-space-sm) var(--nexo-space-md);
+  background: color-mix(in srgb, var(--nexo-error) 8%, transparent);
+  border-radius: 12px;
+}
+
+.nexo-chat-panel__follow-ups {
+  padding-top: var(--nexo-space-sm);
+}
+
+.nexo-chat-panel__input-bar {
+  padding: var(--nexo-space-md) var(--nexo-space-lg);
+  border-top: 1px solid var(--nexo-chat-panel-border);
+  flex-shrink: 0;
+}
+
+.nexo-chat-panel__input-shell {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+  padding: var(--nexo-space-sm) var(--nexo-space-md);
+  border-radius: 16px;
+  border: 1px solid var(--nexo-chat-input-border);
+  background: var(--nexo-chat-input-bg);
+}
+
+.nexo-chat-panel__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--nexo-text);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.nexo-chat-panel__input::placeholder {
+  color: var(--nexo-text-tertiary);
+}
+
+.nexo-chat-panel__send {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 12px;
+  background: var(--nexo-accent);
+  color: var(--nexo-accent-on);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.nexo-chat-panel__send:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.nexo-chat-panel__send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ── Personality selector ────────────────────────────────────────── */
+
+.nexo-personality-selector {
+  display: flex;
+  gap: var(--nexo-space-sm);
+  padding: var(--nexo-space-sm) 0;
+  overflow-x: auto;
+}
+
+.nexo-personality-option {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+  padding: var(--nexo-space-sm) var(--nexo-space-md);
+  border-radius: var(--nexo-radius-card);
+  border: 2px solid transparent;
+  background: var(--nexo-surface);
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s;
+  white-space: nowrap;
+}
+
+.nexo-personality-option:hover {
+  border-color: var(--nexo-border);
+}
+
+.nexo-personality-option.is-selected {
+  border-color: var(--nexo-personality-accent, var(--nexo-accent));
+}
+
+.nexo-personality-option__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--nexo-radius-pill);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nexo-personality-option__avatar--default {
+  background: var(--nexo-border);
+}
+
+.nexo-personality-option__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nexo-accent);
+  color: var(--nexo-accent-on);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nexo-personality-option__info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.nexo-personality-option__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nexo-text);
+}
+
+.nexo-personality-option__desc {
+  font-size: 12px;
+  color: var(--nexo-text-secondary);
+}
+
+/* ── Chat FAB ────────────────────────────────────────────────────── */
+
+.nexo-chat-fab {
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  right: 24px;
+  z-index: 50;
+  height: 56px;
+  min-width: 56px;
+  padding: 0 14px;
+  border-radius: var(--nexo-radius-pill);
+  border: none;
+  background: var(--nexo-accent);
+  color: var(--nexo-accent-on);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nexo-space-sm);
+  box-shadow: var(--nexo-chat-fab-shadow);
+  transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+}
+
+.nexo-chat-fab__label {
+  display: none;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.nexo-chat-fab__icon {
+  flex-shrink: 0;
+}
+
+.nexo-chat-fab__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nexo-chat-fab__emoji {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Avatar variant: slightly larger, with a subtle ring border */
+.nexo-chat-fab--avatar {
+  padding: 0 12px;
+  background: var(--nexo-accent);
+  border: 2px solid color-mix(in srgb, var(--nexo-accent) 40%, white);
+}
+
+.nexo-chat-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.22);
+}
+
+@media (min-width: 640px) {
+  .nexo-chat-fab__label {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexo-chat-fab:hover {
+    transform: none;
+  }
+}
+
+/* ── Auth entry button ("Sign in with Luzia") ────────────────────── */
+
+.nexo-auth-entry-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nexo-space-md);
+  padding: 10px 14px;
+  border-radius: var(--nexo-radius-pill);
+  border: 1px solid var(--nexo-border);
+  background: var(--nexo-bg);
+  color: var(--nexo-text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.nexo-auth-entry-button:disabled {
+  cursor: wait;
+}
+
+.nexo-auth-entry-button:hover {
+  border-color: color-mix(in srgb, var(--nexo-brand-50) 30%, transparent);
+  background: color-mix(in srgb, var(--nexo-brand-50) 4%, var(--nexo-bg));
+  box-shadow: 0 12px 28px
+    color-mix(in srgb, var(--nexo-brand-50) 12%, transparent);
+}
+
+.nexo-auth-entry-button--pending {
+  border-color: color-mix(
+    in srgb,
+    var(--nexo-brand-50) 20%,
+    var(--nexo-border)
+  );
+  background: color-mix(in srgb, var(--nexo-brand-50) 6%, var(--nexo-bg));
+  box-shadow: 0 10px 24px
+    color-mix(in srgb, var(--nexo-brand-50) 10%, transparent);
+}
+
+.nexo-auth-entry-button--compact {
+  gap: var(--nexo-space-sm);
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.nexo-auth-entry-button__avatar {
+  display: flex;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--nexo-radius-pill);
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #f3f6ff, #edf1ff);
+  border: 1px solid color-mix(
+    in srgb,
+    var(--nexo-brand-50) 14%,
+    transparent
+  );
+}
+
+.nexo-auth-entry-button--compact .nexo-auth-entry-button__avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.nexo-auth-entry-button__avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.26) translateY(2px);
+  transform-origin: center top;
+}
+
+.nexo-auth-entry-button--compact .nexo-auth-entry-button__avatar-img {
+  transform: scale(1.18) translateY(2px);
+}
+
+.nexo-auth-entry-button__label {
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.nexo-auth-entry-button__spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 2px solid color-mix(
+    in srgb,
+    var(--nexo-brand-50) 26%,
+    transparent
+  );
+  border-top-color: var(--nexo-brand-50);
+  animation: nexo-auth-entry-spin 0.8s linear infinite;
+}
+
+@keyframes nexo-auth-entry-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexo-auth-entry-button__spinner {
+    animation: none;
+  }
+}
+
+/* ── Auth status card ────────────────────────────────────────────── */
+
+.nexo-auth-status-card--state {
+  border-radius: var(--nexo-radius-lg);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--nexo-accent) 10%, var(--nexo-bg));
+  border: 1px solid var(--nexo-border);
+}
+
+.nexo-auth-status-card__content {
+  padding: var(--nexo-space-lg);
+}
+
+.nexo-auth-status-card__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nexo-text);
+}
+
+.nexo-auth-status-card__desc {
+  margin: var(--nexo-space-xs) 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--nexo-text-secondary);
+}

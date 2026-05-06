@@ -1,0 +1,320 @@
+/*
+ * @luzia/nexo-sdk shell styles.
+ *
+ * Styles for the NexoAppShell component: toolbar, theme toggle,
+ * locale selector, loading/error states.
+ *
+ * Import alongside theme.css:
+ *   @import "@luzia/nexo-sdk/src/theme.css";
+ *   @import "@luzia/nexo-sdk/src/shell.css";
+ *
+ * Uses --nexo-* tokens from theme.css.
+ */
+
+/* ── Shell container ────────────────────────────────────────────── */
+
+.nexo-app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--nexo-font);
+  color: var(--nexo-text);
+  background: var(--nexo-bg);
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────── */
+
+.nexo-app-shell__toolbar {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--nexo-space-md) var(--nexo-space-lg);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+
+.nexo-app-shell__toolbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100%, var(--nexo-shell-frame-max-width, 100%));
+  margin: 0 auto;
+}
+
+.nexo-app-shell__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+  min-width: 0;
+}
+
+.nexo-app-shell__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--nexo-space-sm);
+}
+
+.nexo-app-shell__app-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nexo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Theme toggle ───────────────────────────────────────────────── */
+
+.nexo-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--nexo-radius-pill);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  color: #475569;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  font: inherit;
+  padding: 0;
+}
+
+.nexo-theme-toggle:hover {
+  border-color: rgba(66, 100, 252, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.nexo-theme-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nexo-brand-50) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.nexo-app-shell--dark .nexo-theme-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--nexo-text-secondary);
+  box-shadow: none;
+}
+
+.nexo-app-shell--dark .nexo-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--nexo-text);
+}
+
+/* ── Locale dropdown ─────────────────────────────────────────────── */
+
+.nexo-locale-dropdown {
+  position: relative;
+}
+
+.nexo-locale-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: var(--nexo-radius-pill);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  color: #475569;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nexo-locale-trigger:hover,
+.nexo-locale-trigger--open {
+  border-color: rgba(66, 100, 252, 0.18);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.nexo-locale-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--nexo-brand-50) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.nexo-app-shell--dark .nexo-locale-trigger {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--nexo-text-secondary);
+  box-shadow: none;
+}
+
+.nexo-app-shell--dark .nexo-locale-trigger:hover,
+.nexo-app-shell--dark .nexo-locale-trigger--open {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: var(--nexo-text);
+}
+
+.nexo-locale-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 50;
+  margin-top: var(--nexo-space-sm);
+  min-width: 160px;
+  overflow: hidden;
+  border-radius: var(--nexo-radius-card);
+  border: 1px solid var(--nexo-border);
+  background: var(--nexo-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.nexo-locale-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px var(--nexo-space-lg);
+  border: none;
+  background: transparent;
+  color: var(--nexo-text);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.nexo-locale-option:hover {
+  background: var(--nexo-surface);
+}
+
+.nexo-locale-option--active {
+  font-weight: 600;
+  color: var(--nexo-brand-50);
+}
+
+.nexo-locale-option__flag {
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* ── Content ────────────────────────────────────────────────────── */
+
+.nexo-app-shell__content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Loading state ──────────────────────────────────────────────── */
+
+.nexo-app-shell__loading {
+  align-items: center;
+  justify-content: center;
+}
+
+.nexo-app-shell__loading p {
+  font-size: 14px;
+  color: var(--nexo-text-secondary);
+  animation: nexo-shell-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes nexo-shell-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ── Error state ────────────────────────────────────────────────── */
+
+.nexo-app-shell__error {
+  align-items: center;
+  justify-content: center;
+  padding: var(--nexo-space-xl);
+  text-align: center;
+  gap: var(--nexo-space-md);
+}
+
+.nexo-app-shell__error-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nexo-text);
+  margin: 0;
+}
+
+.nexo-app-shell__error-detail {
+  font-size: 14px;
+  color: var(--nexo-error);
+  margin: 0;
+}
+
+.nexo-app-shell__error-hint {
+  font-size: 13px;
+  color: var(--nexo-text-tertiary);
+  margin: 0;
+}
+
+/* ── Webview mode ───────────────────────────────────────────────── */
+
+.nexo-app-shell--webview .nexo-app-shell__content {
+  min-height: 100vh;
+}
+
+/* ── Auth entry button in toolbar (compact alignment) ───────────── */
+
+.nexo-app-shell__toolbar .nexo-auth-entry-button {
+  /* Override default entry button sizing for toolbar context */
+  gap: var(--nexo-space-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.nexo-app-shell__toolbar .nexo-auth-entry-button__avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.nexo-app-shell__toolbar .nexo-auth-entry-button__avatar-img {
+  transform: scale(1.18) translateY(2px);
+}
+
+/* Dark mode entry button */
+.nexo-app-shell--dark .nexo-auth-entry-button {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--nexo-text);
+  box-shadow: none;
+}
+
+.nexo-app-shell--dark .nexo-auth-entry-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.nexo-app-shell--dark .nexo-auth-entry-button__avatar {
+  background: linear-gradient(180deg, rgba(243, 246, 255, 0.12), rgba(237, 241, 255, 0.08));
+  border-color: rgba(66, 100, 252, 0.2);
+}
+
+/* ── Auth status card in shell (non-toolbar) ────────────────────── */
+
+.nexo-app-shell > .nexo-auth-status-card--state {
+  width: min(
+    calc(100% - (var(--nexo-space-lg) * 2)),
+    var(--nexo-shell-frame-max-width, calc(100% - (var(--nexo-space-lg) * 2)))
+  );
+  margin: 0 auto var(--nexo-space-md);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .nexo-app-shell__loading p {
+    animation: none;
+  }
+}

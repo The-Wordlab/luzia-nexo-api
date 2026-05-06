@@ -11,7 +11,6 @@
 # Targets:
 #   all
 #   hosted
-#   rag
 #   minimal-py
 #   structured-py
 #   advanced-py

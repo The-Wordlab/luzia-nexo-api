@@ -6,7 +6,7 @@ VENV_BIN ?= $(CURDIR)/.venv/bin
 PYTHON ?= $(VENV_BIN)/python
 PYTEST ?= $(VENV_BIN)/pytest
 
-.PHONY: setup-dev pre-commit check-toolchain check-mermaid test-examples test-rag-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-examples-py deploy-examples-ts deploy-examples deploy-rag-examples deploy-rag-workers deploy-all-examples setup-rag-scheduler setup-rag-worker-scheduler set-rag-mode-worker set-rag-mode-endpoint check-rag-scheduler check-rag-worker-scheduler check-rag-scheduler-legacy-endpoint setup-rag-production setup-rag-production-legacy-endpoint setup-rag-production-workers verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
+.PHONY: setup-dev pre-commit check-toolchain check-mermaid test-examples test-contracts test-hosted-examples test-sdk test-all gcp-bootstrap gcp-bootstrap-check deploy-examples-py deploy-examples-ts deploy-examples deploy-all-examples verify-examples smoke-live-services seed-demo-local seed-demo seed-demo-dry-run docs-build docs-serve
 
 pre-commit:
 	$(VENV_BIN)/pre-commit run --all-files
@@ -24,9 +24,6 @@ check-mermaid:
 test-examples:
 	source ~/.zshrc && ./scripts/test-examples.sh
 
-test-rag-examples:
-	source ~/.zshrc && ./scripts/test-rag-examples.sh
-
 test-contracts:
 	@if [ ! -x "$(PYTEST)" ]; then echo "ERROR: $(PYTEST) not found. Run 'make setup-dev' first."; exit 1; fi
 	cd tests/contracts && $(PYTEST) -q
@@ -37,7 +34,7 @@ test-hosted-examples:
 test-sdk:
 	cd sdk/javascript && source ~/.zshrc && pnpm install --no-frozen-lockfile && pnpm test
 
-test-all: test-examples test-rag-examples test-contracts test-hosted-examples test-sdk
+test-all: test-examples test-contracts test-hosted-examples test-sdk
 
 gcp-bootstrap:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/bootstrap-gcp.sh
@@ -53,42 +50,8 @@ deploy-examples-ts:
 
 deploy-examples: deploy-examples-py deploy-examples-ts
 
-deploy-rag-examples:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-rag-examples.sh all
-
-deploy-rag-workers:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-rag-workers.sh all
-
 deploy-all-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/deploy-all-examples.sh all
-
-setup-rag-scheduler:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/setup-rag-scheduler.sh all
-
-setup-rag-worker-scheduler:
-	@if [ -z "$$SCHEDULER_RUNNER_SA" ]; then echo "ERROR: SCHEDULER_RUNNER_SA is required"; exit 1; fi
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) SCHEDULER_RUNNER_SA=$$SCHEDULER_RUNNER_SA ./scripts/setup-rag-worker-scheduler.sh all
-
-set-rag-mode-worker:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/set-rag-scheduler-mode.sh worker
-
-set-rag-mode-endpoint:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/set-rag-scheduler-mode.sh endpoint
-
-check-rag-scheduler:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh worker
-
-check-rag-scheduler-legacy-endpoint:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh endpoint
-
-check-rag-worker-scheduler:
-	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/check-rag-scheduler.sh worker
-
-setup-rag-production: deploy-rag-examples deploy-rag-workers setup-rag-worker-scheduler set-rag-mode-worker check-rag-worker-scheduler
-
-setup-rag-production-workers: deploy-rag-examples deploy-rag-workers setup-rag-worker-scheduler check-rag-worker-scheduler
-
-setup-rag-production-legacy-endpoint: deploy-rag-examples setup-rag-scheduler set-rag-mode-endpoint check-rag-scheduler
 
 verify-examples:
 	GCP_PROJECT_ID=$(GCP_PROJECT_ID) GCP_REGION=$(GCP_REGION) ./scripts/verify-hosted-examples.sh

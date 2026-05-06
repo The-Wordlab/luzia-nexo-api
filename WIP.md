@@ -4,9 +4,9 @@
 
 ## Status
 
-Public example inventory is tighter and more explicit. The repo now treats
-webhook apps, hosted reference APIs, and integration utilities as separate
-public surfaces, and the stale demo receiver service has been removed.
+Public example inventory is lean and explicit. The repo treats webhook apps,
+hosted reference APIs, integration utilities, and the checked-in app SDK mirror
+as separate public surfaces.
 
 ## Current state
 
@@ -17,11 +17,11 @@ public surfaces, and the stale demo receiver service has been removed.
   - webhook app examples (`minimal`, `structured`, `advanced`, `food-ordering`, `openclaw-bridge`)
   - hosted reference APIs (`hosted/python`, `hosted/typescript`)
   - integration utilities (`identity-bridge`, `partner-api/proactive`)
+  - SDK mirror (`sdk/nexo-sdk`) synced from `../luzia-nexo/apps/nexo-sdk`
 - Identity Bridge positioning now follows the slug-scoped hosted utility model:
   the partner-owned auth layer should hand off into `/apps/{slug}/auth`,
   `/apps/{slug}/profile`, and `/apps/{slug}/onboarding` rather than living as a
   separate long-term account UX
-- `demo-receiver` has been removed from code, docs, deploy targets, and live-smoke scripts
 - Signing contract unchanged (X-App-Id + X-App-Secret + HMAC)
 - A2A example compliance tests now use canonical agent-card naming
 - Provisioning endpoint (`POST /api/apps/structured/provision`) documented

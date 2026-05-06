@@ -298,9 +298,8 @@ For starter chips before any message is sent, publish prompt suggestions from `G
 
 ### Add vertical orchestration
 
-For multi-step flows beyond Q&A, start from the flagship vertical examples:
+For multi-step flows beyond Q&A, start from the flagship vertical example:
 
-- [Routines](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/routines/python) -- Morning briefings, schedule actions, follow-up reminders
 - [Food Ordering](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/examples/webhook/food-ordering/python) -- Discovery, basket building, checkout approval, delivery tracking
 
 ### Add live event push
