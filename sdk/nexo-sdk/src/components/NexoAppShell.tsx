@@ -470,6 +470,9 @@ export function NexoAppShell({
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (cancelled || !data?.personality) return;
+        // Avatar paths are relative (e.g. /avatars/trainer.png) and resolve
+        // against the app's own origin in both dev and CDN-hosted modes.
+        // No base URL prepending needed.
         setAppPersonality(data.personality);
       })
       .catch(() => {});
@@ -644,12 +647,15 @@ export function NexoAppShell({
                     className="nexo-theme-toggle"
                     onClick={handleThemeToggle}
                     aria-pressed={darkMode}
+                    disabled={loginPending}
                   >
                     {darkMode ? <SunIcon /> : <MoonIcon />}
                   </button>
 
                   {/* Locale selector */}
-                  <LocaleDropdown locale={locale} onSelect={handleLocaleChange} />
+                  {!loginPending && (
+                    <LocaleDropdown locale={locale} onSelect={handleLocaleChange} />
+                  )}
 
                   {/* Login button for guest users */}
                   {authMode === "guest" && (

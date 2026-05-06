@@ -516,24 +516,50 @@
 }
 
 .nexo-chat-fab__avatar {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
 }
 
 .nexo-chat-fab__emoji {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
   flex-shrink: 0;
 }
 
-/* Avatar variant: slightly larger, with a subtle ring border */
+/* Avatar variant: pill-shaped FAB with character + chat icon (Intercom-style) */
 .nexo-chat-fab--avatar {
-  padding: 0 12px;
-  background: var(--nexo-accent);
-  border: 2px solid color-mix(in srgb, var(--nexo-accent) 40%, white);
+  height: 48px;
+  min-width: auto;
+  padding: 0 12px 0 0;
+  gap: 8px;
+  overflow: visible;
+  background: var(--nexo-bg, #FFFFFF);
+  border: 1px solid var(--nexo-border, #EEEEEE);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+.nexo-chat-fab--avatar:hover {
+  border-color: var(--nexo-text-tertiary, #8E8E8E);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.nexo-chat-fab--avatar .nexo-chat-fab__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-left: 3px;
+}
+
+.nexo-chat-fab__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nexo-text, #1A1A1A);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
 }
 
 .nexo-chat-fab:hover {
@@ -574,9 +600,10 @@
 
 .nexo-auth-entry-button:disabled {
   cursor: wait;
+  pointer-events: none;
 }
 
-.nexo-auth-entry-button:hover {
+.nexo-auth-entry-button:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--nexo-brand-50) 30%, transparent);
   background: color-mix(in srgb, var(--nexo-brand-50) 4%, var(--nexo-bg));
   box-shadow: 0 12px 28px
@@ -584,14 +611,14 @@
 }
 
 .nexo-auth-entry-button--pending {
-  border-color: color-mix(
-    in srgb,
-    var(--nexo-brand-50) 20%,
-    var(--nexo-border)
-  );
-  background: color-mix(in srgb, var(--nexo-brand-50) 6%, var(--nexo-bg));
-  box-shadow: 0 10px 24px
-    color-mix(in srgb, var(--nexo-brand-50) 10%, transparent);
+  opacity: 0.7;
+  border-color: var(--nexo-border);
+  background: var(--nexo-surface);
+  box-shadow: none;
+}
+
+.nexo-auth-entry-button--pending .nexo-auth-entry-button__label {
+  opacity: 0.5;
 }
 
 .nexo-auth-entry-button--compact {
@@ -638,17 +665,13 @@
 }
 
 .nexo-auth-entry-button__spinner {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   border-radius: 999px;
-  border: 2px solid color-mix(
-    in srgb,
-    var(--nexo-brand-50) 26%,
-    transparent
-  );
-  border-top-color: var(--nexo-brand-50);
-  animation: nexo-auth-entry-spin 0.8s linear infinite;
+  border: 2px solid var(--nexo-border);
+  border-top-color: var(--nexo-text-secondary);
+  animation: nexo-auth-entry-spin 0.7s linear infinite;
 }
 
 @keyframes nexo-auth-entry-spin {

@@ -96,7 +96,11 @@ export function AgentChatFab({
         aria-label={ariaLabel}
       >
         <FabIcon avatar={resolvedAvatar} />
-        {label ? <span className="nexo-chat-fab__label">{label}</span> : null}
+        {/* Pill text: label prop wins, then personality name, then nothing */}
+        {resolvedAvatar && (label || personality?.name) && (
+          <span className="nexo-chat-fab__name">{label || personality?.name}</span>
+        )}
+        {!resolvedAvatar && label ? <span className="nexo-chat-fab__label">{label}</span> : null}
       </button>
     </>
   );
