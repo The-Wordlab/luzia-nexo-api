@@ -18,6 +18,8 @@ as separate public surfaces.
   - hosted reference APIs (`hosted/python`, `hosted/typescript`)
   - integration utilities (`identity-bridge`, `partner-api/proactive`)
   - SDK mirror (`sdk/nexo-sdk`) synced from `../luzia-nexo/apps/nexo-sdk`
+- External-runtime public docs now use `agent` / `app agent` naming for
+  app-specific intelligence instead of older legacy terminology
 - Identity Bridge positioning now follows the slug-scoped hosted utility model:
   the partner-owned auth layer should hand off into `/apps/{slug}/auth`,
   `/apps/{slug}/profile`, and `/apps/{slug}/onboarding` rather than living as a

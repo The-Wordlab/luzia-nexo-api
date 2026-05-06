@@ -1047,7 +1047,7 @@ See the [SDK README](https://github.com/The-Wordlab/luzia-nexo-api/tree/main/sdk
 
 ## External Runtime Integration
 
-External runtimes (AI assistants, companion services, background workers) can integrate with Nexo through account linking, capability sync, context summaries, context bundles, and Knowledge Pack sync.
+External runtimes (AI assistants, app agent services, background workers) can integrate with Nexo through account linking, capability sync, context summaries, context bundles, and Knowledge Pack sync.
 
 See the **[External Runtime Integration Guide](external-runtime-integration.md)** for the full end-to-end flow with code examples.
 

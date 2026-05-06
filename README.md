@@ -12,7 +12,7 @@ Nexo has one unified app model. Every app can have:
 Nexo handles routing, consent-managed profile context, rich UI payloads,
 streaming, and proactive delivery. Apps published in Nexo are automatically
 discoverable by Luzia at runtime. This repo is the external examples and
-documentation companion to the main `luzia-nexo` runtime.
+documentation counterpart to the main `luzia-nexo` runtime.
 
 Treat the dashboard as the operator and publishing control plane for
 apps-as-agents: create/configure/approve/publish there. Public aggregate A2A

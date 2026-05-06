@@ -1,6 +1,6 @@
 # External Runtime Integration
 
-Connect an external runtime (AI assistant, companion service, background worker)
+Connect an external runtime (AI assistant, app agent service, background worker)
 to Nexo so it can act on behalf of users, sync data, and surface capabilities
 through the Nexo ecosystem.
 
@@ -13,7 +13,7 @@ This guide covers the full integration flow:
 5. [Context bundles](#context-bundles) - pull unified context for LLM grounding
 6. [Knowledge Pack sync](#knowledge-pack-sync) - keep reference data fresh
 7. [Worker/job topology](#workerjob-topology) - scheduled sync patterns
-8. [Companion services](#companion-services) - app-specific intelligence
+8. [App agent services](#app-agent-services) - app-specific intelligence
 
 If your runtime also needs Nexo-owned app-scoped login, profile, or onboarding
 for an externally hosted frontend, see [Hosted App Auth & Profile](auth-bridge-handoff.md).
@@ -490,31 +490,31 @@ gcloud run jobs update my-sync-job \
 - Use content hashing to skip no-op syncs.
 - Log structured output for Cloud Logging.
 
-## Companion services
+## App agent services
 
 Some apps need domain-specific intelligence beyond what Nexo provides natively
 (prediction suggestions, expert Q&A, provider-specific analysis).
 
 ### Design rules
 
-Companion services follow the same partner-integration shape as all
+App agent services follow the same partner-integration shape as all
 runtime-backed apps:
 
 - **Thin and stateless** - all persistent state lives in Nexo (app tables,
   Knowledge Packs)
-- **App-secret authenticated** - use `X-App-Secret` for webhook/companion calls
+- **App-secret authenticated** - use `X-App-Secret` for webhook/agent calls
 - **Nexo as the substrate** - predictions, competitions, reference data, and
   user state all live in Nexo
 - **No separate backend family** - even chat-like "Ask Expert" features should
-  be a companion endpoint, not a standalone backend
+  be an app-agent endpoint, not a standalone backend
 
-### Ask Expert / chat-like companions
+### Ask Expert / chat-like agents
 
-An "Ask Expert" feature (AI-powered Q&A about your domain) is a companion
+An "Ask Expert" feature (AI-powered Q&A about your domain) is an app-agent
 capability, not a separate system:
 
 ```
-User question -> Nexo webhook dispatch -> Companion service
+User question -> Nexo webhook dispatch -> App agent service
   -> Reads Knowledge Pack data for grounding
   -> Calls LLM with domain context
   -> Returns response via standard webhook envelope
@@ -524,7 +524,7 @@ Before building a custom retrieval stack, prove how far live-updated Knowledge
 Packs can go for RAG-like grounding. Knowledge Pack records include
 `search_text` and `markdown_projection` fields designed for this purpose.
 
-### Example companion endpoints
+### Example app-agent endpoints
 
 ```
 GET  /matches/:id/suggestions  - AI prediction suggestions
@@ -558,14 +558,14 @@ runtime at query time.
 The [WC2026 Predictor](https://github.com/The-Wordlab/worldcup-server) is the
 canonical reference implementation. It demonstrates:
 
-- `src/nexo/client.ts` - TypeScript Nexo client with key-exchange auth
+- `src/lib/nexo-sdk/server/nexo-client.ts` - server-side Nexo client with key-exchange auth
 - `src/jobs/seed-to-nexo.ts` - Bootstrap job that seeds Knowledge Packs
 - `src/jobs/sync-reference-data.ts` - Recurring-sync foundation: capability
   registration is wired, provider fetch still needs implementation
 - `src/jobs/recompute-standings.ts` - Deterministic derived output computation
 - `.github/workflows/deploy.yml` - Cloud Run service + jobs deploy/update
   workflow foundation
-- `docs/custom-service-seam.md` - Companion service design
+- `docs/custom-service-seam.md` - app-agent service design
 
 ## Related docs
 
