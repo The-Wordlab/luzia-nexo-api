@@ -70,6 +70,12 @@ This is the same underlying creation grammar used by the dashboard Builder
 chat in `luzia-nexo`. Builder and MCP are two surfaces over the same creation
 contract.
 
+In the dashboard Builder chat, app creation is explicitly `preview -> confirm
+-> apply`: the first create turn shows the proposed app shape, and provisioning
+only happens after an affirmative follow-up turn. If you build another UI on
+top of MCP, keep that same confirmation discipline instead of silently creating
+on the first turn.
+
 If you have the `luzia-nexo` repo checked out, use the `/build-app` slash
 command in Claude Code for a guided app creation workflow.
 
@@ -109,6 +115,10 @@ Use the same underlying app contract, but choose the right surface explicitly:
 
 Do not invent a second creation story. Builder and MCP should both follow the
 same creation grammar.
+
+For Builder-backed UI flows, that means the user should see a preview first and
+must explicitly confirm before the app is provisioned or a destructive/apply
+step runs.
 
 Strategically, this means Nexo can act as more than a CRUD backend. It can be
 the layer where Luzia gains new app-backed capabilities with durable state and
@@ -180,12 +190,14 @@ Move logic into Nexo backend contracts and/or Knowledge Packs when it becomes:
 
 During app creation:
 
-- fail fast on provider / planner errors
-- surface the real error
+- keep `preview -> confirm -> apply` as the core contract
+- in interactive Builder UI, a planner failure may fall back to the
+  deterministic preview, but that fallback must be explicit to the user
+- after preview, confirmation should apply the approved preview rather than
+  silently replanning
+- if provisioning or apply fails, surface the real error
 - retry the same step when appropriate
 - do not silently fall back to a different creation path
-- do not silently degrade the main Builder/MCP creation story into a hidden
-  deterministic path
 
 ### Use Raw Data after creation when
 

@@ -70,6 +70,16 @@ This is the same underlying creation model used by the dashboard Builder chat
 experience. The UI and MCP are two surfaces over the same creation contract,
 not separate products.
 
+In the dashboard Builder chat, create flows are explicitly `preview -> confirm
+-> apply`: the first turn previews the app, and provisioning only happens after
+an affirmative follow-up turn. External MCP clients should preserve that
+confirmation discipline in their own UI instead of silently creating on the
+first message.
+
+If the interactive Builder planner falls back to the deterministic preview, that
+fallback should be explicit to the user, and confirmation should still apply
+the approved preview rather than silently replanning.
+
 You do not need to understand Nexo runtime internals to use this lane. Treat
 Nexo as a product backend you interact with through the dashboard, REST API,
 and MCP tools.
