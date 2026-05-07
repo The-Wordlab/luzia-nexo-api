@@ -36,7 +36,7 @@ export function AgentChatBubble({ role, text, personality, className }: AgentCha
         />
       )}
       <div className="nexo-chat-bubble__content">
-        {text}
+        {text || <span className="nexo-chat-bubble__typing" />}
       </div>
     </div>
   );

@@ -22,7 +22,11 @@ import { AgentChatPanel } from "./AgentChatPanel";
 import { useAgentChat } from "../useAgentChat";
 import type { NexoClientConfig, NexoAuthMode, NexoBootstrap } from "../types";
 import type { NexoAccessState } from "../types";
-import type { AgentChatOptions, Personality } from "../chat-types";
+import type {
+  AgentAppearance,
+  AgentChatOptions,
+  Personality,
+} from "../chat-types";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -75,6 +79,16 @@ export interface NexoAppShellContext {
   bootstrap: NexoBootstrap | null;
   /** Whether the shell is in webview mode. */
   isWebview: boolean;
+  /** The app's linked personality (from bootstrap). */
+  personality: Personality | null;
+  /** Bootstrap-resolved chat appearance for the current user/app context. */
+  agentAppearance: AgentAppearance | null;
+  /**
+   * Incremented after the agent chat completes a turn that used a mutation
+   * tool (create_record, update_record, delete_record). Use this as a React
+   * effect dependency to trigger a data refetch in your app.
+   */
+  dataVersion: number;
 }
 
 export interface NexoAppShellProps {
@@ -90,7 +104,7 @@ export interface NexoAppShellProps {
    * Custom avatar for the chat FAB. Can be:
    * - A URL to an image (character icon, SVG, PNG)
    * - An emoji string
-   * - undefined (uses personality avatar or default chat bubble)
+   * - undefined (uses personality avatar or the default chat icon)
    */
   chatFabAvatar?: string;
   /** The app content to render inside the shell. */
@@ -353,6 +367,10 @@ function LocaleDropdown({
 // ---------------------------------------------------------------------------
 
 type ConnectionStatus = "connecting" | "connected" | "error";
+type AppBootstrapPayload = {
+  personality?: Personality | null;
+  agent_appearance?: AgentAppearance | null;
+};
 
 export function NexoAppShell({
   appName,
@@ -461,19 +479,22 @@ export function NexoAppShell({
 
   // Fetch personality from bootstrap for the chat FAB avatar
   const [appPersonality, setAppPersonality] = useState<Personality | null>(null);
+  const [appAgentAppearance, setAppAgentAppearance] =
+    useState<AgentAppearance | null>(null);
   useEffect(() => {
     if (!isReady || !config?.slug || !config?.apiBaseUrl) return;
     let cancelled = false;
     fetch(`${config.apiBaseUrl}/api/apps/${config.slug}/bootstrap`, {
       headers: { Authorization: `Bearer ${config.accessToken}` },
     })
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => (r.ok ? (r.json() as Promise<AppBootstrapPayload>) : null))
       .then((data) => {
-        if (cancelled || !data?.personality) return;
+        if (cancelled || !data) return;
         // Avatar paths are relative (e.g. /avatars/trainer.png) and resolve
         // against the app's own origin in both dev and CDN-hosted modes.
         // No base URL prepending needed.
-        setAppPersonality(data.personality);
+        setAppPersonality(data.personality ?? null);
+        setAppAgentAppearance(data.agent_appearance ?? null);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -539,6 +560,9 @@ export function NexoAppShell({
     config,
     bootstrap,
     isWebview,
+    personality: appPersonality,
+    agentAppearance: appAgentAppearance,
+    dataVersion: agentChat.dataVersion,
   };
 
   // -------------------------------------------------------------------------
@@ -710,11 +734,12 @@ export function NexoAppShell({
         <AgentChatFab
           chatOptions={agentChatOptions}
           personality={appPersonality ?? undefined}
+          agentAppearance={appAgentAppearance ?? undefined}
           shellMode="standalone"
           ariaLabel={labels.chatFabAriaLabel}
           label={labels.chatFabLabel}
           avatar={chatFabAvatar}
-          renderPanel={({ chatOptions: _chatOptions, personality, onClose }) => (
+          renderPanel={({ personality, agentAppearance, onClose }) => (
             <AgentChatPanel
               messages={agentChat.messages}
               suggestions={agentChat.suggestions}
@@ -724,6 +749,7 @@ export function NexoAppShell({
               onSendMessage={agentChat.sendMessage}
               onClearThread={agentChat.clearThread}
               personality={personality}
+              agentAppearance={agentAppearance}
               title={labels.chatTitle ?? appName}
               welcomeTitle={labels.chatWelcomeTitle}
               welcomeDescription={labels.chatWelcomeDescription}

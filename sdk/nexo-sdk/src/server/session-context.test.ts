@@ -10,23 +10,24 @@ function createPayload(
   overrides: Partial<PartnerWebhookPayload> = {},
 ): PartnerWebhookPayload {
   return {
-    event: "message_received",
-    app: { id: "app-1", name: "WC2026 Predictor" },
-    thread: { id: "thread-1", customer_id: null },
     message: {
-      id: "msg-1",
-      seq: 1,
+      messageId: "msg-1",
+      contextId: "thread-1",
       role: "user",
-      content: "How does this look?",
-      content_json: { match_id: "match-001" },
+      parts: [{ type: "text", text: "How does this look?" }],
+      metadata: {
+        app: { id: "app-1", name: "WC2026 Predictor" },
+        thread: { id: "thread-1", customer_id: null },
+        profile: { display_name: "Mark" },
+        locale: "es",
+        history_tail: [
+          { role: "user", content: "Earlier question" },
+          { role: "assistant", content: "Earlier answer" },
+        ],
+        timestamp: "2026-04-25T12:00:00Z",
+        group_id: "group-a",
+      },
     },
-    history_tail: [
-      { role: "user", content: "Earlier question" },
-      { role: "assistant", content: "Earlier answer" },
-    ],
-    metadata: { locale: "es", group_id: "group-a" },
-    profile: { display_name: "Mark" },
-    timestamp: "2026-04-25T12:00:00Z",
     ...overrides,
   };
 }
@@ -38,8 +39,8 @@ describe("session-context SDK helpers", () => {
     expect(context.currentMessage).toBe("How does this look?");
     expect(context.displayName).toBe("Mark");
     expect(context.locale).toBe("es");
-    expect(context.messageContext).toEqual({ match_id: "match-001" });
-    expect(context.metadata).toEqual({ locale: "es", group_id: "group-a" });
+    expect(context.messageContext).toBeNull();
+    expect(context.metadata).toMatchObject({ locale: "es", group_id: "group-a" });
     expect(context.historyTail).toEqual([
       { role: "user", content: "Earlier question" },
       { role: "assistant", content: "Earlier answer" },

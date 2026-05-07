@@ -7,6 +7,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
+import { NexoAppShell } from "./NexoAppShell";
+import type { NexoAppShellLabels } from "./NexoAppShell";
+import * as clientModule from "../client";
+import * as bootstrapModule from "../useNexoBootstrap";
 
 // ---------------------------------------------------------------------------
 // We set up mocks at the top level before importing the component.
@@ -94,12 +98,6 @@ vi.mock("../useAgentChat", () => ({
   })),
 }));
 
-// Now import after mocks are registered
-import { NexoAppShell } from "./NexoAppShell";
-import type { NexoAppShellLabels } from "./NexoAppShell";
-import * as clientModule from "../client";
-import * as bootstrapModule from "../useNexoBootstrap";
-
 // ---------------------------------------------------------------------------
 // localStorage mock
 // ---------------------------------------------------------------------------
@@ -155,6 +153,13 @@ describe("NexoAppShell", () => {
   beforeEach(() => {
     fakeStorage = makeFakeStorage();
     vi.stubGlobal("localStorage", fakeStorage);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => null,
+      }),
+    );
     vi.stubGlobal("location", {
       search: "",
       href: "http://localhost:5173/",
@@ -174,6 +179,7 @@ describe("NexoAppShell", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
     vi.clearAllMocks();
   });
@@ -547,6 +553,53 @@ describe("NexoAppShell", () => {
     );
 
     expect(screen.queryByLabelText("Chat")).not.toBeInTheDocument();
+  });
+
+  it("exposes the resolved agent appearance from bootstrap to render-prop children", async () => {
+    useConnectedClient();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        personality: {
+          id: "pers-1",
+          slug: "trainer",
+          name: "Trainer",
+          greeting: "Hello",
+          suggestions: [],
+          assets: { avatarLight: "/avatars/trainer.png" },
+          brand: {},
+        },
+        agent_appearance: {
+          displayName: "Elias",
+          avatarLight: "/avatars/elias-bra.png",
+          variantKey: "team-bra",
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <NexoAppShell appName="Test App" storagePrefix="test" labels={LABELS}>
+        {(ctx) => (
+          <div data-testid="resolved-appearance">
+            {ctx.agentAppearance?.displayName ?? "none"}|
+            {ctx.agentAppearance?.variantKey ?? "none"}|
+            {ctx.personality?.name ?? "none"}
+          </div>
+        )}
+      </NexoAppShell>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("resolved-appearance")).toHaveTextContent(
+        "Elias|team-bra|Trainer",
+      );
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://localhost:8000/api/apps/test/bootstrap",
+      { headers: { Authorization: "Bearer tok" } },
+    );
   });
 
   // -------------------------------------------------------------------------

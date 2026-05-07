@@ -48,15 +48,10 @@ describe("useAgentChat", () => {
   it("uses the final done text when streamed chunks collapse word spacing", async () => {
     globalThis.fetch = vi.fn().mockResolvedValueOnce(
       createSSEResponse([
-        { event: "stream_start", data: JSON.stringify({ thread_id: "thread-1" }) },
-        { event: "content_delta", data: JSON.stringify({ delta: "Mexico are" }) },
-        { event: "content_delta", data: JSON.stringify({ delta: "still favourites." }) },
-        {
-          event: "done",
-          data: JSON.stringify({
-            text: "Mexico are still favourites.",
-          }),
-        },
+        { event: "status_update", data: JSON.stringify({ taskId: "t1", contextId: "ctx-1", status: { state: "working" } }) },
+        { event: "artifact_update", data: JSON.stringify({ taskId: "t1", artifact: { artifactId: "a1", parts: [{ type: "text", text: "Mexico are" }] }, append: true }) },
+        { event: "artifact_update", data: JSON.stringify({ taskId: "t1", artifact: { artifactId: "a1", parts: [{ type: "text", text: "still favourites." }] }, append: true }) },
+        { event: "status_update", data: JSON.stringify({ taskId: "t1", contextId: "ctx-1", status: { state: "completed", message: { role: "agent", parts: [{ type: "text", text: "Mexico are still favourites." }] } } }) },
       ]),
     );
 
@@ -76,12 +71,12 @@ describe("useAgentChat", () => {
     );
   });
 
-  it("posts chat turns to the API-prefixed A2A stream endpoint", async () => {
+  it("posts chat turns to the canonical A2A stream endpoint", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       createSSEResponse([
-        { event: "stream_start", data: JSON.stringify({ thread_id: "thread-1" }) },
-        { event: "content_delta", data: JSON.stringify({ delta: "Hello there." }) },
-        { event: "done", data: JSON.stringify({ text: "Hello there." }) },
+        { event: "status_update", data: JSON.stringify({ taskId: "t1", contextId: "ctx-1", status: { state: "working" } }) },
+        { event: "artifact_update", data: JSON.stringify({ taskId: "t1", artifact: { artifactId: "a1", parts: [{ type: "text", text: "Hello there." }] }, append: true }) },
+        { event: "status_update", data: JSON.stringify({ taskId: "t1", contextId: "ctx-1", status: { state: "completed", message: { role: "agent", parts: [{ type: "text", text: "Hello there." }] } } }) },
       ]),
     );
     globalThis.fetch = fetchMock;
@@ -93,14 +88,60 @@ describe("useAgentChat", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://test.nexo.local/api/a2a/messages:stream?format=chatify",
+      "https://test.nexo.local/a2a/messages:stream",
       expect.objectContaining({
         method: "POST",
       }),
     );
   });
 
-  it("restores existing threads from the API-prefixed A2A task endpoint", async () => {
+  it("uses the final done envelope to surface webhook error diagnostics", async () => {
+    globalThis.fetch = vi.fn().mockResolvedValueOnce(
+      createSSEResponse([
+        { event: "status_update", data: JSON.stringify({ taskId: "t1", contextId: "ctx-err", status: { state: "working" } }) },
+        { event: "artifact_update", data: JSON.stringify({ taskId: "t1", artifact: { artifactId: "a1", parts: [{ type: "text", text: "ERROR_TEMPORARY_FAILURE" }] }, append: true }) },
+        {
+          event: "done",
+          data: JSON.stringify({
+            contextId: "ctx-err",
+            status: "error",
+            partner_response: {
+              error: {
+                code: "ERROR_TEMPORARY_FAILURE",
+                message: "I can't answer that right now. Please try again later.",
+                details: {
+                  internal_message: "Gemini API request failed: 429 RESOURCE_EXHAUSTED",
+                },
+              },
+            },
+            text: "ERROR_TEMPORARY_FAILURE",
+          }),
+        },
+      ]),
+    );
+
+    const { result } = renderHook(() => useAgentChat(BASE_OPTIONS));
+
+    await act(async () => {
+      await result.current.sendMessage("Who are the favourites?");
+    });
+
+    await waitFor(
+      () => {
+        const assistant = result.current.messages.at(-1);
+        expect(assistant?.text).toBe(
+          "I can't answer that right now. Please try again later.\n\nTechnical details: Gemini API request failed: 429 RESOURCE_EXHAUSTED",
+        );
+      },
+      { timeout: 3000 },
+    );
+
+    expect(result.current.error).toBe(
+      "I can't answer that right now. Please try again later.\n\nTechnical details: Gemini API request failed: 429 RESOURCE_EXHAUSTED",
+    );
+  });
+
+  it("restores existing threads from the canonical A2A task endpoint", async () => {
     localStorage.setItem(
       "test_agent:app-123:user-456",
       "thread-restore-1",
@@ -109,11 +150,16 @@ describe("useAgentChat", () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(
       new Response(
         JSON.stringify({
-          history: [
+          tasks: [
             {
-              messageId: "assistant-1",
-              role: "agent",
-              parts: [{ type: "text", text: "Restored answer" }],
+              contextId: "thread-restore-1",
+              history: [
+                {
+                  messageId: "assistant-1",
+                  role: "agent",
+                  parts: [{ type: "text", text: "Restored answer" }],
+                },
+              ],
             },
           ],
         }),
@@ -129,7 +175,7 @@ describe("useAgentChat", () => {
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://test.nexo.local/api/a2a/tasks/thread-restore-1?historyLength=50",
+        "https://test.nexo.local/a2a/tasks?contextId=thread-restore-1&historyLength=50&pageSize=1",
         expect.objectContaining({
           headers: { Authorization: "Bearer test-token" },
         }),

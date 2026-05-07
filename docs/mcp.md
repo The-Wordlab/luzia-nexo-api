@@ -778,7 +778,7 @@ Once connected, use this sequence to build Personalized Apps:
 2. **Provision:** `provision_app` with the plan template creates the app, tables, fields, views, and seed data
 3. **Verify:** `show_app` to inspect what was created
 4. **Evolve:** `plan_operation` + `apply_operation` for incremental changes (add fields, records, views)
-5. **Review:** Check the result in the dashboard (`/dashboard/apps`) and standalone webview (`/micro-apps/{id}/webview`)
+5. **Review:** Check the result in the dashboard (`/dashboard/apps`) and standalone app webview (`https://apps.luzia.com/{slug}/?webview=1`)
 
 **Tips by client:**
 

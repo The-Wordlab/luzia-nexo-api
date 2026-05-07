@@ -53,6 +53,7 @@ export type { NexoAuthMode, NexoAccessState } from "./types";
 // Types re-exported for convenience
 export type {
   ChatMessage,
+  AgentAppearance,
   AgentChatOptions,
   AgentChatResult,
   ContentBlock,

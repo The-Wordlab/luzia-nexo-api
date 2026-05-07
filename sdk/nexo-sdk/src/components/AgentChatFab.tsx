@@ -4,26 +4,31 @@
  * Only renders in standalone mode (browser). Hidden in webview mode
  * where the native app owns the chat chrome.
  *
- * Supports a custom avatar image (character icon) or falls back to a
- * generic chat bubble. The Luzia octopus is the recommended default.
+ * Supports a custom avatar image (character icon) with the personality
+ * name shown alongside in a pill shape.
  */
 
 import { useState } from "react";
-import type { AgentChatOptions, Personality } from "../chat-types";
-
-const DEFAULT_LUZIA_AVATAR = "./luzia/avatars/luzia-avatar.svg";
+import type {
+  AgentAppearance,
+  AgentChatOptions,
+  Personality,
+} from "../chat-types";
 
 export interface AgentChatFabProps {
   /** Agent chat connection options. */
   chatOptions: AgentChatOptions;
   /** The personality to show in the chat panel. */
   personality?: Personality;
+  /** Bootstrap-resolved per-user appearance overrides. */
+  agentAppearance?: AgentAppearance;
   /** Shell mode: "standalone" shows the FAB, "webview" hides it. */
   shellMode: "standalone" | "webview";
   /** Lazy-loaded chat panel render function. */
   renderPanel: (props: {
     chatOptions: AgentChatOptions;
     personality?: Personality;
+    agentAppearance?: AgentAppearance;
     onClose: () => void;
   }) => React.ReactNode;
   /** Accessible label for the FAB button. Required - host provides translation. */
@@ -33,8 +38,8 @@ export interface AgentChatFabProps {
   /**
    * Custom avatar for the FAB button. Can be:
    * - A URL to an image (PNG, SVG, etc.)
-   * - An emoji string (rendered as text)
-   * - undefined (falls back to default chat bubble icon)
+   * - An emoji string
+   * - undefined (falls back to personality assets, then default icon)
    */
   avatar?: string;
   /** Override class. */
@@ -42,18 +47,26 @@ export interface AgentChatFabProps {
 }
 
 function isUrl(s: string): boolean {
-  return (
-    s.startsWith("http") ||
-    s.startsWith("/") ||
-    s.startsWith("./") ||
-    s.startsWith("../") ||
-    s.startsWith("data:")
-  );
+  return s.startsWith("http") || s.startsWith("/") || s.startsWith("data:");
 }
 
 function FabIcon({ avatar }: { avatar?: string }) {
   if (!avatar) {
-    return null;
+    return (
+      <svg
+        className="nexo-chat-fab__icon"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    );
   }
 
   if (isUrl(avatar)) {
@@ -67,6 +80,7 @@ function FabIcon({ avatar }: { avatar?: string }) {
 export function AgentChatFab({
   chatOptions,
   personality,
+  agentAppearance,
   shellMode,
   renderPanel,
   ariaLabel,
@@ -76,20 +90,32 @@ export function AgentChatFab({
 }: AgentChatFabProps) {
   const [open, setOpen] = useState(false);
 
-  // Resolve avatar: prop > personality assets > undefined (fallback to icon)
   const resolvedAvatar =
     avatar ??
+    agentAppearance?.avatarLight ??
+    agentAppearance?.avatarSmall ??
+    agentAppearance?.avatarStatic ??
     personality?.assets?.avatarLight ??
-    DEFAULT_LUZIA_AVATAR;
+    personality?.assets?.avatarSmall ??
+    personality?.assets?.avatarStatic ??
+    undefined;
+  const resolvedName =
+    agentAppearance?.displayName ??
+    personality?.name ??
+    label;
 
-  // Hidden in webview mode - native app owns chat
   if (shellMode === "webview") return null;
 
   return (
     <>
       {open && (
         <div className="nexo-chat-overlay" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
-          {renderPanel({ chatOptions, personality, onClose: () => setOpen(false) })}
+          {renderPanel({
+            chatOptions,
+            personality,
+            agentAppearance,
+            onClose: () => setOpen(false),
+          })}
         </div>
       )}
       <button
@@ -99,10 +125,9 @@ export function AgentChatFab({
         aria-label={ariaLabel}
       >
         <FabIcon avatar={resolvedAvatar} />
-        {/* Pill text: label prop wins, then personality name, then nothing */}
-        {resolvedAvatar && (label || personality?.name) && (
-          <span className="nexo-chat-fab__name">{label || personality?.name}</span>
-        )}
+        {resolvedAvatar && resolvedName ? (
+          <span className="nexo-chat-fab__name">{resolvedName}</span>
+        ) : null}
         {!resolvedAvatar && label ? <span className="nexo-chat-fab__label">{label}</span> : null}
       </button>
     </>

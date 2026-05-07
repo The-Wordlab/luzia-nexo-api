@@ -34,18 +34,19 @@ describe("executeAgentTurn", () => {
     ]);
 
     const payload = {
-      event: "message_received",
-      app: { id: "app-1", name: "Example App" },
-      thread: { id: "thread-1", customer_id: null },
       message: {
-        id: "msg-1",
-        seq: 1,
+        messageId: "msg-1",
+        contextId: "thread-1",
         role: "user",
-        content: "How do you see Mexico vs South Africa?",
+        parts: [{ type: "text", text: "How do you see Mexico vs South Africa?" }],
+        metadata: {
+          app: { id: "app-1", name: "Example App" },
+          thread: { id: "thread-1" },
+          locale: "en",
+          history_tail: [],
+          timestamp: "2026-05-02T18:00:00Z",
+        },
       },
-      history_tail: [],
-      metadata: {},
-      timestamp: "2026-05-02T18:00:00Z",
     } as const;
 
     const reply = await executeAgentTurn({
@@ -53,7 +54,7 @@ describe("executeAgentTurn", () => {
       client,
       buildSessionContext: (incoming) => ({
         locale: "en",
-        currentMessage: incoming.message.content,
+        currentMessage: incoming.message.parts[0].text ?? "",
       }),
       buildTools: () => [
         {

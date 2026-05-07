@@ -16,14 +16,23 @@ describe("content-blocks registry", () => {
   });
 
   it("registers and retrieves a renderer", () => {
-    const renderer = (_block: ContentBlock) => null;
+    const renderer = (block: ContentBlock) => {
+      void block;
+      return null;
+    };
     registerBlockRenderer("nutrition.daily_summary", renderer);
     expect(getBlockRenderer("nutrition.daily_summary")).toBe(renderer);
   });
 
   it("overwrites a previously registered renderer", () => {
-    const first = (_block: ContentBlock) => null;
-    const second = (_block: ContentBlock) => null;
+    const first = (block: ContentBlock) => {
+      void block;
+      return null;
+    };
+    const second = (block: ContentBlock) => {
+      void block;
+      return null;
+    };
     registerBlockRenderer("test.format", first);
     registerBlockRenderer("test.format", second);
     expect(getBlockRenderer("test.format")).toBe(second);
@@ -38,8 +47,14 @@ describe("content-blocks registry", () => {
   });
 
   it("different formats are independent", () => {
-    const rendererA = (_block: ContentBlock) => null;
-    const rendererB = (_block: ContentBlock) => null;
+    const rendererA = (block: ContentBlock) => {
+      void block;
+      return null;
+    };
+    const rendererB = (block: ContentBlock) => {
+      void block;
+      return null;
+    };
     registerBlockRenderer("format.a", rendererA);
     registerBlockRenderer("format.b", rendererB);
     expect(getBlockRenderer("format.a")).toBe(rendererA);

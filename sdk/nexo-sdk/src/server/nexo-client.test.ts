@@ -53,7 +53,7 @@ describe("NexoServerClient", () => {
         bearerToken: "pre-auth-token",
       });
 
-      await client.listMicroApps();
+      await client.listApps();
 
       // Should NOT have called authenticate (key-exchange)
       const calls = fetch.mock.calls as [string, RequestInit][];
@@ -131,7 +131,7 @@ describe("NexoServerClient", () => {
             json: () => Promise.resolve({ access_token: "auto-token" }),
           });
         }
-        // listMicroApps
+        // listApps
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -144,7 +144,7 @@ describe("NexoServerClient", () => {
         developerKey: "my-key",
       });
 
-      await client.listMicroApps();
+      await client.listApps();
       expect(callCount).toBe(2); // key-exchange + actual request
     });
 
@@ -171,8 +171,8 @@ describe("NexoServerClient", () => {
         developerKey: "my-key",
       });
 
-      await client.listMicroApps();
-      await client.listMicroApps();
+      await client.listApps();
+      await client.listApps();
 
       expect(keyExchangeCalls).toBe(1);
     });
@@ -190,7 +190,7 @@ describe("NexoServerClient", () => {
         bearerToken: "my-token",
       });
 
-      await client.listMicroApps();
+      await client.listApps();
 
       const [, init] = (fetch.mock.calls as [string, RequestInit][])[0];
       expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer my-token");
@@ -220,7 +220,7 @@ describe("NexoServerClient", () => {
         bearerToken: "token",
       });
 
-      const error = await client.listMicroApps().catch((e) => e);
+      const error = await client.listApps().catch((e) => e);
       expect(error).toBeInstanceOf(NexoRequestError);
       expect(error.status).toBe(403);
     });

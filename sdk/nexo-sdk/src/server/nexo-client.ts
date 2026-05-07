@@ -2,7 +2,7 @@
  * NexoServerClient - typed Nexo API client for server-to-server use.
  *
  * Authenticates via developer key exchange and provides typed wrappers for
- * Knowledge Packs, External Sync, Micro Apps, Table Records, Profiles, and
+ * Knowledge Packs, External Sync, Apps, Table Records, Profiles, and
  * Demo Personas.
  *
  * Node-only. No browser APIs.
@@ -202,17 +202,17 @@ export class NexoServerClient {
     return this.request("GET", "/api/demo/personas");
   }
 
-  // ---- Micro Apps ----
+  // ---- Apps ----
 
-  async listMicroApps(): Promise<MicroApp[]> {
+  async listApps(): Promise<App[]> {
     return this.request("GET", "/api/apps/structured");
   }
 
-  async listMicroAppParticipants(appId: string): Promise<MicroAppParticipant[]> {
+  async listAppParticipants(appId: string): Promise<AppParticipant[]> {
     return this.request("GET", `/api/apps/structured/${appId}/participants`);
   }
 
-  async listAppTables(appId: string): Promise<MicroAppTable[]> {
+  async listAppTables(appId: string): Promise<AppTable[]> {
     return this.request("GET", `/api/apps/structured/${appId}/tables`);
   }
 
@@ -283,13 +283,13 @@ export interface KnowledgePackDataset {
   title: string;
 }
 
-export interface MicroApp {
+export interface App {
   id: string;
   name: string;
   template_key: string | null;
 }
 
-export interface MicroAppParticipant {
+export interface AppParticipant {
   id: string;
   app_id: string;
   user_id: string;
@@ -321,7 +321,7 @@ export interface DemoPersona {
   consent_scopes: string[];
 }
 
-export interface MicroAppTable {
+export interface AppTable {
   id: string;
   key: string;
   name: string;

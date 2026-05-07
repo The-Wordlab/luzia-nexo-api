@@ -54,6 +54,7 @@ export type {
 } from "./types";
 export type {
   ChatMessage,
+  AgentAppearance,
   AgentChatOptions,
   AgentChatResult,
   Personality,

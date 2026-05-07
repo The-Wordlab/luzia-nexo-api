@@ -17,6 +17,16 @@ export interface Personality {
   brand: PersonalityBrand;
 }
 
+/** Bootstrap-resolved chat appearance for the current user/app context. */
+export interface AgentAppearance {
+  displayName?: string;
+  variantKey?: string;
+  avatarLight?: string;
+  avatarDark?: string;
+  avatarSmall?: string;
+  avatarStatic?: string;
+}
+
 export interface PersonalityAssets {
   avatarLight?: string;
   avatarDark?: string;
@@ -67,6 +77,9 @@ export interface AgentChatOptions {
   /** App slug for canonical /api/apps/{slug} routing. Required - the backend
    *  only serves agent routes at slug-based paths. */
   slug: string;
+  /** Optional explicit skill/app id sent in A2A metadata.skill_id.
+   *  Defaults to slug when omitted. */
+  skillId?: string;
   /** Optional capability filter for the agent. */
   capabilityName?: string;
   /** Storage key prefix for thread persistence. */
@@ -88,4 +101,10 @@ export interface AgentChatResult {
   suggestions: string[];
   sendMessage: (text: string) => Promise<void>;
   clearThread: () => void;
+  /**
+   * Incremented after each agent turn that used a mutation tool
+   * (create_record, update_record, delete_record). Apps can use this
+   * as a React dependency to trigger a data refetch.
+   */
+  dataVersion: number;
 }

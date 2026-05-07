@@ -12,28 +12,45 @@ export interface PartnerProfile {
   [key: string]: unknown;
 }
 
+/**
+ * A2A Message-shaped webhook payload from Nexo.
+ *
+ * Nexo sends this shape. Text is in message.parts[0].text,
+ * profile/locale/history are in message.metadata.
+ */
 export interface PartnerWebhookPayload {
-  event: "message_received";
-  app: { id: string; name: string };
-  thread: { id: string; customer_id: string | null };
   message: {
-    id: string;
-    seq: number;
+    messageId: string;
+    contextId?: string;
     role: string;
-    content: string;
-    content_json?: Record<string, unknown> | null;
+    parts: Array<{ type: string; text?: string; data?: unknown }>;
+    metadata?: {
+      app?: { id: string; name: string };
+      thread?: { id: string; customer_id?: string | null };
+      profile?: PartnerProfile | null;
+      locale?: string | null;
+      locale_source?: string | null;
+      history_tail?: Array<{
+        role: string;
+        content: string;
+        content_json?: Record<string, unknown> | null;
+      }>;
+      timestamp?: string;
+      [key: string]: unknown;
+    } | null;
+    [key: string]: unknown;
   };
-  history_tail: Array<{
-    role: string;
-    content: string;
-    content_json?: Record<string, unknown> | null;
-  }>;
-  tools?: Array<{ name: string; enabled: boolean }> | null;
-  attachments?: Array<{ media_id: string; type: string; url: string }> | null;
-  metadata?: Record<string, unknown> | null;
-  profile?: PartnerProfile | null;
-  locale_source?: string | null;
-  timestamp: string;
+  configuration?: Record<string, unknown> | null;
+}
+
+/** Helper: extract text from an A2A message parts array. */
+export function extractTextFromPayload(payload: PartnerWebhookPayload): string {
+  const parts = payload.message?.parts;
+  if (Array.isArray(parts)) {
+    const textPart = parts.find((p) => p.type === "text" && typeof p.text === "string");
+    if (textPart?.text) return textPart.text;
+  }
+  return "";
 }
 
 export interface PartnerContentPart {

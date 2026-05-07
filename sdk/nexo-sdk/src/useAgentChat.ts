@@ -10,9 +10,8 @@
  * - Suggestion extraction from responses
  * - Initial prompt suggestion bootstrap from the per-app agent card
  *
- * The hook talks to POST /api/a2a/messages:stream?format=chatify on the
- * configured API origin. The backend also serves canonical root /a2a routes,
- * but API-only origins like the public ALB commonly forward /api/* only.
+ * The hook talks to POST /a2a/messages:stream on the configured Nexo API
+ * origin using A2A-native SSE events (status_update, artifact_update).
  */
 
 import { useCallback, useEffect, useState } from "react";
@@ -79,6 +78,9 @@ function extractPartnerResponseText(value: unknown): string | null {
 
 function resolveDoneText(donePayload: Record<string, unknown> | null, fallback: string): string {
   if (!donePayload) return fallback;
+  if (donePayload.status === "error") {
+    return fallback;
+  }
   const topLevelText = donePayload.text;
   if (typeof topLevelText === "string" && topLevelText.trim().length > 0) {
     return topLevelText;
@@ -132,9 +134,11 @@ function extractSuggestionsFromContext(payload: ThreadContextPayload): string[] 
   return parseSuggestions(latest.content_json);
 }
 
-function buildApiA2aPath(path: string): string {
-  return `/api/a2a${path}`;
+function buildA2aPath(path: string): string {
+  return `/a2a${path}`;
 }
+
+const MUTATION_TOOLS = new Set(["create_record", "update_record", "delete_record"]);
 
 export function useAgentChat(options: AgentChatOptions | null): AgentChatResult {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -143,10 +147,10 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [threadId, setThreadId] = useState<string | null>(null);
+  const [dataVersion, setDataVersion] = useState(0);
 
   const storagePrefix = options?.storagePrefix ?? "nexo_agent_thread";
   const appId = options?.appId ?? null;
-  const slug = options?.slug ?? null;
   const userId = options?.userId ?? null;
   const apiBaseUrl = options?.apiBaseUrl ?? null;
   const accessToken = options?.accessToken ?? null;
@@ -156,7 +160,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
   // Restore thread on mount
   useEffect(() => {
-    if (!appId || !slug || !userId || !apiBaseUrl || !accessToken) return;
+    if (!appId || !userId || !apiBaseUrl || !accessToken) return;
     let cancelled = false;
 
     (async () => {
@@ -172,25 +176,48 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
       try {
         const resp = await fetch(
-          `${apiBaseUrl}${buildApiA2aPath(`/tasks/${storedId}`)}?historyLength=50`,
+          `${apiBaseUrl}${buildA2aPath("/tasks")}?contextId=${encodeURIComponent(storedId)}&historyLength=50&pageSize=1`,
           { headers: { Authorization: `Bearer ${accessToken}` } },
         );
         if (!resp.ok) {
           localStorage.removeItem(key);
           return;
         }
-        const task = await resp.json();
+        const listPayload = await resp.json();
+        const tasks = Array.isArray(listPayload.tasks) ? listPayload.tasks : [];
+        const task = tasks[0];
+        if (!task || typeof task !== "object") {
+          localStorage.removeItem(key);
+          return;
+        }
+        const taskRecord = task as Record<string, unknown>;
+        const history = Array.isArray(taskRecord.history) ? taskRecord.history : [];
         const payload: ThreadContextPayload = {
-          messages: (task.history ?? []).map((msg: Record<string, unknown>) => ({
-            id: msg.messageId,
-            role: msg.role === "agent" ? "assistant" : "user",
-            content: (Array.isArray(msg.parts) ? (msg.parts[0] as Record<string, unknown>)?.text : undefined) ?? "",
-            content_json: msg.metadata as Record<string, unknown> | undefined,
-          })),
+          messages: history.map((msg: Record<string, unknown>) => {
+            const firstPart = Array.isArray(msg.parts)
+              ? (msg.parts[0] as Record<string, unknown> | undefined)
+              : undefined;
+            return {
+              id: typeof msg.messageId === "string" ? msg.messageId : undefined,
+              role: msg.role === "agent" ? "assistant" : "user",
+              content:
+                typeof firstPart?.text === "string" ? firstPart.text : "",
+              content_json:
+                msg.metadata &&
+                typeof msg.metadata === "object" &&
+                !Array.isArray(msg.metadata)
+                  ? (msg.metadata as Record<string, unknown>)
+                  : undefined,
+            };
+          }),
         };
         if (cancelled) return;
 
-        setThreadId(storedId);
+        setThreadId(
+          typeof taskRecord.contextId === "string" && taskRecord.contextId.trim().length > 0
+            ? taskRecord.contextId
+            : storedId,
+        );
         setMessages(mapThreadMessages(payload));
         const restored = extractSuggestionsFromContext(payload);
         if (restored.length > 0) setSuggestions(restored);
@@ -200,7 +227,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
     })();
 
     return () => { cancelled = true; };
-  }, [accessToken, apiBaseUrl, appId, slug, deviceKey, storagePrefix, userId]);
+  }, [accessToken, apiBaseUrl, appId, deviceKey, storagePrefix, userId]);
 
   useEffect(() => {
     if (!agentCardUrl) return;
@@ -271,6 +298,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         }
       };
 
+      let sawMutationTool = false;
       let assistantBubbleCreated = false;
       const ensureAssistantBubble = () => {
         if (!assistantBubbleCreated) {
@@ -281,7 +309,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
       try {
         const resp = await fetch(
-          `${options.apiBaseUrl}${buildApiA2aPath("/messages:stream")}?format=chatify`,
+          `${options.apiBaseUrl}${buildA2aPath("/messages:stream")}`,
           {
             method: "POST",
             headers: {
@@ -296,7 +324,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
                 role: "user",
                 parts: [{ type: "text", text: text.trim() }],
                 metadata: {
-                  skill_id: options.slug,
+                  skill_id: options.skillId ?? options.slug,
                   capability_name: options.capabilityName ?? undefined,
                   locale: options.locale ?? "en",
                 },
@@ -318,57 +346,89 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         let currentEvent = "message";
         let currentData: string[] = [];
 
+        // Helper to extract text from A2A message parts
+        const extractPartsText = (message: unknown): string | null => {
+          if (!message || typeof message !== "object") return null;
+          const parts = (message as Record<string, unknown>).parts;
+          if (!Array.isArray(parts)) return null;
+          const texts = parts
+            .filter((p): p is Record<string, unknown> => typeof p === "object" && p !== null && typeof (p as Record<string, unknown>).text === "string")
+            .map((p) => p.text as string);
+          return texts.length > 0 ? texts.join("") : null;
+        };
+
         const processEvent = (eventName: string, payloadText: string) => {
           if (!payloadText) return;
           let parsed: unknown = payloadText;
           try { parsed = JSON.parse(payloadText); } catch { /* raw string */ }
 
-          if (eventName === "stream_start" && parsed && typeof parsed === "object") {
-            const tid = (parsed as Record<string, unknown>).contextId
-              ?? (parsed as Record<string, unknown>).requestId;
-            if (typeof tid === "string") {
+          if (!parsed || typeof parsed !== "object") return;
+          const obj = parsed as Record<string, unknown>;
+
+          // A2A: status_update events carry state transitions
+          if (eventName === "status_update") {
+            const status = obj.status as Record<string, unknown> | undefined;
+            if (!status) return;
+            const state = status.state as string;
+
+            // Extract contextId from the first status_update (thread ID)
+            const tid = obj.contextId;
+            if (typeof tid === "string" && !threadId) {
               setThreadId(tid);
-              const key = buildAgentThreadStorageKey(
-                storagePrefix,
-                options.appId,
-                options.userId,
-              );
+              const key = buildAgentThreadStorageKey(storagePrefix, options.appId, options.userId);
               localStorage.setItem(key, tid);
             }
-            return;
-          }
 
-          if (eventName === "thinking") {
-            setProgress("thinking");
-            return;
-          }
+            if (state === "working") {
+              // Tool call or initial working state
+              const toolName = status.tool;
+              if (typeof toolName === "string" && MUTATION_TOOLS.has(toolName)) {
+                sawMutationTool = true;
+              }
+              const progressText = extractPartsText(status.message);
+              if (typeof progressText === "string" && progressText) {
+                setProgress(progressText);
+              }
+              return;
+            }
 
-          if ((eventName === "tool_call" || eventName === "tool_start") && parsed && typeof parsed === "object") {
-            const progressText = (parsed as Record<string, unknown>).progress;
-            if (typeof progressText === "string") {
-              setProgress(progressText);
+            if (state === "completed") {
+              // Done - extract final text and suggestions
+              const doneText = extractPartsText(status.message);
+              const suggestions = status.followUpQuestions;
+              donePayload = {
+                text: doneText ?? fullText,
+                followupQuestions: Array.isArray(suggestions) ? suggestions : [],
+              };
+              return;
+            }
+
+            if (state === "failed") {
+              const errorText = extractPartsText(status.message) ?? "Request failed";
+              if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+              pendingDelta = "";
+              fullText = errorText;
+              visibleText = errorText;
+              updateVisible();
+              setError(errorText);
+              return;
             }
             return;
           }
 
-          if (eventName === "content_delta" && parsed && typeof parsed === "object") {
-            const delta = (parsed as Record<string, unknown>).delta;
-            if (typeof delta === "string") {
-              ensureAssistantBubble();
-              fullText += delta;
-              setProgress(null);
-              enqueueDelta(delta);
+          if (eventName === "done") {
+            donePayload = obj;
+
+            const tid = obj.contextId ?? obj.thread_id ?? obj.threadId;
+            if (typeof tid === "string" && !threadId) {
+              setThreadId(tid);
+              const key = buildAgentThreadStorageKey(storagePrefix, options.appId, options.userId);
+              localStorage.setItem(key, tid);
             }
-            return;
-          }
 
-          if (eventName === "done" && parsed && typeof parsed === "object") {
-            donePayload = parsed as Record<string, unknown>;
-
-            // Handle partner error: surface formatted error from partner_response.error
-            const status = (donePayload as Record<string, unknown>).status;
+            const status = obj.status;
             if (status === "error") {
-              const partnerResponse = (donePayload as Record<string, unknown>).partner_response;
+              const partnerResponse = obj.partner_response;
               let formatted: string | null = null;
               if (partnerResponse && typeof partnerResponse === "object") {
                 const partnerError = (partnerResponse as Record<string, unknown>).error;
@@ -394,6 +454,20 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
                 setError(formatted);
               }
             }
+            return;
+          }
+
+          // A2A: artifact_update events carry streamed text deltas
+          if (eventName === "artifact_update") {
+            const artifact = obj.artifact as Record<string, unknown> | undefined;
+            const delta = artifact ? extractPartsText(artifact) : null;
+            if (typeof delta === "string" && delta) {
+              ensureAssistantBubble();
+              fullText += delta;
+              setProgress(null);
+              enqueueDelta(delta);
+            }
+            return;
           }
         };
 
@@ -438,10 +512,13 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
             const doneSuggestions = parseSuggestions(cj);
             if (doneSuggestions.length > 0) setSuggestions(doneSuggestions);
           }
-          // Try top-level prompt_suggestions / follow_up_questions (serverless path).
+          // Try top-level prompt_suggestions / follow_up_questions / followupQuestions.
           // These are raw arrays, not wrapped in content_json, so parse directly.
+          // The A2A chatify mapper uses camelCase "followupQuestions".
           const rawSuggestions: unknown =
-            donePayload["prompt_suggestions"] ?? donePayload["follow_up_questions"];
+            donePayload["prompt_suggestions"] ??
+            donePayload["follow_up_questions"] ??
+            donePayload["followupQuestions"];
           if (Array.isArray(rawSuggestions) && rawSuggestions.length > 0) {
             const topSuggestions = rawSuggestions.filter(
               (item): item is string => typeof item === "string",
@@ -461,6 +538,11 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
               : m,
           ),
         );
+
+        // Signal data change so the app can refetch
+        if (sawMutationTool) {
+          setDataVersion((v) => v + 1);
+        }
       } catch (err) {
         if (flushTimer) clearTimeout(flushTimer);
         const msg = err instanceof Error ? err.message : "Unknown error";
@@ -496,5 +578,5 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
     setError(null);
   }, [options, storagePrefix]);
 
-  return { messages, sending, progress, error, suggestions, sendMessage, clearThread };
+  return { messages, sending, progress, error, suggestions, sendMessage, clearThread, dataVersion };
 }

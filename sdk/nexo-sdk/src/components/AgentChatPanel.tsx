@@ -6,7 +6,11 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { ChatMessage, Personality } from "../chat-types";
+import type {
+  AgentAppearance,
+  ChatMessage,
+  Personality,
+} from "../chat-types";
 import { AgentChatBubble } from "./AgentChatBubble";
 import { AgentSuggestionChips } from "./AgentSuggestionChips";
 
@@ -20,6 +24,8 @@ export interface AgentChatPanelProps {
   onClearThread: () => void;
   /** Active personality (shown on assistant bubbles). */
   personality?: Personality;
+  /** Bootstrap-resolved per-user appearance overrides. */
+  agentAppearance?: AgentAppearance;
   /** Placeholder text for the input. Required - host provides translation. */
   placeholder: string;
   /** Label for the clear/new-chat button. Required - host provides translation. */
@@ -46,6 +52,7 @@ export function AgentChatPanel(props: AgentChatPanelProps) {
     error,
     onSendMessage,
     personality,
+    agentAppearance,
     placeholder,
     closeLabel,
     onClose,
@@ -71,7 +78,11 @@ export function AgentChatPanel(props: AgentChatPanelProps) {
   const showTypingIndicator =
     sending &&
     (!latestAssistantMessage || latestAssistantMessage.text.trim().length === 0);
-  const resolvedTitle = title ?? personality?.name ?? placeholder;
+  const resolvedTitle =
+    title ??
+    agentAppearance?.displayName ??
+    personality?.name ??
+    placeholder;
   const resolvedWelcomeTitle =
     welcomeTitle ?? personality?.greeting ?? resolvedTitle;
 

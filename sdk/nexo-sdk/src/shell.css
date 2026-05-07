@@ -14,12 +14,28 @@
 /* ── Shell container ────────────────────────────────────────────── */
 
 .nexo-app-shell {
+  /* Responsive frame: 100% on mobile, 540px on tablets, 640px on desktop.
+     Apps can override --nexo-shell-frame-max-width to opt out. Webview mode
+     stays at 100% regardless (the native container owns the width). */
+  --nexo-shell-frame-max-width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: var(--nexo-font);
   color: var(--nexo-text);
   background: var(--nexo-bg);
+}
+
+@media (min-width: 640px) {
+  .nexo-app-shell:not(.nexo-app-shell--webview) {
+    --nexo-shell-frame-max-width: 540px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .nexo-app-shell:not(.nexo-app-shell--webview) {
+    --nexo-shell-frame-max-width: 640px;
+  }
 }
 
 /* ── Toolbar ────────────────────────────────────────────────────── */

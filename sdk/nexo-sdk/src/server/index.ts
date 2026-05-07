@@ -69,11 +69,11 @@ export type {
   KPRecord,
   KnowledgePack,
   KnowledgePackDataset,
-  MicroApp,
-  MicroAppParticipant,
+  App,
+  AppParticipant,
+  AppTable,
   NexoProfile,
   DemoPersona,
-  MicroAppTable,
   TableQueryFilter,
   TableQueryBody,
   TableRecord,
@@ -83,6 +83,7 @@ export type {
 } from "./nexo-client";
 
 // Types
+export { extractTextFromPayload } from "./webhook-types";
 export type {
   PartnerWebhookPayload,
   PartnerWebhookResponse,

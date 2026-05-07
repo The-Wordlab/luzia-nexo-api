@@ -1,4 +1,5 @@
 import type { PartnerWebhookPayload } from "./webhook-types";
+import { extractTextFromPayload } from "./webhook-types";
 
 export interface AgentHistoryEntry {
   role: string;
@@ -66,40 +67,34 @@ export function buildBaseAgentSessionContext(
   payload: PartnerWebhookPayload,
   options: BuildBaseAgentSessionContextOptions = {},
 ): BaseAgentSessionContext {
-  const messageContext = payload.message.content_json ?? null;
-  const metadata = payload.metadata ?? null;
-  const profile = payload.profile ?? null;
+  const meta = payload.message.metadata ?? {};
+  const profile = (meta.profile as Record<string, unknown>) ?? null;
   const historyLimit = options.historyLimit ?? 6;
   const locale =
-    getAgentStringValue(payload as unknown as Record<string, unknown>, "locale") ||
-    getAgentStringValue(profile ?? null, "locale") ||
-    getAgentStringValue(metadata, "locale");
+    getAgentStringValue(meta as Record<string, unknown>, "locale") ||
+    getAgentStringValue(profile, "locale");
+
+  const historyTail = (meta.history_tail ?? []) as Array<{
+    role: string;
+    content: string;
+  }>;
 
   return {
-    currentMessage: payload.message.content.trim(),
+    currentMessage: extractTextFromPayload(payload).trim(),
     displayName:
-      getAgentStringValue(profile ?? null, "display_name") ||
-      getAgentStringValue(profile ?? null, "name"),
+      getAgentStringValue(profile, "display_name") ||
+      getAgentStringValue(profile, "name"),
     locale,
-    historyTail: payload.history_tail
+    historyTail: historyTail
       .slice(-historyLimit)
       .map((entry) => ({
         role: entry.role,
         content: entry.content,
       }))
       .filter((entry) => entry.content.trim()),
-    messageContext:
-      messageContext && typeof messageContext === "object" && !Array.isArray(messageContext)
-        ? (messageContext as Record<string, unknown>)
-        : null,
-    metadata:
-      metadata && typeof metadata === "object" && !Array.isArray(metadata)
-        ? (metadata as Record<string, unknown>)
-        : null,
-    profile:
-      profile && typeof profile === "object" && !Array.isArray(profile)
-        ? (profile as Record<string, unknown>)
-        : null,
+    messageContext: null,
+    metadata: meta as Record<string, unknown>,
+    profile,
   };
 }
 

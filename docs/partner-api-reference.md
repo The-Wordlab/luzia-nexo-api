@@ -950,7 +950,7 @@ curl "${NEXO_BASE_URL}/api/capabilities/manifest" \
       "ui": {
         "dashboard_url": "https://nexo.luzia.com/dashboard/apps/550e8400-...",
         "runtime_url": "https://nexo.luzia.com/dashboard/apps/550e8400-.../runtime",
-        "webview_url": "https://nexo.luzia.com/micro-apps/550e8400-.../webview",
+        "webview_url": "https://apps.luzia.com/shared-expenses/?webview=1",
         "public_app_url": null
       }
     },
