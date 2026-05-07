@@ -483,7 +483,8 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     expect(config.accessToken).toBe("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLWxvZ2luIn0.test");
     expect(config.userId).toBe("user-login");
     expect(config.slug).toBe("nutrition");
-    expect(config.apiBaseUrl).toBe("https://api.luzia.com");
+    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
+    expect(config.runtimeAuthMode).toBe("bearer");
 
     // Token stored in localStorage
     expect(fakeStorage.getItem("nexo_nexologin_token")).toBe(config.accessToken);
@@ -534,6 +535,67 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     expect(replaceStateMock).toHaveBeenCalled();
   });
 
+  it("prefers the hosted session bootstrap on first-party app hosts", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        origin: "https://apps.staging.luzia.com",
+        host: "apps.staging.luzia.com",
+        hostname: "apps.staging.luzia.com",
+        pathname: "/nutrition/",
+        search: "",
+        hash: "",
+      },
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        slug: "nutrition",
+        environments: {
+          staging: {
+            api_base_url: "https://nexo-cdn-alb.staging.thewordlab.net",
+            auth_base_url: "https://staging.nexo.luzia.com",
+          },
+        },
+      }),
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        app_id: "app-hosted",
+        user_id: "user-hosted",
+      }),
+    } as unknown as Response);
+
+    const client = createNexoClient({ storagePrefix: "hostedsession" });
+    const config = await client.initStandalone("http://localhost:8000");
+
+    expect(config.apiBaseUrl).toBe("https://staging.nexo.luzia.com/app-runtime-api");
+    expect(config.authBaseUrl).toBe("https://staging.nexo.luzia.com");
+    expect(config.appId).toBe("app-hosted");
+    expect(config.userId).toBe("user-hosted");
+    expect(config.accessToken).toBeNull();
+    expect(config.runtimeAuthMode).toBe("hosted_session");
+    expect(fakeStorage.getItem("nexo_hostedsession_token")).toBeNull();
+    expect(fakeStorage.getItem("nexo_hostedsession_user_id")).toBeNull();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const [bootstrapUrl, bootstrapInit] = fetchMock.mock.calls[1] as [
+      string,
+      { cache?: string; credentials?: string; headers?: Headers },
+    ];
+    expect(bootstrapUrl).toBe(
+      "https://staging.nexo.luzia.com/app-runtime-api/api/apps/nutrition/bootstrap",
+    );
+    expect(bootstrapInit.cache).toBe("no-store");
+    expect(bootstrapInit.credentials).toBe("include");
+    expect(bootstrapInit.headers).toBeUndefined();
+  });
+
   it("builds hosted login URLs for well-known CDN hosts without auth bridge enabled", async () => {
     vi.stubGlobal("window", {
       location: {
@@ -557,6 +619,12 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     } as unknown as Response);
 
     fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 401,
+      json: async () => ({ detail: "ERROR_UNAUTHORIZED" }),
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         access_token: "guest-token",
@@ -568,8 +636,9 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     const client = createNexoClient({ storagePrefix: "cdnlogin" });
     const config = await client.initStandalone("http://localhost:8000");
 
-    expect(config.apiBaseUrl).toBe("https://luzia-nexo.thewordlab.net");
+    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
     expect(config.authBaseUrl).toBe("https://nexo.luzia.com");
+    expect(config.runtimeAuthMode).toBe("bearer");
 
     const loginUrl = new URL(client.buildNexoLoginUrl());
     expect(loginUrl.origin).toBe("https://nexo.luzia.com");
@@ -613,7 +682,54 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     );
     expect(config.userId).toBe("user-token");
     expect(config.slug).toBe("nutrition");
-    expect(config.apiBaseUrl).toBe("http://localhost:8000");
+    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
+    expect(config.runtimeAuthMode).toBe("bearer");
+  });
+
+  it("hydrates hosted-session clients without requiring a cached bearer token", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        origin: "https://apps.staging.luzia.com",
+        host: "apps.staging.luzia.com",
+        hostname: "apps.staging.luzia.com",
+        pathname: "/nutrition/",
+        search: "",
+        hash: "",
+      },
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        slug: "nutrition",
+        environments: {
+          staging: {
+            api_base_url: "https://nexo-cdn-alb.staging.thewordlab.net",
+            auth_base_url: "https://staging.nexo.luzia.com",
+          },
+        },
+      }),
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        app_id: "app-hosted",
+        user_id: "user-hosted",
+      }),
+    } as unknown as Response);
+
+    const client = createNexoClient({ storagePrefix: "hydratehosted" });
+    await expect(client.hydrateFromStorage()).resolves.toBe(true);
+
+    const config = client.getConfig();
+    expect(config.apiBaseUrl).toBe("https://staging.nexo.luzia.com/app-runtime-api");
+    expect(config.accessToken).toBeNull();
+    expect(config.userId).toBe("user-hosted");
+    expect(config.runtimeAuthMode).toBe("hosted_session");
   });
 
   it("buildNexoLoginUrl builds correct redirect URL", async () => {

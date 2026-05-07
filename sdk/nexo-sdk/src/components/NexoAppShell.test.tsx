@@ -6,11 +6,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import React from "react";
 import { NexoAppShell } from "./NexoAppShell";
 import type { NexoAppShellLabels } from "./NexoAppShell";
 import * as clientModule from "../client";
 import * as bootstrapModule from "../useNexoBootstrap";
+import * as agentChatModule from "../useAgentChat";
 
 // ---------------------------------------------------------------------------
 // We set up mocks at the top level before importing the component.
@@ -48,7 +48,9 @@ vi.mock("../client", () => {
       initFromBootstrap: vi.fn(),
       initStandalone: vi.fn(initStandaloneFn),
       getConfig: vi.fn().mockReturnValue(resolvedConfig),
+      getAppId: vi.fn().mockReturnValue(resolvedConfig.appId),
       isInitialized: vi.fn().mockReturnValue(true),
+      hydrateFromStorage: vi.fn().mockResolvedValue(true),
       getAuthMode: vi.fn().mockReturnValue(opts?.authMode ?? "guest"),
       getAccessState: vi.fn().mockReturnValue(opts?.accessState ?? null),
       buildNexoLoginUrl: vi.fn().mockReturnValue(
@@ -95,6 +97,9 @@ vi.mock("../useAgentChat", () => ({
     suggestions: [],
     sendMessage: vi.fn(),
     clearThread: vi.fn(),
+    startNewThread: vi.fn(),
+    threadId: null,
+    dataVersion: 0,
   })),
 }));
 
@@ -153,6 +158,7 @@ describe("NexoAppShell", () => {
   beforeEach(() => {
     fakeStorage = makeFakeStorage();
     vi.stubGlobal("localStorage", fakeStorage);
+    document.documentElement.className = "";
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
@@ -169,6 +175,7 @@ describe("NexoAppShell", () => {
     });
     // Reset mock to default (connected guest client)
     vi.mocked(clientModule.createNexoClient).mockReset();
+    vi.mocked(agentChatModule.useAgentChat).mockClear();
     vi.mocked(clientModule.createNexoClient).mockImplementation(() => {
       const { _make } = vi.mocked(clientModule.createNexoClient) as unknown as {
         _make: (o?: unknown) => ReturnType<typeof clientModule.createNexoClient>;
@@ -215,7 +222,9 @@ describe("NexoAppShell", () => {
       initFromBootstrap: vi.fn(),
       initStandalone: vi.fn().mockResolvedValue(resolvedConfig),
       getConfig: vi.fn().mockReturnValue(resolvedConfig),
+      getAppId: vi.fn().mockReturnValue(resolvedConfig.appId),
       isInitialized: vi.fn().mockReturnValue(true),
+      hydrateFromStorage: vi.fn().mockResolvedValue(true),
       getAuthMode: vi.fn().mockReturnValue(opts?.authMode ?? "guest"),
       getAccessState: vi.fn().mockReturnValue(opts?.accessState ?? null),
       buildNexoLoginUrl: vi.fn().mockReturnValue(
@@ -411,6 +420,44 @@ describe("NexoAppShell", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("reconciles locale from bootstrap when it arrives after mount", async () => {
+    let bootstrap: ReturnType<typeof bootstrapModule.useNexoBootstrap> = null;
+    vi.mocked(bootstrapModule.useNexoBootstrap).mockImplementation(
+      () => bootstrap,
+    );
+    useConnectedClient();
+
+    const renderShell = () => (
+      <NexoAppShell appName="Test App" storagePrefix="test" labels={LABELS}>
+        {(ctx) => <div data-testid="locale-state">{ctx.locale}</div>}
+      </NexoAppShell>
+    );
+
+    const { rerender } = render(renderShell());
+
+    await waitFor(() => {
+      expect(screen.getByTestId("locale-state")).toHaveTextContent("en");
+    });
+
+    bootstrap = {
+      type: "nexo:bootstrap",
+      app_id: "app-1",
+      slug: "test",
+      app_name: "Test App",
+      api_base_url: "http://localhost:8000",
+      access_token: "tok",
+      user_id: "user-1",
+      locale: "pt",
+      surface_mode: "webview_optimized",
+      capabilities: {},
+    };
+    rerender(renderShell());
+
+    await waitFor(() => {
+      expect(screen.getByTestId("locale-state")).toHaveTextContent("pt");
+    });
+  });
+
   // -------------------------------------------------------------------------
   // Theme toggle
   // -------------------------------------------------------------------------
@@ -459,6 +506,32 @@ describe("NexoAppShell", () => {
     expect(fakeStorage.getItem("nexo_theme")).toBe("light");
   });
 
+  it("honors dark query param on initial render", async () => {
+    fakeStorage.setItem("nexo_theme", "light");
+    vi.stubGlobal("location", {
+      search: "?dark=1",
+      href: "http://localhost:5173/?dark=1",
+      origin: "http://localhost:5173",
+      pathname: "/",
+      assign: vi.fn(),
+    });
+    useConnectedClient();
+
+    render(
+      <NexoAppShell appName="Test App" storagePrefix="test" labels={LABELS}>
+        {(ctx) => (
+          <div data-testid="theme-state">{ctx.darkMode ? "dark" : "light"}</div>
+        )}
+      </NexoAppShell>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("theme-state")).toHaveTextContent("dark");
+    });
+
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+  });
+
   // -------------------------------------------------------------------------
   // Locale selector
   // -------------------------------------------------------------------------
@@ -487,6 +560,28 @@ describe("NexoAppShell", () => {
     fireEvent.click(esOption!);
 
     expect(fakeStorage.getItem("nexo_locale")).toBe("es");
+  });
+
+  it("honors locale query param over stored locale on initial render", async () => {
+    fakeStorage.setItem("nexo_locale", "fr");
+    vi.stubGlobal("location", {
+      search: "?locale=es",
+      href: "http://localhost:5173/?locale=es",
+      origin: "http://localhost:5173",
+      pathname: "/",
+      assign: vi.fn(),
+    });
+    useConnectedClient();
+
+    render(
+      <NexoAppShell appName="Test App" storagePrefix="test" labels={LABELS}>
+        {(ctx) => <div data-testid="locale-state">{ctx.locale}</div>}
+      </NexoAppShell>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("locale-state")).toHaveTextContent("es");
+    });
   });
 
   // -------------------------------------------------------------------------
@@ -555,6 +650,36 @@ describe("NexoAppShell", () => {
     expect(screen.queryByLabelText("Chat")).not.toBeInTheDocument();
   });
 
+  it("passes the configured SDK thread policy into useAgentChat", async () => {
+    useConnectedClient();
+
+    render(
+      <NexoAppShell
+        appName="Test App"
+        storagePrefix="test"
+        agentCapability="nutrition.ask_expert"
+        chatThreadMode="multiple"
+        chatAllowThreadDeletion={false}
+        labels={LABELS}
+      >
+        <div data-testid="app-content">Hello</div>
+      </NexoAppShell>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId("app-content")).toBeInTheDocument(),
+    );
+
+    await waitFor(() => {
+      expect(vi.mocked(agentChatModule.useAgentChat)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          capabilityName: "nutrition.ask_expert",
+          threadPolicy: { mode: "multiple", allowDeletion: false },
+        }),
+      );
+    });
+  });
+
   it("exposes the resolved agent appearance from bootstrap to render-prop children", async () => {
     useConnectedClient();
     const fetchMock = vi.fn().mockResolvedValue({
@@ -596,10 +721,13 @@ describe("NexoAppShell", () => {
       );
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:8000/api/apps/test/bootstrap",
-      { headers: { Authorization: "Bearer tok" } },
-    );
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [
+      string,
+      { headers?: Headers },
+    ];
+    expect(url).toBe("http://localhost:8000/api/apps/test/bootstrap");
+    expect(init.headers?.get("Authorization")).toBe("Bearer tok");
   });
 
   // -------------------------------------------------------------------------

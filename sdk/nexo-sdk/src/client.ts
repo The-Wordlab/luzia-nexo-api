@@ -34,6 +34,10 @@ import type {
   NexoClientOptions,
 } from "./types";
 import {
+  buildNexoRequestInit,
+  resolveRuntimeApiBaseUrl,
+} from "./runtime-auth";
+import {
   loadNexoSiteConfig,
   resolveApiBaseUrlFromSiteConfig,
   resolveAuthBaseUrlFromSiteConfig,
@@ -58,6 +62,11 @@ interface SessionMeta {
   accessState: NexoAccessState | null;
   authBaseUrl: string | null;
   deviceKey: string;
+}
+
+interface StandaloneBootstrapPayload {
+  app_id?: string;
+  user_id?: string;
 }
 
 export interface NexoClient {
@@ -259,6 +268,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     slug: string;
     apiBaseUrl: string;
     authBaseUrl: string | null;
+    hostedSessionCapable: boolean;
   } | null> {
     const queryOverrides = resolveNexoQueryOverrides(window.location.search);
     const siteConfig = await loadNexoSiteConfig();
@@ -275,8 +285,73 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     if (!slug) return null;
 
     const authBaseUrl = resolveAuthBaseUrlFromSiteConfig(siteConfig, hostOptions);
+    const runtimeApi = resolveRuntimeApiBaseUrl({
+      apiBaseUrl,
+      authBaseUrl,
+      appHost: window.location.host,
+    });
 
-    return { slug, apiBaseUrl, authBaseUrl };
+    return {
+      slug,
+      apiBaseUrl: runtimeApi.apiBaseUrl,
+      authBaseUrl,
+      hostedSessionCapable: runtimeApi.hostedSessionCapable,
+    };
+  }
+
+  function clearCachedBearerSession(): void {
+    localStorage.removeItem(tokenKey);
+    localStorage.removeItem(userKey);
+  }
+
+  async function resolveStandaloneBootstrap(
+    apiBaseUrl: string,
+    slug: string,
+    accessToken: string | null,
+  ): Promise<StandaloneBootstrapPayload | null> {
+    try {
+      const response = await fetch(
+        `${apiBaseUrl}/api/apps/${slug}/bootstrap`,
+        buildNexoRequestInit({
+          accessToken,
+          cache: "no-store",
+        }),
+      );
+      if (!response.ok) {
+        return null;
+      }
+      return (await response.json()) as StandaloneBootstrapPayload;
+    } catch {
+      return null;
+    }
+  }
+
+  async function requestStandaloneDomainSession(
+    apiBaseUrl: string,
+    slug: string,
+    options?: {
+      deviceKey?: string;
+    },
+  ): Promise<Response> {
+    const persona = new URLSearchParams(window.location.search).get("persona");
+    const params = new URLSearchParams();
+    if (persona) {
+      params.set("persona", persona);
+    }
+    if (options?.deviceKey) {
+      params.set("device_key", options.deviceKey);
+    }
+    const query = params.toString();
+    const url = `${apiBaseUrl}/api/apps/${slug}/domain-session${
+      query ? `?${query}` : ""
+    }`;
+
+    return fetch(
+      url,
+      buildNexoRequestInit({
+        method: "POST",
+      }),
+    );
   }
 
   // --- Auth bridge session resolution ---
@@ -335,10 +410,13 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     accessToken: string,
   ): Promise<boolean> {
     try {
-      const response = await fetch(`${apiBaseUrl}/api/me/account`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        cache: "no-store",
-      });
+      const response = await fetch(
+        `${apiBaseUrl}/api/me/account`,
+        buildNexoRequestInit({
+          accessToken,
+          cache: "no-store",
+        }),
+      );
       return response.ok;
     } catch {
       return false;
@@ -365,6 +443,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         accessToken: bootstrap.access_token,
         userId: bootstrap.user_id,
         authBaseUrl: null,
+        runtimeAuthMode: "bearer",
         authMode: "authenticated",
         accessState: "access_granted",
         deviceKey,
@@ -379,6 +458,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         slug: bootstrap.slug,
         accessToken: bootstrap.access_token,
         userId: bootstrap.user_id,
+        runtimeAuthMode: "bearer",
       };
     }
   }
@@ -392,26 +472,31 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
       const userId = extractUserId(tokenParam);
       const resolved = await resolveConfigFromSite();
       const slug = resolved?.slug ?? "";
+      const apiBaseUrl = resolved?.apiBaseUrl ?? fallbackApiBaseUrl;
+      const authBaseUrl = resolved?.authBaseUrl ?? null;
       if (authBridgeEnabled) {
         const deviceKey = getOrCreateDeviceKey();
         _config = {
-          apiBaseUrl: fallbackApiBaseUrl,
+          apiBaseUrl,
           appId: "",
           slug,
           accessToken: tokenParam,
           userId,
-          authBaseUrl: null,
+          authBaseUrl,
+          runtimeAuthMode: "bearer",
           authMode: "guest",
           accessState: null,
           deviceKey,
         };
       } else {
         _config = {
-          apiBaseUrl: fallbackApiBaseUrl,
+          apiBaseUrl,
           appId: "",
           slug,
           accessToken: tokenParam,
           userId,
+          authBaseUrl,
+          runtimeAuthMode: "bearer",
         };
       }
       return _config;
@@ -455,12 +540,21 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
           accessToken: nexoTokenParam,
           userId,
           authBaseUrl,
+          runtimeAuthMode: "bearer",
           authMode: "authenticated",
           accessState: "access_granted",
           deviceKey,
         };
       } else {
-        _config = { apiBaseUrl, appId: "", slug, accessToken: nexoTokenParam, userId };
+        _config = {
+          apiBaseUrl,
+          appId: "",
+          slug,
+          accessToken: nexoTokenParam,
+          userId,
+          authBaseUrl,
+          runtimeAuthMode: "bearer",
+        };
       }
       return _config;
     }
@@ -517,6 +611,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         accessToken,
         userId,
         authBaseUrl,
+        runtimeAuthMode: "bearer",
         authMode: "authenticated",
         accessState,
         deviceKey,
@@ -551,6 +646,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         accessToken: cached,
         userId: cachedUser,
         authBaseUrl,
+        runtimeAuthMode: "bearer",
         authMode: cachedAuthMode,
         accessState: cachedAccessState,
         deviceKey: sessionMeta?.deviceKey || deviceKey,
@@ -559,13 +655,9 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     }
 
     // Fall back to slug-native domain-verified session with device_key
-    const persona = new URLSearchParams(window.location.search).get("persona");
-    const params = new URLSearchParams();
-    if (persona) params.set("persona", persona);
-    params.set("device_key", deviceKey);
-    const url = `${apiBaseUrl}/api/apps/${slug}/domain-session?${params.toString()}`;
-
-    const resp = await fetch(url, { method: "POST" });
+    const resp = await requestStandaloneDomainSession(apiBaseUrl, slug, {
+      deviceKey,
+    });
     if (resp.ok) {
       const data = await resp.json();
       localStorage.setItem(tokenKey, data.access_token);
@@ -585,6 +677,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         accessToken: data.access_token,
         userId: data.user_id,
         authBaseUrl,
+        runtimeAuthMode: "bearer",
         authMode: "guest",
         accessState: null,
         deviceKey,
@@ -605,33 +698,50 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
       );
     }
 
-    const { slug, apiBaseUrl, authBaseUrl } = resolved;
+    const { slug, apiBaseUrl, authBaseUrl, hostedSessionCapable } = resolved;
 
     // Check cached token
     const cached = localStorage.getItem(tokenKey);
     const cachedUser = localStorage.getItem(userKey);
     if (cached && cachedUser) {
-      try {
-        const resp = await fetch(`${apiBaseUrl}/api/apps/${slug}/bootstrap`, {
-          headers: { Authorization: `Bearer ${cached}` },
-        });
-        if (resp.ok) {
-          const bootstrap = await resp.json();
-          _config = { apiBaseUrl, appId: bootstrap.app_id ?? "", slug, accessToken: cached, userId: cachedUser, authBaseUrl };
-          return _config;
-        }
-      } catch {
-        // Expired or invalid - fall through to domain session
+      const bootstrap = await resolveStandaloneBootstrap(apiBaseUrl, slug, cached);
+      if (bootstrap) {
+        _config = {
+          apiBaseUrl,
+          appId: bootstrap.app_id ?? "",
+          slug,
+          accessToken: cached,
+          userId: cachedUser,
+          authBaseUrl,
+          runtimeAuthMode: "bearer",
+        };
+        return _config;
+      }
+    }
+
+    if (hostedSessionCapable) {
+      const hostedBootstrap = await resolveStandaloneBootstrap(
+        apiBaseUrl,
+        slug,
+        null,
+      );
+      if (hostedBootstrap && typeof hostedBootstrap.user_id === "string") {
+        clearCachedBearerSession();
+        _config = {
+          apiBaseUrl,
+          appId: hostedBootstrap.app_id ?? "",
+          slug,
+          accessToken: null,
+          userId: hostedBootstrap.user_id,
+          authBaseUrl,
+          runtimeAuthMode: "hosted_session",
+        };
+        return _config;
       }
     }
 
     // Request slug-native domain-verified session
-    const persona = new URLSearchParams(window.location.search).get("persona");
-    const url = `${apiBaseUrl}/api/apps/${slug}/domain-session${
-      persona ? `?persona=${encodeURIComponent(persona)}` : ""
-    }`;
-
-    const resp = await fetch(url, { method: "POST" });
+    const resp = await requestStandaloneDomainSession(apiBaseUrl, slug);
     if (resp.ok) {
       const data = await resp.json();
       localStorage.setItem(tokenKey, data.access_token);
@@ -643,6 +753,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
         accessToken: data.access_token,
         userId: data.user_id,
         authBaseUrl,
+        runtimeAuthMode: "bearer",
       };
       return _config;
     }
@@ -669,38 +780,52 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
   async function hydrateFromStorage(): Promise<boolean> {
     if (_config) return true;
 
-    const cached = localStorage.getItem(tokenKey);
-    const cachedUser = localStorage.getItem(userKey);
-    if (!cached || !cachedUser) return false;
-
     // Resolve API base URL and slug from nexo.json (local read, no network)
     const resolved = await resolveConfigFromSite();
     if (!resolved) return false;
 
-    const { slug, apiBaseUrl, authBaseUrl } = resolved;
-    _config = {
-      apiBaseUrl,
-      appId: "", // Will be populated by bootstrap call if needed
-      slug,
-      accessToken: cached,
-      userId: cachedUser,
-      authBaseUrl,
-    };
+    const { slug, apiBaseUrl, authBaseUrl, hostedSessionCapable } = resolved;
+    const cached = localStorage.getItem(tokenKey);
+    const cachedUser = localStorage.getItem(userKey);
 
-    // Try bootstrap to get app_id (one lightweight call)
-    try {
-      const resp = await fetch(`${apiBaseUrl}/api/apps/${slug}/bootstrap`, {
-        headers: { Authorization: `Bearer ${cached}` },
-      });
-      if (resp.ok) {
-        const bootstrap = await resp.json();
-        _config.appId = bootstrap.app_id ?? "";
+    if (cached && cachedUser) {
+      const bootstrap = await resolveStandaloneBootstrap(apiBaseUrl, slug, cached);
+      if (bootstrap) {
+        _config = {
+          apiBaseUrl,
+          appId: bootstrap.app_id ?? "",
+          slug,
+          accessToken: cached,
+          userId: cachedUser,
+          authBaseUrl,
+          runtimeAuthMode: "bearer",
+        };
+        return true;
       }
-    } catch {
-      // Bootstrap failed but we have enough to make API calls
+      clearCachedBearerSession();
     }
 
-    return true;
+    if (hostedSessionCapable) {
+      const hostedBootstrap = await resolveStandaloneBootstrap(
+        apiBaseUrl,
+        slug,
+        null,
+      );
+      if (hostedBootstrap && typeof hostedBootstrap.user_id === "string") {
+        _config = {
+          apiBaseUrl,
+          appId: hostedBootstrap.app_id ?? "",
+          slug,
+          accessToken: null,
+          userId: hostedBootstrap.user_id,
+          authBaseUrl,
+          runtimeAuthMode: "hosted_session",
+        };
+        return true;
+      }
+    }
+
+    return false;
   }
 
   function getAuthMode(): NexoAuthMode {
@@ -814,41 +939,53 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
 
   async function get<T = unknown>(path: string): Promise<T> {
     const { apiBaseUrl, accessToken } = getConfig();
-    const resp = await fetch(`${apiBaseUrl}${path}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const resp = await fetch(
+      `${apiBaseUrl}${path}`,
+      buildNexoRequestInit({ accessToken }),
+    );
     if (!resp.ok) throw new Error(`GET ${path} failed: ${resp.status}`);
     return resp.json();
   }
 
   async function post<T = unknown>(path: string, body: unknown): Promise<T> {
     const { apiBaseUrl, accessToken } = getConfig();
-    const resp = await fetch(`${apiBaseUrl}${path}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const resp = await fetch(
+      `${apiBaseUrl}${path}`,
+      buildNexoRequestInit({
+        accessToken,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
     if (!resp.ok) throw new Error(`POST ${path} failed: ${resp.status}`);
     return resp.json();
   }
 
   async function patch<T = unknown>(path: string, body: unknown): Promise<T> {
     const { apiBaseUrl, accessToken } = getConfig();
-    const resp = await fetch(`${apiBaseUrl}${path}`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const resp = await fetch(
+      `${apiBaseUrl}${path}`,
+      buildNexoRequestInit({
+        accessToken,
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
     if (!resp.ok) throw new Error(`PATCH ${path} failed: ${resp.status}`);
     return resp.json();
   }
 
   async function del(path: string): Promise<void> {
     const { apiBaseUrl, accessToken } = getConfig();
-    const resp = await fetch(`${apiBaseUrl}${path}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
+    const resp = await fetch(
+      `${apiBaseUrl}${path}`,
+      buildNexoRequestInit({
+        accessToken,
+        method: "DELETE",
+      }),
+    );
     if (!resp.ok) throw new Error(`DELETE ${path} failed: ${resp.status}`);
   }
 

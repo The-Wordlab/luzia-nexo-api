@@ -57,4 +57,34 @@ describe("site-config", () => {
     expect(origins.has("https://nexo-cdn-alb.staging.thewordlab.net")).toBe(true);
     expect(origins.has("https://luzia-nexo.thewordlab.net")).toBe(true);
   });
+
+  it("treats raw Cloud Run staging hosts as staging by default", () => {
+    const config = { slug: "nutrition" };
+    const options = {
+      host: "nexo-worldcup-staging-v3me5awkta-ew.a.run.app",
+      envHint: null,
+    };
+
+    expect(resolveApiBaseUrlFromSiteConfig(config, options)).toBe(
+      "https://nexo-cdn-alb.staging.thewordlab.net",
+    );
+    expect(resolveAuthBaseUrlFromSiteConfig(config, options)).toBe(
+      "https://staging.nexo.luzia.com",
+    );
+  });
+
+  it("treats raw Cloud Run production hosts as production by default", () => {
+    const config = { slug: "nutrition" };
+    const options = {
+      host: "nexo-worldcup-v3me5awkta-ew.a.run.app",
+      envHint: null,
+    };
+
+    expect(resolveApiBaseUrlFromSiteConfig(config, options)).toBe(
+      "https://luzia-nexo.thewordlab.net",
+    );
+    expect(resolveAuthBaseUrlFromSiteConfig(config, options)).toBe(
+      "https://nexo.luzia.com",
+    );
+  });
 });

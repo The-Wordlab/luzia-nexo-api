@@ -30,6 +30,8 @@ export interface AgentChatPanelProps {
   placeholder: string;
   /** Label for the clear/new-chat button. Required - host provides translation. */
   clearLabel: string;
+  /** Whether the clear/new-chat action should be shown. */
+  showClearAction?: boolean;
   /** Label for the close button. Required - host provides translation. */
   closeLabel: string;
   /** Called when the user taps close. */
@@ -60,6 +62,7 @@ export function AgentChatPanel(props: AgentChatPanelProps) {
     title,
     welcomeTitle,
     welcomeDescription,
+    showClearAction = true,
   } = props;
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -125,7 +128,7 @@ export function AgentChatPanel(props: AgentChatPanelProps) {
           <span>{resolvedTitle}</span>
         </div>
         <div className="nexo-chat-panel__header-actions">
-          {messages.length > 0 && (
+          {showClearAction && messages.length > 0 && (
             <button
               type="button"
               className="nexo-chat-panel__icon-button"

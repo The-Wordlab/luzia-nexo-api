@@ -22,8 +22,8 @@ as separate public surfaces.
   - treat `luzia-nexo-apps` as the only source of truth for hosted app SDK
     transport and site-config changes
   - current mirror tracks the canonical A2A transport, message-shaped webhook
-    payload, session-context helpers, `Agent*` browser surface, and `App*`
-    server naming
+    payload, session-context helpers, hosted-session-first first-party auth,
+    `Agent*` browser surface, and `App*` server naming
   - the shared SDK surface no longer ships `Companion*` or `MicroApp*`
     compatibility naming
   - do not hand-edit the mirror here; resync it when the source SDK changes

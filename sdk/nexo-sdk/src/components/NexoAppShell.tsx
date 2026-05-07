@@ -20,11 +20,13 @@ import { NexoAuthStatusCard } from "./NexoAuthStatusCard";
 import { AgentChatFab } from "./AgentChatFab";
 import { AgentChatPanel } from "./AgentChatPanel";
 import { useAgentChat } from "../useAgentChat";
+import { buildNexoRequestInit } from "../runtime-auth";
 import type { NexoClientConfig, NexoAuthMode, NexoBootstrap } from "../types";
 import type { NexoAccessState } from "../types";
 import type {
   AgentAppearance,
   AgentChatOptions,
+  AgentChatThreadMode,
   Personality,
 } from "../chat-types";
 
@@ -100,6 +102,10 @@ export interface NexoAppShellProps {
   apiBaseUrl?: string;
   /** Agent chat capability name (e.g. "nutrition.ask_expert"). Optional. */
   agentCapability?: string;
+  /** Shared SDK thread mode for the hosted chat surface. */
+  chatThreadMode?: AgentChatThreadMode;
+  /** Hide destructive clear/delete controls when false. */
+  chatAllowThreadDeletion?: boolean;
   /**
    * Custom avatar for the chat FAB. Can be:
    * - A URL to an image (character icon, SVG, PNG)
@@ -168,7 +174,18 @@ const LOCALE_STORAGE_KEY = "nexo_locale";
 // Helpers
 // ---------------------------------------------------------------------------
 
+function resolveQueryTheme(): "light" | "dark" | null {
+  if (typeof window === "undefined") return null;
+  const param = new URLSearchParams(window.location.search).get("dark");
+  if (param === "1") return "dark";
+  if (param === "0") return "light";
+  return null;
+}
+
 function resolveInitialTheme(): "light" | "dark" {
+  const queryTheme = resolveQueryTheme();
+  if (queryTheme) return queryTheme;
+
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "dark" || stored === "light") return stored;
@@ -183,18 +200,34 @@ function resolveInitialTheme(): "light" | "dark" {
   return "light";
 }
 
-function resolveInitialLocale(): SupportedLocale {
+function resolveQueryLocale(): SupportedLocale | null {
+  if (typeof window === "undefined") return null;
+  const param = new URLSearchParams(window.location.search).get("locale");
+  if (param && SUPPORTED_LOCALES.includes(param as SupportedLocale)) {
+    return param as SupportedLocale;
+  }
+  return null;
+}
+
+function resolveInitialLocale(
+  bootstrapLocale?: string | null,
+): SupportedLocale {
+  if (
+    bootstrapLocale &&
+    SUPPORTED_LOCALES.includes(bootstrapLocale as SupportedLocale)
+  ) {
+    return bootstrapLocale as SupportedLocale;
+  }
+
+  const queryLocale = resolveQueryLocale();
+  if (queryLocale) {
+    return queryLocale;
+  }
+
   try {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
     if (stored && SUPPORTED_LOCALES.includes(stored as SupportedLocale)) {
       return stored as SupportedLocale;
-    }
-    // Check query param
-    if (typeof window !== "undefined") {
-      const param = new URLSearchParams(window.location.search).get("locale");
-      if (param && SUPPORTED_LOCALES.includes(param as SupportedLocale)) {
-        return param as SupportedLocale;
-      }
     }
   } catch {
     // localStorage unavailable
@@ -377,6 +410,8 @@ export function NexoAppShell({
   storagePrefix,
   apiBaseUrl = "",
   agentCapability,
+  chatThreadMode = "single",
+  chatAllowThreadDeletion = true,
   chatFabAvatar,
   children,
   labels,
@@ -401,12 +436,13 @@ export function NexoAppShell({
   const [config, setConfig] = useState<NexoClientConfig | null>(null);
   const [loginPending, setLoginPending] = useState(false);
 
-  // Theme and locale state - read from localStorage on mount
+  // Theme and locale state - derive from launch params/bootstrap first, then
+  // fall back to persisted client preferences.
   const [darkMode, setDarkMode] = useState<boolean>(
     () => resolveInitialTheme() === "dark",
   );
   const [locale, setLocale] = useState<SupportedLocale>(
-    () => resolveInitialLocale(),
+    () => resolveInitialLocale(bootstrap?.locale),
   );
 
   // Webview detection: bootstrap present OR ?webview=1 query param
@@ -419,6 +455,14 @@ export function NexoAppShell({
   useEffect(() => {
     syncThemeToDocument(darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  // Bootstrap can arrive after the first render in webview mode. Reconcile the
+  // locale when that happens so native-controlled launches honor the payload.
+  useEffect(() => {
+    if (!bootstrap?.locale) return;
+    const nextLocale = resolveInitialLocale(bootstrap.locale);
+    setLocale((current) => (current === nextLocale ? current : nextLocale));
+  }, [bootstrap?.locale]);
 
   // Initialize the client on mount
   useEffect(() => {
@@ -464,14 +508,27 @@ export function NexoAppShell({
       appId: config.appId,
       userId: config.userId,
       accessToken: config.accessToken,
+      runtimeAuthMode: config.runtimeAuthMode,
       slug,
       storagePrefix,
       capabilityName: agentCapability,
       locale,
       deviceKey: config.deviceKey,
       agentCardUrl: `${config.apiBaseUrl}/api/apps/${slug}/agent.json`,
+      threadPolicy: {
+        mode: chatThreadMode,
+        allowDeletion: chatAllowThreadDeletion,
+      },
     };
-  }, [isReady, config, agentCapability, storagePrefix, locale]);
+  }, [
+    isReady,
+    config,
+    agentCapability,
+    storagePrefix,
+    locale,
+    chatThreadMode,
+    chatAllowThreadDeletion,
+  ]);
 
   const agentChat = useAgentChat(
     agentCapability ? agentChatOptions : null,
@@ -484,9 +541,12 @@ export function NexoAppShell({
   useEffect(() => {
     if (!isReady || !config?.slug || !config?.apiBaseUrl) return;
     let cancelled = false;
-    fetch(`${config.apiBaseUrl}/api/apps/${config.slug}/bootstrap`, {
-      headers: { Authorization: `Bearer ${config.accessToken}` },
-    })
+    fetch(
+      `${config.apiBaseUrl}/api/apps/${config.slug}/bootstrap`,
+      buildNexoRequestInit({
+        accessToken: config.accessToken,
+      }),
+    )
       .then((r) => (r.ok ? (r.json() as Promise<AppBootstrapPayload>) : null))
       .then((data) => {
         if (cancelled || !data) return;
@@ -498,7 +558,13 @@ export function NexoAppShell({
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [isReady, config?.slug, config?.apiBaseUrl, config?.accessToken]);
+  }, [
+    isReady,
+    config?.slug,
+    config?.apiBaseUrl,
+    config?.accessToken,
+    config?.runtimeAuthMode,
+  ]);
 
   // -------------------------------------------------------------------------
   // Handlers
@@ -754,7 +820,14 @@ export function NexoAppShell({
               welcomeTitle={labels.chatWelcomeTitle}
               welcomeDescription={labels.chatWelcomeDescription}
               placeholder={labels.chatPlaceholder ?? ""}
-              clearLabel={labels.chatClearLabel ?? labels.chatNewLabel ?? ""}
+              clearLabel={
+                chatThreadMode === "multiple"
+                  ? labels.chatNewLabel ?? labels.chatClearLabel ?? ""
+                  : labels.chatClearLabel ?? labels.chatNewLabel ?? ""
+              }
+              showClearAction={
+                chatThreadMode === "multiple" || chatAllowThreadDeletion
+              }
               closeLabel={labels.chatCloseLabel ?? ""}
               onClose={onClose}
             />

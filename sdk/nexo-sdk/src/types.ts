@@ -24,10 +24,12 @@ export interface NexoClientConfig {
   apiBaseUrl: string;
   appId: string;
   slug: string;
-  accessToken: string;
+  accessToken: string | null;
   userId: string;
   /** Base URL of the Nexo hosted auth/profile/onboarding service. */
   authBaseUrl?: string | null;
+  /** Request transport used by the runtime client. */
+  runtimeAuthMode?: NexoRuntimeAuthMode;
   /** Current auth mode - guest or authenticated. Defaults to "guest". */
   authMode?: "guest" | "authenticated";
   /** Current access state (auth bridge only). */
@@ -52,6 +54,7 @@ export interface NexoSiteConfig {
 }
 
 export type NexoAuthMode = "guest" | "authenticated";
+export type NexoRuntimeAuthMode = "bearer" | "hosted_session";
 export type NexoAccessState =
   | "access_granted"
   | "access_pending"

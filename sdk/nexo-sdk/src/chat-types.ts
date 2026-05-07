@@ -1,3 +1,5 @@
+import type { NexoRuntimeAuthMode } from "./types";
+
 /**
  * Types for the Nexo chat/personality system.
  *
@@ -64,12 +66,23 @@ export interface ChatMessage {
   contentBlocks?: ContentBlock[];
 }
 
+export type AgentChatThreadMode = "single" | "multiple";
+
+export interface AgentChatThreadPolicy {
+  /** Default remains single-thread to preserve current hosted apps. */
+  mode?: AgentChatThreadMode;
+  /** Hide destructive clear/delete affordances when false. */
+  allowDeletion?: boolean;
+}
+
 /** Options for the agent chat hook. */
 export interface AgentChatOptions {
   /** Nexo API base URL. */
   apiBaseUrl: string;
-  /** Bearer token for API auth. */
-  accessToken: string;
+  /** Bearer token for API auth. Null when using hosted-session mode. */
+  accessToken: string | null;
+  /** Request transport used by the runtime client. */
+  runtimeAuthMode?: NexoRuntimeAuthMode;
   /** The app's UUID (from domain-session response). */
   appId: string;
   /** Current user ID (from domain-session response). */
@@ -90,6 +103,8 @@ export interface AgentChatOptions {
   agentCardUrl?: string | null;
   /** Locale hint sent with messages. */
   locale?: string;
+  /** Shared SDK thread policy. */
+  threadPolicy?: AgentChatThreadPolicy;
 }
 
 /** Return type of useAgentChat. */
@@ -101,6 +116,8 @@ export interface AgentChatResult {
   suggestions: string[];
   sendMessage: (text: string) => Promise<void>;
   clearThread: () => void;
+  startNewThread: () => void;
+  threadId: string | null;
   /**
    * Incremented after each agent turn that used a mutation tool
    * (create_record, update_record, delete_record). Apps can use this

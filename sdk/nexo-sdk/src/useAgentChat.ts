@@ -26,6 +26,7 @@ import {
   loadAgentPromptSuggestions,
   migrateAgentThreadStorage,
 } from "./agent-utils";
+import { buildNexoRequestInit } from "./runtime-auth";
 
 const STREAM_RENDER_CHUNK_SIZE = 4;
 const STREAM_RENDER_INTERVAL_MS = 18;
@@ -138,6 +139,33 @@ function buildA2aPath(path: string): string {
   return `/a2a${path}`;
 }
 
+function buildThreadListStorageKey(baseKey: string): string {
+  return `${baseKey}:threads`;
+}
+
+function buildActiveThreadStorageKey(baseKey: string): string {
+  return `${baseKey}:active`;
+}
+
+function readStoredThreadIds(baseKey: string): string[] {
+  try {
+    const raw = localStorage.getItem(buildThreadListStorageKey(baseKey));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((item): item is string => typeof item === "string");
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredThreadIds(baseKey: string, threadIds: string[]): void {
+  localStorage.setItem(
+    buildThreadListStorageKey(baseKey),
+    JSON.stringify(threadIds),
+  );
+}
+
 const MUTATION_TOOLS = new Set(["create_record", "update_record", "delete_record"]);
 
 export function useAgentChat(options: AgentChatOptions | null): AgentChatResult {
@@ -157,10 +185,12 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
   const deviceKey = options?.deviceKey ?? null;
   const agentCardUrl = options?.agentCardUrl ?? null;
   const capabilityName = options?.capabilityName ?? null;
+  const threadMode = options?.threadPolicy?.mode ?? "single";
+  const [fallbackSuggestions, setFallbackSuggestions] = useState<string[]>([]);
 
   // Restore thread on mount
   useEffect(() => {
-    if (!appId || !userId || !apiBaseUrl || !accessToken) return;
+    if (!appId || !userId || !apiBaseUrl) return;
     let cancelled = false;
 
     (async () => {
@@ -171,13 +201,23 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         userId,
         deviceKey,
       });
-      const storedId = localStorage.getItem(key);
+      let storedId = localStorage.getItem(key);
+      if (threadMode === "multiple") {
+        const activeKey = buildActiveThreadStorageKey(key);
+        storedId =
+          localStorage.getItem(activeKey) ||
+          storedId ||
+          readStoredThreadIds(key).at(-1) ||
+          null;
+      }
       if (!storedId) return;
 
       try {
         const resp = await fetch(
           `${apiBaseUrl}${buildA2aPath("/tasks")}?contextId=${encodeURIComponent(storedId)}&historyLength=50&pageSize=1`,
-          { headers: { Authorization: `Bearer ${accessToken}` } },
+          buildNexoRequestInit({
+            accessToken,
+          }),
         );
         if (!resp.ok) {
           localStorage.removeItem(key);
@@ -223,11 +263,14 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         if (restored.length > 0) setSuggestions(restored);
       } catch {
         localStorage.removeItem(key);
+        if (threadMode === "multiple") {
+          localStorage.removeItem(buildActiveThreadStorageKey(key));
+        }
       }
     })();
 
     return () => { cancelled = true; };
-  }, [accessToken, apiBaseUrl, appId, deviceKey, storagePrefix, userId]);
+  }, [accessToken, apiBaseUrl, appId, deviceKey, storagePrefix, threadMode, userId]);
 
   useEffect(() => {
     if (!agentCardUrl) return;
@@ -239,6 +282,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
           capabilityName,
         });
         if (cancelled || next.length === 0) return;
+        setFallbackSuggestions(next);
         setSuggestions((prev) => (prev.length > 0 ? prev : next));
       } catch {
         // Best effort only.
@@ -299,6 +343,11 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
       };
 
       let sawMutationTool = false;
+      const storageKey = buildAgentThreadStorageKey(
+        storagePrefix,
+        options.appId,
+        options.userId,
+      );
       let assistantBubbleCreated = false;
       const ensureAssistantBubble = () => {
         if (!assistantBubbleCreated) {
@@ -310,10 +359,10 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
       try {
         const resp = await fetch(
           `${options.apiBaseUrl}${buildA2aPath("/messages:stream")}`,
-          {
+          buildNexoRequestInit({
+            accessToken: options.accessToken,
             method: "POST",
             headers: {
-              Authorization: `Bearer ${options.accessToken}`,
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
@@ -330,7 +379,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
                 },
               },
             }),
-          },
+          }),
         );
 
         if (!resp.ok) {
@@ -375,8 +424,14 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
             const tid = obj.contextId;
             if (typeof tid === "string" && !threadId) {
               setThreadId(tid);
-              const key = buildAgentThreadStorageKey(storagePrefix, options.appId, options.userId);
-              localStorage.setItem(key, tid);
+              localStorage.setItem(storageKey, tid);
+              if (threadMode === "multiple") {
+                localStorage.setItem(buildActiveThreadStorageKey(storageKey), tid);
+                const existing = readStoredThreadIds(storageKey);
+                if (!existing.includes(tid)) {
+                  writeStoredThreadIds(storageKey, [...existing, tid]);
+                }
+              }
             }
 
             if (state === "working") {
@@ -422,8 +477,14 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
             const tid = obj.contextId ?? obj.thread_id ?? obj.threadId;
             if (typeof tid === "string" && !threadId) {
               setThreadId(tid);
-              const key = buildAgentThreadStorageKey(storagePrefix, options.appId, options.userId);
-              localStorage.setItem(key, tid);
+              localStorage.setItem(storageKey, tid);
+              if (threadMode === "multiple") {
+                localStorage.setItem(buildActiveThreadStorageKey(storageKey), tid);
+                const existing = readStoredThreadIds(storageKey);
+                if (!existing.includes(tid)) {
+                  writeStoredThreadIds(storageKey, [...existing, tid]);
+                }
+              }
             }
 
             const status = obj.status;
@@ -506,11 +567,14 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
 
         // Extract suggestions from done payload
         if (donePayload) {
+          let nextSuggestions: string[] = [];
           // Try content_json.prompt_suggestions (webhook path)
           const cj = donePayload["content_json"];
           if (cj && typeof cj === "object") {
             const doneSuggestions = parseSuggestions(cj);
-            if (doneSuggestions.length > 0) setSuggestions(doneSuggestions);
+            if (doneSuggestions.length > 0) {
+              nextSuggestions = doneSuggestions;
+            }
           }
           // Try top-level prompt_suggestions / follow_up_questions / followupQuestions.
           // These are raw arrays, not wrapped in content_json, so parse directly.
@@ -523,7 +587,14 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
             const topSuggestions = rawSuggestions.filter(
               (item): item is string => typeof item === "string",
             );
-            if (topSuggestions.length > 0) setSuggestions(topSuggestions);
+            if (topSuggestions.length > 0) {
+              nextSuggestions = topSuggestions;
+            }
+          }
+          if (nextSuggestions.length > 0) {
+            setSuggestions(nextSuggestions);
+          } else if (fallbackSuggestions.length > 0) {
+            setSuggestions(fallbackSuggestions);
           }
         }
 
@@ -560,7 +631,7 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         setProgress(null);
       }
     },
-    [options, threadId, storagePrefix],
+    [fallbackSuggestions, options, threadId, storagePrefix, threadMode],
   );
 
   const clearThread = useCallback(() => {
@@ -571,12 +642,26 @@ export function useAgentChat(options: AgentChatOptions | null): AgentChatResult 
         options.userId,
       );
       localStorage.removeItem(key);
+      if (threadMode === "multiple") {
+        localStorage.removeItem(buildActiveThreadStorageKey(key));
+      }
     }
     setMessages([]);
     setThreadId(null);
     setSuggestions([]);
     setError(null);
-  }, [options, storagePrefix]);
+  }, [options, storagePrefix, threadMode]);
 
-  return { messages, sending, progress, error, suggestions, sendMessage, clearThread, dataVersion };
+  return {
+    messages,
+    sending,
+    progress,
+    error,
+    suggestions,
+    sendMessage,
+    clearThread,
+    startNewThread: clearThread,
+    threadId,
+    dataVersion,
+  };
 }

@@ -69,4 +69,26 @@ describe("AgentChatPanel", () => {
 
     expect(onClearThread).toHaveBeenCalledTimes(1);
   });
+
+  it("hides the clear-thread action when disabled by thread policy", () => {
+    render(
+      <AgentChatPanel
+        {...makeProps({
+          messages: [
+            {
+              id: "user-1",
+              role: "user",
+              text: "Who are the favourites?",
+              timestamp: Date.now(),
+            },
+          ],
+          showClearAction: false,
+        })}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Clear chat" }),
+    ).not.toBeInTheDocument();
+  });
 });

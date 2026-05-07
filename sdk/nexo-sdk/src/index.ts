@@ -49,6 +49,7 @@ export type {
   NexoSiteConfig,
   NexoSiteEnvironmentConfig,
   NexoAuthMode,
+  NexoRuntimeAuthMode,
   NexoAccessState,
   NexoAuthBridgeOptions,
 } from "./types";

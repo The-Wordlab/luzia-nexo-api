@@ -65,6 +65,9 @@ function resolveKnownEnvironmentName(
   ) {
     return "staging";
   }
+  if (host.endsWith(".a.run.app")) {
+    return host.includes("-staging") ? "staging" : "production";
+  }
   if (
     host === "apps.luzia.com" ||
     host === "nexo-apps.thewordlab.net" ||
