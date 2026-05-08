@@ -1,33 +1,15 @@
-# @luzia/nexo-sdk - Mirror
+# @luzia/nexo-sdk
 
-This is a downstream mirror of the Nexo SDK from
-`luzia-nexo-apps/apps/nexo-sdk`.
-
-**Do not edit files in this directory.** All changes must be made in the source
-repo and synced here via the sync script.
-
-## Source of truth
-
-`luzia-nexo-apps/apps/nexo-sdk/src/` is the authoritative source.
-
-## Sync
-
-From the `luzia-nexo-api` repo root:
-
-```bash
-./scripts/sync-nexo-sdk.sh
-```
-
-This copies the source TypeScript files from the sibling repo. The mirror is
-intentionally checked in so consumers can use it without needing the source
+This is the checked-in SDK package used by the public examples and docs in this
 repo.
 
-Re-run this sync any time the source SDK changes before publishing public app
-examples from this repo.
+Treat this directory as the canonical package for the `luzia-nexo-api` lane and
+keep downstream consumer mirrors aligned when the shared hosted-app contract
+changes.
 
 ## Usage
 
-Apps in this repo can import from the mirror:
+Apps in this repo can import from the package:
 
 ```typescript
 import { NexoAppShell } from "@luzia/nexo-sdk/react";

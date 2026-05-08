@@ -321,4 +321,78 @@ describe("NexoServerClient", () => {
       expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer client-token");
     });
   });
+
+  describe("exchangeNativeSession", () => {
+    it("posts the legacy native mobile headers to the slug-native exchange endpoint", async () => {
+      const payload = {
+        access_token: "nexo-token-1",
+        token_type: "bearer",
+        expires_in_seconds: 3600,
+        user_id: "bridge-user-1",
+        master_user_id: "master-user-1",
+      };
+      const fetch = mockFetch({
+        json: () => Promise.resolve(payload),
+      });
+      global.fetch = fetch;
+
+      const client = new NexoServerClient({
+        apiUrl: "http://nexo.example.com",
+      });
+
+      await expect(
+        client.exchangeNativeSession("wc2026-predictor", {
+          accessToken: "opaque-chatify-token",
+          deviceKey: "device-1",
+          masterUserId: "master-user-1",
+          adId: "ad-1",
+          organizationId: "org-1",
+          apiKey: "api-key-1",
+          correlationId: "corr-1",
+          countryCode: "ES",
+          acceptLanguage: "en-US",
+          userTheme: "DARK",
+          userAgent: "iPhone iOS/26.1 LuziaApp-Dev/5.27.0",
+        }),
+      ).resolves.toEqual(payload);
+
+      const [url, init] = (fetch.mock.calls as [string, RequestInit][])[0];
+      expect(url).toBe("http://nexo.example.com/api/apps/wc2026-predictor/native-session");
+      expect(init.method).toBe("POST");
+      expect(init.headers).toMatchObject({
+        Authorization: "Bearer opaque-chatify-token",
+        "X-DEVICE-KEY": "device-1",
+        "X-MASTER-USER-ID": "master-user-1",
+        "X-AD-ID": "ad-1",
+        "X-ORGANIZATION-ID": "org-1",
+        "X-API-KEY": "api-key-1",
+        "X-CORRELATION-ID": "corr-1",
+        "X-COUNTRY-CODE": "ES",
+        "Accept-Language": "en-US",
+        "X-USER-THEME": "DARK",
+        "User-Agent": "iPhone iOS/26.1 LuziaApp-Dev/5.27.0",
+      });
+      expect(init.body).toBeUndefined();
+    });
+
+    it("throws when native-session exchange returns a non-ok response", async () => {
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        statusText: "Unauthorized",
+        text: () => Promise.resolve("ERROR_UNAUTHORIZED"),
+      });
+
+      const client = new NexoServerClient({
+        apiUrl: "http://nexo.example.com",
+      });
+
+      await expect(
+        client.exchangeNativeSession("wc2026-predictor", {
+          accessToken: "opaque-chatify-token",
+          deviceKey: "device-1",
+        }),
+      ).rejects.toThrow("native-session");
+    });
+  });
 });

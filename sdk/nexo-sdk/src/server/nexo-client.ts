@@ -17,6 +17,39 @@ export interface NexoServerClientConfig {
   bearerToken?: string;
 }
 
+export interface NexoNativeSessionExchangeInput {
+  accessToken: string;
+  deviceKey?: string | null;
+  masterUserId?: string | null;
+  adId?: string | null;
+  organizationId?: string | null;
+  apiKey?: string | null;
+  correlationId?: string | null;
+  countryCode?: string | null;
+  acceptLanguage?: string | null;
+  userTheme?: string | null;
+  userAgent?: string | null;
+}
+
+export interface NexoNativeSessionExchangeResponse {
+  access_token: string;
+  token_type: string;
+  expires_in_seconds: number;
+  user_id: string;
+  master_user_id: string;
+}
+
+function appendOptionalHeader(
+  headers: Record<string, string>,
+  key: string,
+  value: string | null | undefined,
+): void {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  if (normalized) {
+    headers[key] = normalized;
+  }
+}
+
 export class NexoRequestError extends Error {
   constructor(
     message: string,
@@ -223,6 +256,46 @@ export class NexoServerClient {
       return this.requestWithBearer("GET", "/api/me/profile", accessToken);
     }
     return this.request("GET", "/api/me/profile");
+  }
+
+  async exchangeNativeSession(
+    slug: string,
+    input: NexoNativeSessionExchangeInput,
+  ): Promise<NexoNativeSessionExchangeResponse> {
+    const accessToken = input.accessToken.trim();
+    if (!accessToken) {
+      throw new Error("No access token provided");
+    }
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${accessToken}`,
+    };
+    appendOptionalHeader(headers, "X-DEVICE-KEY", input.deviceKey);
+    appendOptionalHeader(headers, "X-MASTER-USER-ID", input.masterUserId);
+    appendOptionalHeader(headers, "X-AD-ID", input.adId);
+    appendOptionalHeader(headers, "X-ORGANIZATION-ID", input.organizationId);
+    appendOptionalHeader(headers, "X-API-KEY", input.apiKey);
+    appendOptionalHeader(headers, "X-CORRELATION-ID", input.correlationId);
+    appendOptionalHeader(headers, "X-COUNTRY-CODE", input.countryCode);
+    appendOptionalHeader(headers, "Accept-Language", input.acceptLanguage);
+    appendOptionalHeader(headers, "X-USER-THEME", input.userTheme);
+    appendOptionalHeader(headers, "User-Agent", input.userAgent);
+
+    const path = `/api/apps/${slug}/native-session`;
+    const resp = await fetch(`${this.apiUrl}${path}`, {
+      method: "POST",
+      headers,
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new NexoRequestError(
+        `Nexo API POST ${path}: ${resp.status} ${text}`,
+        resp.status,
+      );
+    }
+
+    return (await resp.json()) as NexoNativeSessionExchangeResponse;
   }
 
   // ---- Table Records ----

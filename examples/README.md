@@ -15,12 +15,8 @@ Runnable Nexo integration examples.
 - `identity-bridge` - partner-owned login and identity-linking reference flow that hands off into Nexo-hosted `/apps/{slug}/auth`, `/apps/{slug}/profile`, and `/apps/{slug}/onboarding`
 
 This repository does not own first-party app shells. Public lightweight app
-consumers, when needed, should stay thin and sit on top of the mirrored SDK,
-not replace the webhook/reference examples. Keep that mirror current with:
-
-```bash
-./scripts/sync-nexo-sdk.sh
-```
+consumers, when needed, should stay thin and sit on top of the checked-in SDK
+package in `sdk/nexo-sdk`, not replace the webhook/reference examples.
 
 ## Docker Compose quickstart
 

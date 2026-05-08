@@ -66,6 +66,8 @@ export type {
 export { NexoServerClient, NexoRequestError } from "./nexo-client";
 export type {
   NexoServerClientConfig,
+  NexoNativeSessionExchangeInput,
+  NexoNativeSessionExchangeResponse,
   KPRecord,
   KnowledgePack,
   KnowledgePackDataset,

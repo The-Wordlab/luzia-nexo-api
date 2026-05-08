@@ -17,17 +17,17 @@ as separate public surfaces.
   - webhook app examples (`minimal`, `structured`, `advanced`, `food-ordering`, `openclaw-bridge`)
   - hosted reference APIs (`hosted/python`, `hosted/typescript`)
   - integration utilities (`identity-bridge`, `partner-api/proactive`)
-- SDK mirror (`sdk/nexo-sdk`) synced from
-  `../luzia-nexo-apps/apps/nexo-sdk`
-  - treat `luzia-nexo-apps` as the only source of truth for hosted app SDK
-    transport and site-config changes
-  - current mirror tracks the canonical A2A transport, message-shaped webhook
+- Checked-in SDK package (`sdk/nexo-sdk`)
+  - treat this repo's `sdk/nexo-sdk` as the canonical hosted-app SDK package
+    for this public consumer lane
+  - current package tracks the canonical A2A transport, message-shaped webhook
     payload, session-context helpers, hosted-session-first first-party auth
-    with direct-API fallback for standalone CDN entry,
+    with direct-API fallback for standalone CDN entry, plus server-side
+    `native-session` exchange helpers for Nexo-blind mobile callers,
     `Agent*` browser surface, and `App*` server naming
   - the shared SDK surface no longer ships `Companion*` or `MicroApp*`
     compatibility naming
-  - do not hand-edit the mirror here; resync it when the source SDK changes
+  - sync downstream mirrors when this shared SDK package changes
 - External-runtime public docs now use `agent` / `app agent` naming for
   app-specific intelligence instead of older legacy terminology
 - Identity Bridge positioning now follows the slug-scoped hosted utility model:
@@ -43,9 +43,8 @@ as separate public surfaces.
 ## Next
 
 - Keep the public example inventory lean and accurate as examples evolve
-- Keep the checked-in SDK mirror synced from `../luzia-nexo-apps/apps/nexo-sdk`
-  whenever hosted app transport, auth/profile/onboarding URLs, or site-config
-  behavior changes
+- Keep downstream SDK mirrors synced from `sdk/nexo-sdk` whenever hosted app
+  transport, auth/profile/onboarding URLs, or site-config behavior changes
 - Decide whether lightweight public app-shell consumers should live under
   `examples/apps/` on top of the mirrored SDK
 - Shape the first partner-facing identity-bridge example around the

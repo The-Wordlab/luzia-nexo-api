@@ -164,16 +164,13 @@ structured data, a custom webhook, or both.
 | [`examples/hosted/`](examples/hosted/) | Reference API services for Cloud Run |
 | [`examples/identity-bridge/`](examples/identity-bridge/) | Partner-owned login and identity-linking example that hands off into Nexo-hosted app-scoped auth/profile |
 | [`sdk/javascript/`](sdk/javascript/) | TypeScript SDK for webhook verification and proactive messaging |
-| [`sdk/nexo-sdk/`](sdk/nexo-sdk/) | Checked-in mirror of the app SDK from `../luzia-nexo-apps/apps/nexo-sdk` for public app-shell consumers |
+| [`sdk/nexo-sdk/`](sdk/nexo-sdk/) | Checked-in canonical app SDK package for public app-shell consumers |
 | [`scripts/`](scripts/) | Deployment and seeding utilities |
 | [`docs/`](docs/) | Documentation source ([published site](https://the-wordlab.github.io/luzia-nexo-api/)) |
 
-When the source app SDK changes in `../luzia-nexo-apps/apps/nexo-sdk`, resync this
-repo's mirror before publishing example changes:
-
-```bash
-./scripts/sync-nexo-sdk.sh
-```
+`sdk/nexo-sdk/` is the checked-in SDK package for this repo's public consumers.
+Keep downstream mirrors aligned with it when the shared hosted-app contract
+changes.
 
 ## Profile context
 
