@@ -280,6 +280,29 @@ describe("NexoServerClient", () => {
       const [, init] = (fetch.mock.calls as [string, RequestInit][])[0];
       expect(JSON.parse(init.body as string)).toEqual(records);
     });
+
+    it("deleteKnowledgePackRecord encodes record_key on DELETE", async () => {
+      const fetch = mockFetch({
+        status: 204,
+        text: () => Promise.resolve(""),
+      });
+      global.fetch = fetch;
+
+      const client = new NexoServerClient({
+        apiUrl: "http://nexo.example.com",
+        bearerToken: "token",
+      });
+
+      await expect(
+        client.deleteKnowledgePackRecord("pack-1", "ds-1", "weird&key=value"),
+      ).resolves.toBeUndefined();
+
+      const [url, init] = (fetch.mock.calls as [string, RequestInit][])[0];
+      expect(url).toBe(
+        "http://nexo.example.com/api/knowledge-packs/pack-1/datasets/ds-1/records?record_key=weird%26key%3Dvalue",
+      );
+      expect(init.method).toBe("DELETE");
+    });
   });
 
   // ---- getMyProfile with bearer override ----
@@ -319,6 +342,40 @@ describe("NexoServerClient", () => {
 
       const [, init] = (fetch.mock.calls as [string, RequestInit][])[0];
       expect((init.headers as Record<string, string>)["Authorization"]).toBe("Bearer client-token");
+    });
+  });
+
+  describe("resolveAppIdentitySnippets", () => {
+    it("posts identifiers to the app identity resolution endpoint", async () => {
+      const payload = [
+        {
+          requested_id: "master-user-123",
+          user_id: "user-1",
+          master_user_id: "master-user-123",
+          display_name: "Mati",
+          avatar_url: "https://cdn.example.com/mati.png",
+        },
+      ];
+      const fetch = mockFetch({
+        json: () => Promise.resolve(payload),
+      });
+      global.fetch = fetch;
+
+      const client = new NexoServerClient({
+        apiUrl: "http://nexo.example.com",
+        bearerToken: "token",
+      });
+
+      await expect(
+        client.resolveAppIdentitySnippets("app-123", ["master-user-123"]),
+      ).resolves.toEqual(payload);
+
+      const [url, init] = (fetch.mock.calls as [string, RequestInit][])[0];
+      expect(url).toBe("http://nexo.example.com/api/apps/app-123/identities/resolve");
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(init.body as string)).toEqual({
+        identifiers: ["master-user-123"],
+      });
     });
   });
 

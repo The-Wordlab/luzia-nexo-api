@@ -72,6 +72,7 @@ export type {
   KnowledgePack,
   KnowledgePackDataset,
   App,
+  AppIdentitySnippet,
   AppParticipant,
   AppTable,
   NexoProfile,

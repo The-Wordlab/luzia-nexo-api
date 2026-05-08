@@ -186,12 +186,29 @@ export class NexoServerClient {
   async bulkUpsertRecords(
     packId: string,
     datasetId: string,
-    records: { record_key: string; data_json: Record<string, unknown> }[],
+    records: {
+      record_key: string;
+      data_json: Record<string, unknown>;
+      search_text?: string | null;
+    }[],
   ): Promise<{ created: number; updated: number; total: number }> {
     return this.request(
       "POST",
       `/api/knowledge-packs/${packId}/datasets/${datasetId}/records/bulk`,
       records,
+    );
+  }
+
+  /** Delete a Knowledge Pack dataset row by record_key (204 No Content). */
+  async deleteKnowledgePackRecord(
+    packId: string,
+    datasetId: string,
+    recordKey: string,
+  ): Promise<void> {
+    const query = new URLSearchParams({ record_key: recordKey });
+    await this.request(
+      "DELETE",
+      `/api/knowledge-packs/${packId}/datasets/${datasetId}/records?${query.toString()}`,
     );
   }
 
@@ -243,6 +260,15 @@ export class NexoServerClient {
 
   async listAppParticipants(appId: string): Promise<AppParticipant[]> {
     return this.request("GET", `/api/apps/structured/${appId}/participants`);
+  }
+
+  async resolveAppIdentitySnippets(
+    appId: string,
+    identifiers: string[],
+  ): Promise<AppIdentitySnippet[]> {
+    return this.request("POST", `/api/apps/${appId}/identities/resolve`, {
+      identifiers,
+    });
   }
 
   async listAppTables(appId: string): Promise<AppTable[]> {
@@ -370,6 +396,14 @@ export interface AppParticipant {
   status: string;
   joined_at: string;
   display_name?: string | null;
+}
+
+export interface AppIdentitySnippet {
+  requested_id: string;
+  user_id?: string | null;
+  master_user_id?: string | null;
+  display_name?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface NexoProfile {
