@@ -23,18 +23,21 @@ export function resolveRuntimeApiBaseUrl(options: {
   appHost: string | null | undefined;
 }): {
   apiBaseUrl: string;
+  hostedSessionApiBaseUrl: string | null;
   hostedSessionCapable: boolean;
 } {
-  if (!options.authBaseUrl || !isFirstPartyHostedAppHost(options.appHost)) {
-    return {
-      apiBaseUrl: options.apiBaseUrl,
-      hostedSessionCapable: false,
-    };
-  }
+  const hostedSessionApiBaseUrl =
+    options.authBaseUrl && isFirstPartyHostedAppHost(options.appHost)
+      ? new URL("/app-runtime-api", options.authBaseUrl).toString()
+      : null;
 
   return {
-    apiBaseUrl: new URL("/app-runtime-api", options.authBaseUrl).toString(),
-    hostedSessionCapable: true,
+    // Keep the direct API origin as the canonical bearer/domain-session path.
+    // Hosted session bootstrap is an optional auth-host overlay, not a
+    // wholesale replacement for standalone runtime traffic.
+    apiBaseUrl: options.apiBaseUrl,
+    hostedSessionApiBaseUrl,
+    hostedSessionCapable: hostedSessionApiBaseUrl !== null,
   };
 }
 

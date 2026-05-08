@@ -483,7 +483,7 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     expect(config.accessToken).toBe("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLWxvZ2luIn0.test");
     expect(config.userId).toBe("user-login");
     expect(config.slug).toBe("nutrition");
-    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
+    expect(config.apiBaseUrl).toBe("https://api.luzia.com");
     expect(config.runtimeAuthMode).toBe("bearer");
 
     // Token stored in localStorage
@@ -636,9 +636,26 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     const client = createNexoClient({ storagePrefix: "cdnlogin" });
     const config = await client.initStandalone("http://localhost:8000");
 
-    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
+    expect(config.apiBaseUrl).toBe("https://luzia-nexo.thewordlab.net");
     expect(config.authBaseUrl).toBe("https://nexo.luzia.com");
     expect(config.runtimeAuthMode).toBe("bearer");
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://nexo.luzia.com/app-runtime-api/api/apps/nutrition/bootstrap",
+      expect.objectContaining({
+        cache: "no-store",
+        credentials: "include",
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      "https://luzia-nexo.thewordlab.net/api/apps/nutrition/domain-session",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
 
     const loginUrl = new URL(client.buildNexoLoginUrl());
     expect(loginUrl.origin).toBe("https://nexo.luzia.com");
@@ -682,8 +699,77 @@ describe("auth bridge session resolution via initStandalone (mocked fetch)", () 
     );
     expect(config.userId).toBe("user-token");
     expect(config.slug).toBe("nutrition");
-    expect(config.apiBaseUrl).toBe("https://nexo.luzia.com/app-runtime-api");
+    expect(config.apiBaseUrl).toBe("https://api.luzia.com");
     expect(config.runtimeAuthMode).toBe("bearer");
+  });
+
+  it("uses the direct API for auth-bridge domain-session on first-party app hosts", async () => {
+    vi.stubGlobal("window", {
+      location: {
+        origin: "https://apps.staging.luzia.com",
+        host: "apps.staging.luzia.com",
+        hostname: "apps.staging.luzia.com",
+        pathname: "/nutrition/",
+        search: "",
+        hash: "",
+      },
+    });
+
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        slug: "nutrition",
+        environments: {
+          staging: {
+            api_base_url: "https://nexo-cdn-alb.staging.thewordlab.net",
+            auth_base_url: "https://staging.nexo.luzia.com",
+          },
+        },
+      }),
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 204,
+    } as unknown as Response);
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        access_token: "guest-token",
+        user_id: "guest-user",
+        app_id: "app-bridge",
+      }),
+    } as unknown as Response);
+
+    const client = createNexoClient({
+      storagePrefix: "firstpartybridge",
+      authBridge: {
+        enabled: true,
+        serviceBaseUrl: "https://service.example.com",
+      },
+    });
+
+    const config = await client.initStandalone("http://localhost:8000");
+
+    expect(config.apiBaseUrl).toBe("https://nexo-cdn-alb.staging.thewordlab.net");
+    expect(config.authBaseUrl).toBe("https://staging.nexo.luzia.com");
+    expect(config.runtimeAuthMode).toBe("bearer");
+    expect(config.appId).toBe("app-bridge");
+    expect(config.userId).toBe("guest-user");
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining(
+        "https://nexo-cdn-alb.staging.thewordlab.net/api/apps/nutrition/domain-session",
+      ),
+      expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }),
+    );
   });
 
   it("hydrates hosted-session clients without requiring a cached bearer token", async () => {

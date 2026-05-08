@@ -268,6 +268,7 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     slug: string;
     apiBaseUrl: string;
     authBaseUrl: string | null;
+    hostedSessionApiBaseUrl: string | null;
     hostedSessionCapable: boolean;
   } | null> {
     const queryOverrides = resolveNexoQueryOverrides(window.location.search);
@@ -293,8 +294,9 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
 
     return {
       slug,
-      apiBaseUrl: runtimeApi.apiBaseUrl,
+      apiBaseUrl,
       authBaseUrl,
+      hostedSessionApiBaseUrl: runtimeApi.hostedSessionApiBaseUrl,
       hostedSessionCapable: runtimeApi.hostedSessionCapable,
     };
   }
@@ -698,7 +700,13 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
       );
     }
 
-    const { slug, apiBaseUrl, authBaseUrl, hostedSessionCapable } = resolved;
+    const {
+      slug,
+      apiBaseUrl,
+      authBaseUrl,
+      hostedSessionApiBaseUrl,
+      hostedSessionCapable,
+    } = resolved;
 
     // Check cached token
     const cached = localStorage.getItem(tokenKey);
@@ -719,16 +727,16 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
       }
     }
 
-    if (hostedSessionCapable) {
+    if (hostedSessionCapable && hostedSessionApiBaseUrl) {
       const hostedBootstrap = await resolveStandaloneBootstrap(
-        apiBaseUrl,
+        hostedSessionApiBaseUrl,
         slug,
         null,
       );
       if (hostedBootstrap && typeof hostedBootstrap.user_id === "string") {
         clearCachedBearerSession();
         _config = {
-          apiBaseUrl,
+          apiBaseUrl: hostedSessionApiBaseUrl,
           appId: hostedBootstrap.app_id ?? "",
           slug,
           accessToken: null,
@@ -784,7 +792,13 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
     const resolved = await resolveConfigFromSite();
     if (!resolved) return false;
 
-    const { slug, apiBaseUrl, authBaseUrl, hostedSessionCapable } = resolved;
+    const {
+      slug,
+      apiBaseUrl,
+      authBaseUrl,
+      hostedSessionApiBaseUrl,
+      hostedSessionCapable,
+    } = resolved;
     const cached = localStorage.getItem(tokenKey);
     const cachedUser = localStorage.getItem(userKey);
 
@@ -805,15 +819,15 @@ export function createNexoClient(options: NexoClientOptions): NexoClient {
       clearCachedBearerSession();
     }
 
-    if (hostedSessionCapable) {
+    if (hostedSessionCapable && hostedSessionApiBaseUrl) {
       const hostedBootstrap = await resolveStandaloneBootstrap(
-        apiBaseUrl,
+        hostedSessionApiBaseUrl,
         slug,
         null,
       );
       if (hostedBootstrap && typeof hostedBootstrap.user_id === "string") {
         _config = {
-          apiBaseUrl,
+          apiBaseUrl: hostedSessionApiBaseUrl,
           appId: hostedBootstrap.app_id ?? "",
           slug,
           accessToken: null,
