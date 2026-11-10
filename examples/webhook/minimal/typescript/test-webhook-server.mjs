@@ -4,6 +4,14 @@ import crypto from "node:crypto";
 
 import { processWebhook, verifySignature } from "./webhook-server.mjs";
 
+for (const headers of [{}, { "x-timestamp": "1700000000" }, { "x-signature": "sha256=missing-time" }]) {
+  test(`configured secret rejects incomplete signature headers: ${Object.keys(headers).join(",") || "none"}`, () => {
+    const result = processWebhook('{"message":{"content":"hello"}}', headers, "testsecret");
+    assert.equal(result.status, 401);
+    assert.equal(result.body, null);
+  });
+}
+
 test("verifySignature validates HMAC sha256 payload", () => {
   const secret = "testsecret";
   const raw = '{"message":{"content":"hello"}}';
@@ -14,6 +22,7 @@ test("verifySignature validates HMAC sha256 payload", () => {
 
   assert.equal(verifySignature(secret, raw, timestamp, signature), true);
   assert.equal(verifySignature(secret, raw, timestamp, "sha256=bad"), false);
+  assert.equal(processWebhook(raw, { "x-timestamp": timestamp, "x-signature": signature }, secret).status, 200);
 });
 
 test("processWebhook returns rich response for valid payload", () => {

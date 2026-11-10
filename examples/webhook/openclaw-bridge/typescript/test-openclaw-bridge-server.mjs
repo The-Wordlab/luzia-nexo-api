@@ -4,6 +4,31 @@ import crypto from "node:crypto";
 
 import { processWebhook, streamWebhook, verifySignature } from "./openclaw-bridge-server.mjs";
 
+for (const headers of [{}, { "x-timestamp": "1700000000" }, { "x-signature": "sha256=missing-time" }]) {
+  for (const mode of ["json", "sse"]) {
+    test(`${mode} rejects incomplete signature headers before calling OpenClaw: ${Object.keys(headers).join(",") || "none"}`, async () => {
+      let calls = 0;
+      const opts = {
+        secret: "testsecret",
+        openclawToken: "gateway-token",
+        fetchImpl: async () => { calls++; throw new Error("upstream must not be called"); },
+      };
+      const raw = '{"message":{"content":"hello"}}';
+      const res = createMockRes();
+      const result = mode === "json"
+        ? await processWebhook(raw, headers, opts)
+        : await streamWebhook(raw, headers, res, opts);
+      assert.equal(result.status, 401);
+      assert.equal(result.body, null);
+      assert.equal(calls, 0);
+      if (mode === "sse") {
+        assert.equal(result.streamed, false);
+        assert.equal(res.chunks.length, 0);
+      }
+    });
+  }
+}
+
 test("verifySignature validates HMAC sha256 payload", () => {
   const secret = "testsecret";
   const raw = '{"message":{"content":"hello"}}';
@@ -15,6 +40,32 @@ test("verifySignature validates HMAC sha256 payload", () => {
   assert.equal(verifySignature(secret, raw, timestamp, signature), true);
   assert.equal(verifySignature(secret, raw, timestamp, "sha256=bad"), false);
 });
+
+for (const mode of ["json", "sse"]) {
+  test(`${mode} accepts a correctly signed request with a configured secret`, async () => {
+    const secret = "testsecret";
+    const raw = '{"message":{"content":"hello"}}';
+    const timestamp = "1700000000";
+    const signature = "sha256=" + crypto.createHmac("sha256", secret)
+      .update(`${timestamp}.${raw}`).digest("hex");
+    let calls = 0;
+    const opts = {
+      secret,
+      openclawToken: "gateway-token",
+      fetchImpl: async () => {
+        calls++;
+        return { ok: true, status: 200, headers: new Headers({ "content-type": "application/json" }),
+          json: async () => ({ output_text: "hello" }), text: async () => "" };
+      },
+    };
+    const headers = { "x-timestamp": timestamp, "x-signature": signature };
+    const result = mode === "json"
+      ? await processWebhook(raw, headers, opts)
+      : await streamWebhook(raw, headers, createMockRes(), opts);
+    assert.equal(result.status, 200);
+    assert.equal(calls, 1);
+  });
+}
 
 test("processWebhook calls OpenClaw responses API and returns rich success envelope", async () => {
   const calls = [];
