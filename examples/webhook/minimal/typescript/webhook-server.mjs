@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 const PORT = parseInt(process.env.PORT || "8081", 10);
 
 export function verifySignature(secret, rawBody, timestamp, signature) {
-  if (!secret || !timestamp || !signature) return true;
+  if (!secret || !timestamp || !signature) return false;
   try {
     const signed = `${timestamp}.${rawBody}`;
     const expected =
